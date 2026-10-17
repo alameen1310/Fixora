@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { Link } from 'react-router-dom'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
@@ -6,6 +7,7 @@ import SiteHeader from '../components/SiteHeader.jsx'
 import StepAccordion from '../components/StepAccordion.jsx'
 import ProjectStoryCarousel from '../components/ProjectStoryCarousel.jsx'
 import SiteFooter from '../components/SiteFooter.jsx'
+import serviceCategories from '../data/serviceCategories.js'
 import heroPhoto from '../assets/plumber-at-work.jpg'
 import renovationPhoto from '../assets/kitchen-renovation.jpg'
 import completedPhoto from '../assets/finished-kitchen.jpg'
@@ -13,11 +15,10 @@ import './LandingPage.css'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
-const services = ['Repairs', 'Plumbing', 'Installations', 'Electrical', 'Maintenance', 'Renovation']
 const revealText = 'A real problem becomes easier to solve when you can see the work, understand the skill, and compare what matters.'
 
 function ServiceMarquee() {
-  const repeatedServices = [...services, ...services]
+  const repeatedServices = [...serviceCategories, ...serviceCategories]
 
   return (
     <div aria-label="Household service categories" className="service-marquee" role="region">
@@ -31,7 +32,7 @@ function ServiceMarquee() {
             </span>
           ))}
         </div>
-        <div className="visually-hidden">{services.join(', ')}</div>
+        <div className="visually-hidden">{serviceCategories.join(', ')}</div>
       </div>
     </div>
   )
@@ -145,12 +146,12 @@ export default function LandingPage() {
                 Find the right help through real projects, useful details, and the people behind the work.
               </p>
               <div className="hero-actions" data-hero-enter>
-                <a className="button button--primary" href="#for-customers">
+                <Link className="button button--primary" to="/signup/customer">
                   Find a professional <ArrowUpRight />
-                </a>
-                <a className="button button--text" href="#for-professionals">
+                </Link>
+                <Link className="button button--text" to="/signup/provider">
                   Offer your services <ArrowUpRight />
-                </a>
+                </Link>
               </div>
               <div className="hero-note" data-hero-enter>
                 <span aria-hidden="true" className="hero-note__line" />
@@ -267,8 +268,8 @@ export default function LandingPage() {
             <h2 id="closing-title">Good work deserves to be found.</h2>
             <p>Fixora is taking shape around the people who need a hand and the people who know how to help.</p>
             <div className="closing-section__actions">
-              <a className="button button--primary" href="#for-customers">Find a professional <ArrowUpRight /></a>
-              <a className="button button--outline" href="#for-professionals">Offer your services <ArrowUpRight /></a>
+              <Link className="button button--primary" to="/signup/customer">Find a professional <ArrowUpRight /></Link>
+              <Link className="button button--outline" to="/signup/provider">Offer your services <ArrowUpRight /></Link>
             </div>
           </div>
         </section>

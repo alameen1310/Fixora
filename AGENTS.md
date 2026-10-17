@@ -29,3 +29,7 @@ Recent history uses short, imperative subjects with a category prefix, such as `
 ## Product and Design Expectations
 
 Treat `ABOUT.md` as product vision, not proof that features exist. Use `DESIGN.md` for visual direction and accessibility expectations. Build incrementally and preserve both customer and professional perspectives.
+
+## Interface Icons
+
+Use Phosphor Icons for all new interface icons and replace existing icon glyphs with suitable Phosphor icons when changing those controls. Do not add another icon library or use arbitrary Unicode symbols as UI icons without explicit approval. Keep Fixora's brand mark and meaningful illustrations intact.

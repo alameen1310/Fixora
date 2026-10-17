@@ -1,0 +1,39 @@
+.pwa-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pwa-controls__button {
+  min-height: 44px;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.7rem;
+  color: var(--color-primary-dark);
+  background: var(--color-surface);
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+
+.pwa-controls__button:hover {
+  border-color: var(--color-primary);
+  background: var(--color-pale-blue);
+}
+
+.pwa-controls__button:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+@media (max-width: 960px) {
+  .pwa-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pwa-controls__button {
+    width: 100%;
+    min-height: 48px;
+  }
+}

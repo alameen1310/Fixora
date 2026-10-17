@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import PwaControls from './PwaControls.jsx'
 import './SiteHeader.css'
 
 const links = [
@@ -67,13 +69,14 @@ export default function SiteHeader() {
             ))}
           </div>
           <div className="primary-navigation__actions">
-            <a className="nav-action nav-action--quiet" href="#for-customers" onClick={closeMenu}>
+            <PwaControls />
+            <Link className="nav-action nav-action--quiet" onClick={closeMenu} to="/signup/customer">
               Find a professional
-            </a>
-            <a className="nav-action nav-action--primary" href="#for-professionals" onClick={closeMenu}>
+            </Link>
+            <Link className="nav-action nav-action--primary" onClick={closeMenu} to="/signup/provider">
               Offer your services
               <span aria-hidden="true">↗</span>
-            </a>
+            </Link>
           </div>
         </nav>
       </div>

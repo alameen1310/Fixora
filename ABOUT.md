@@ -73,7 +73,7 @@ The connections between these experiences matter. Project content can help a cus
 
 ## Intended technical direction
 
-The current architectural intentions are React, Vite, and JavaScript with JSX, with Supabase as the intended backend for database, authentication, and storage, and Cloudflare Pages as the intended frontend hosting platform. A progressive web app experience may be introduced later.
+The current architectural direction is React, Vite, and JavaScript with JSX, with Supabase as the intended backend for database, authentication, and storage, and Cloudflare Pages as the intended frontend hosting platform. The current app includes an installable public shell with static-asset caching; this does not provide offline account creation, job posting, or marketplace features. A fuller progressive web app experience may be developed later.
 
 These are planning decisions, not authorization to scaffold or integrate the stack. They do not imply that any of these services are configured or in use.
 

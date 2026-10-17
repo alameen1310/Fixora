@@ -75,6 +75,10 @@
   gap: 1rem;
 }
 
+.primary-navigation__actions .pwa-controls {
+  order: 3;
+}
+
 .nav-action {
   display: inline-flex;
   min-height: 46px;
@@ -181,6 +185,10 @@
 
   .primary-navigation__actions {
     gap: 0.35rem;
+  }
+
+  .primary-navigation__actions .pwa-controls {
+    order: 0;
   }
 
   .nav-action--primary {

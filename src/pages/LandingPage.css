@@ -518,7 +518,7 @@
 }
 
 .button--outline-light {
-  border-color: rgb(255 255 255 / 47%);
+  border-color: rgb(255 255 255 / 78%);
   color: #fff;
   background: transparent;
 }
@@ -591,7 +591,7 @@
 }
 
 .button--outline {
-  border-color: rgb(25 70 184 / 35%);
+  border-color: rgb(25 70 184 / 58%);
   color: var(--color-primary-dark);
   background: transparent;
 }
