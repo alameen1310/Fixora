@@ -1,0 +1,225 @@
+.story-carousel {
+  display: grid;
+  min-width: 0;
+  height: 720px;
+  grid-auto-flow: dense;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr)) 46px;
+  column-gap: 1rem;
+}
+
+.story-card {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  grid-row: span 2;
+  overflow: hidden;
+  border-radius: 1.6rem;
+  background: var(--color-primary-dark);
+  color: #fff;
+  isolation: isolate;
+}
+
+.story-card--1 {
+  grid-column: span 7;
+}
+
+.story-card--2 {
+  grid-column: span 5;
+}
+
+.story-card__image,
+.story-card__shade {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.story-card__image {
+  z-index: -2;
+  object-fit: cover;
+  transition: transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.story-card:hover .story-card__image {
+  transform: scale(1.045);
+}
+
+.story-card__shade {
+  z-index: -1;
+  background: linear-gradient(180deg, rgb(23 25 29 / 4%) 28%, rgb(23 25 29 / 84%) 100%);
+}
+
+.story-card__copy {
+  position: absolute;
+  right: clamp(1.3rem, 2.6vw, 2.7rem);
+  bottom: clamp(1.4rem, 2.7vw, 2.8rem);
+  left: clamp(1.3rem, 2.6vw, 2.7rem);
+  max-width: 38rem;
+}
+
+.story-card__type {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: rgb(255 255 255 / 88%);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.story-card__type::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-pale-blue);
+  content: '';
+}
+
+.story-card__copy h3 {
+  max-width: 12ch;
+  margin: 1rem 0 0.7rem;
+  font-size: clamp(1.9rem, 3.5vw, 3.5rem);
+  font-weight: 600;
+  letter-spacing: -0.065em;
+  line-height: 0.98;
+}
+
+.story-card--2 .story-card__copy h3 {
+  font-size: clamp(1.65rem, 2.7vw, 2.7rem);
+}
+
+.story-card__copy p {
+  max-width: 32rem;
+  margin: 0;
+  color: rgb(255 255 255 / 84%);
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+.story-card--2 .story-card__copy p {
+  font-size: 0.9rem;
+}
+
+.story-card__note {
+  display: block;
+  margin-top: 1rem;
+  color: rgb(255 255 255 / 67%);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.story-carousel__controls {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.8rem;
+  padding-top: 0.1rem;
+}
+
+.story-carousel__arrow {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.story-carousel__arrow span {
+  font-size: 1.15rem;
+}
+
+.story-carousel__arrow:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-primary);
+  color: #fff;
+  background: var(--color-primary);
+}
+
+.story-carousel__dots {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+  margin-inline: 0.3rem;
+}
+
+.story-carousel__dots button {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #c9cdd5;
+  cursor: pointer;
+  transition: width 220ms ease, background-color 220ms ease;
+}
+
+.story-carousel__dots button.is-active {
+  width: 28px;
+  background: var(--color-primary);
+}
+
+@media (max-width: 860px) {
+  .story-carousel {
+    height: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto;
+    gap: 0.8rem;
+  }
+
+  .story-card,
+  .story-card--1,
+  .story-card--2 {
+    min-height: 550px;
+    grid-column: span 1;
+    grid-row: auto;
+  }
+
+  .story-card__copy h3,
+  .story-card--2 .story-card__copy h3 {
+    font-size: clamp(1.7rem, 4.3vw, 2.5rem);
+  }
+
+  .story-carousel__controls {
+    padding-top: 0.2rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .story-carousel {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .story-card,
+  .story-card--1,
+  .story-card--2 {
+    min-height: 430px;
+    grid-column: 1;
+  }
+
+  .story-card--2 {
+    min-height: 370px;
+  }
+
+  .story-card__copy h3,
+  .story-card--2 .story-card__copy h3 {
+    max-width: 13ch;
+    font-size: 2.25rem;
+  }
+
+  .story-carousel__controls {
+    justify-content: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-card__image {
+    transition: none;
+  }
+}
