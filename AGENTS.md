@@ -28,4 +28,4 @@ Recent history uses short, imperative subjects with a category prefix, such as `
 
 ## Product and Design Expectations
 
-Treat `ABOUT.md` as product vision, not proof that features exist. Use `DESIGN.md` for visual direction and accessibility expectations. Build incrementally and preserve both customer and professional perspectives. Consult the installed GPT Taste skill directly when relevant to interface work.
+Treat `ABOUT.md` as product vision, not proof that features exist. Use `DESIGN.md` for visual direction and accessibility expectations. Build incrementally and preserve both customer and professional perspectives.
