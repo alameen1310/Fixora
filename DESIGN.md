@@ -1,119 +1,81 @@
-# Fixora — Visual Design Specification
+# Fixora — Design Direction
 
-This document is the initial visual source of truth for Fixora. Read and follow it before making UI changes. Extend the existing design system rather than inventing new styles on every screen. Update this file only when an intentional design decision changes, and keep visual changes within the current task's scope. Do not build unrequested pages or components.
+## Purpose and status
 
-## Brand personality
+This brief describes the visual identity, experience principles, and quality bar for Fixora. It is a direction for future design and implementation, not a rigid component-by-component blueprint or a claim that the described experience exists today. Design decisions should respond to the product context and the needs of the feature being built.
 
-Fixora should feel trustworthy, modern, practical, human, premium without feeling exclusive, and social and discovery-oriented while remaining a credible service marketplace.
+## Brand feeling
 
-It should not look like a generic admin dashboard, a generic AI-generated SaaS template, or a clone of a conventional social network.
+Fixora should feel modern and distinctive, premium without being pretentious, trustworthy and human, confident and welcoming, practical and dependable. It should be visually engaging and photo-rich, with a contemporary identity of its own.
 
-## Colour palette
+The product should feel like a thoughtfully designed consumer marketplace. Avoid the look of a generic admin dashboard or a standard template with a new name applied.
 
-Use these initial design tokens:
+## Starting colour palette
 
-| Token | Value | Intended use |
-| --- | --- | --- |
-| Primary blue | `#2457D6` | Primary actions, active navigation, links, meaningful highlights |
-| Dark blue | `#1946B8` | Deeper blue states where needed |
-| Main background | `#F6F7F9` | Page background |
-| Surface | `#FFFFFF` | Content surfaces |
-| Primary text | `#17191D` | Main text |
-| Secondary text | `#686D76` | Supporting text and metadata |
-| Borders | `#E4E7EC` | Dividers and restrained outlines |
-| Pale blue | `#EEF3FF` | Subtle blue-tinted highlights |
-| Success | `#23845B` | Successful outcomes and status |
+- Primary blue: `#2457D6`
+- Dark blue: `#1946B8`
+- Background: `#F6F7F9`
+- Surface: `#FFFFFF`
+- Primary text: `#17191D`
+- Secondary text: `#686D76`
+- Border: `#E4E7EC`
+- Pale blue: `#EEF3FF`
+- Success: `#23845B`
 
-Use blue selectively. Maintain strong contrast and avoid making every element blue. Implement shared colours and other design tokens with CSS custom properties.
+Use blue to establish recognition, guide important actions, and communicate confidence. White and neutral tones should keep information clear and readable. Reserve success green for meaningful success feedback or status. This palette is a foundation for a cohesive identity; introduce other colours only when they have a clear product or communication purpose.
 
-## Typography
+## Visual direction
 
-- Use a clean sans-serif typeface such as Inter, with a suitable system-font fallback.
-- Establish a clear hierarchy between page titles, section headings, body text, labels, and metadata.
-- Use readable font sizes and comfortable line heights.
-- Avoid oversized headings that consume too much space on mobile.
-- Keep labels and supporting text legible.
+Give each page and section a deliberate point of view. Build visual hierarchy through composition, typography, imagery, contrast, and useful detail. Layouts should respond to their content and task rather than repeat one template everywhere. Keep the experience consistent across pages without making every page look identical.
 
-## Layout and spacing
+Avoid generic AI-made SaaS patterns, bare interfaces without enough visual character, disconnected empty space, unreadably small text, repetitive grids of identical cards, and excessive use of pills. Avoid gradients, blobs, oversized shadows, generic illustrations, and decorative effects when they do not serve the content or experience. These are cautions, not blanket bans: use a card, shadow, gradient, rounded shape, or illustration when it has a clear purpose.
 
-- Use a consistent spacing scale based on multiples of 4px.
-- Align elements carefully and maintain clear visual hierarchy.
-- Prefer whitespace over unnecessary decorative elements.
-- Use consistent content widths and responsive gutters.
-- Use restrained borders and subtle shadows only where they improve hierarchy.
-- Use modest corner radii, generally around 8–12px, with larger radii only when justified.
-- Avoid wrapping every piece of content in a separate card.
+Do not equate premium design with enormous whitespace, tiny type, or an oversized hero. Make each screen balanced, useful, and visually confident.
 
-## Product-specific visual direction
+## Typography, spacing, and layout
 
-Fixora is a photo-rich household-services marketplace.
+Do not treat this brief as a source of arbitrary pixel values, fixed spacing rules, or exact font sizes. Set measurements in context during design and implementation.
 
-- Use real-looking household repair and home improvement imagery where appropriate.
-- Treat photos of actual work as important content, not decoration.
-- Make problem posts and completed projects easy to distinguish.
-- Design provider profiles around skills, experience, portfolios, and customer feedback.
-- Give job status and application status clear visual treatments.
-- Keep the interface useful and scannable even when users have many posts to browse.
-- Use a consistent icon library if one is introduced later; do not use emojis as interface icons.
+The interface should use readable type at real viewing sizes and create clear hierarchy between headings, supporting text, labels, and metadata. Spacing should feel balanced and intentional. Content density should suit the task, available space should be used effectively, and pages should have a coherent visual rhythm without forcing every section into the same proportions.
 
-## Navigation and responsive behaviour
+Responsive layouts should preserve readability and composition across screen sizes. Reorganize content where needed rather than merely shrinking a desktop layout.
 
-- Design mobile and desktop experiences deliberately.
-- On desktop, use a layout appropriate to the current page rather than forcing every page into the same dashboard structure.
-- A feed may use a central content column and restrained supporting sidebars where useful.
-- On mobile, prioritise the main task and avoid cramped multi-column layouts.
-- Navigation should be predictable, with clearly indicated active states.
-- Forms must remain comfortable to complete on touchscreens.
-- Buttons and interactive controls must have appropriate touch targets.
-- Do not assume that a desktop sidebar should simply shrink onto mobile.
+## Photography and project imagery
 
-## Components
+Photography is central to Fixora because the product revolves around real household problems and completed work. Prefer relevant imagery that helps people understand the work and the people behind it, such as professionals at work, repairs and installations, tools and materials in context, before-and-after transformations, and finished projects.
 
-Establish consistent treatments for:
+Use images to explain, create visual interest, and support discovery. Do not add images merely as decoration. Use existing assets or suitable permitted sources, and verify external assets when the available tools allow. Do not use random, unrelated, broken, or fabricated image URLs. Represent illustrative or unverified content transparently.
 
-- Primary, secondary, and text buttons.
-- Form inputs, labels, helper text, and validation errors.
-- Navigation links and active states.
-- Problem posts and completed-project posts.
-- Provider profile summaries.
-- Application and job status indicators.
-- Empty states, loading states, and error states.
-- Confirmation dialogs and feedback messages when needed.
+## Motion
 
-Components should be reusable where doing so improves consistency, but avoid premature abstraction.
+The interface should feel responsive and alive. Use purposeful, smooth movement when it clarifies a change, guides attention, or gives useful feedback. Suitable opportunities include page entrances, scroll reveals, navigation and control feedback, state transitions, and project-preview interactions.
 
-## Accessibility
+Choose motion for the context. Do not animate every element, distract from content, or delay access to important actions. Keep motion performant, especially on mobile, and respect `prefers-reduced-motion`. Avoid gratuitous movement, excessive bouncing, long intro sequences, and gimmicks.
 
-- Use semantic HTML.
-- Ensure keyboard accessibility and visible focus states.
-- Associate form labels with their inputs.
-- Provide useful alternative text for meaningful images.
-- Do not communicate status through colour alone.
-- Maintain adequate contrast and readable text.
-- Respect reduced-motion preferences if animations are introduced.
+Animation libraries are allowed. Use CSS when it is sufficient; a library such as Motion for React may be used when it materially improves the quality, coherence, or maintainability of the experience. Do not reject a useful dependency solely to minimize dependency count.
 
-## Explicit anti-patterns
+## Interaction and accessibility
 
-Avoid:
+Interactions should feel responsive and intentional. Where relevant, buttons, links, navigation, forms, and controls should communicate hover, focus, active, loading, success, and error states. Interactive previews should behave like controls, and static content should not imply an action it cannot perform.
 
-- Unnecessary gradients and decorative blobs.
-- Excessive pill-shaped buttons and tags.
-- Oversized shadows and glassmorphism used without purpose.
-- Generic dashboard cards everywhere.
-- Excessive blue backgrounds.
-- Arbitrary spacing and inconsistent radii.
-- Fake functionality and dead buttons presented as working.
-- Decorative animations that interfere with usability.
-- Broken external image URLs or unlicensed assets.
-- Unnecessary dependencies added solely for appearance.
-- Inconsistent styles across pages.
+Use semantic, accessible controls and preserve keyboard navigation. Provide adequate contrast, readable typography, useful alternative text for images, and forms that clearly communicate their purpose. Error and empty states should help people understand what happened and what they can do next. A visually attractive interface is not successful if it is difficult to use.
 
-## Design implementation rules
+## Responsive experience
 
-- Treat this file as the initial visual source of truth.
-- Read and follow it before making UI changes.
-- Extend the existing design system rather than inventing new styles on every screen.
-- Update this file only when an intentional design decision changes.
-- Use CSS custom properties for shared colours and other design tokens.
-- Keep visual changes within the scope of the current task.
-- Do not build pages or components that have not been requested.
+The experience must adapt naturally to mobile, tablet, and desktop. Reconsider navigation, content order, image presentation, and interaction patterns at smaller sizes. Preserve hierarchy, readable type, useful content density, and comfortable touch interaction.
+
+## Component and styling architecture
+
+For future UI work, use React and JSX with JavaScript, not TypeScript. A `src` directory may be organized around route-level pages, reusable components, project assets, and application entry points. Add folders when they provide a real organizational benefit; avoid hierarchy for its own sake.
+
+Do not put an entire substantial page in `App.jsx`. Keep it focused on the app shell, route composition, or top-level orchestration. Place substantial pages in their own files and extract components when they have a clear purpose or are shared.
+
+Keep component-specific styling near its component where practical. Use global styles for resets, base typography, design tokens, and genuinely global rules. Avoid one enormous stylesheet for every page, duplicated styling scattered across components, and abstractions that force unrelated elements together.
+
+## GPT Taste skill
+
+The installed `gpt-taste` skill was consulted while preparing this direction. Its instructions are highly specific to building interfaces: they require a preflight design plan and define randomized layout selection, an AIDA page structure, image-led composition, gapless bento grids, and GSAP-based motion patterns, with reduced-motion handling. Those instructions should be consulted directly when the skill is used for future interface work; this brief does not restate them as universal requirements for every Fixora screen. Apply the relevant guidance in the context of the feature and the product principles above. Do not claim the skill was used for implementation unless it was actually invoked for that work.
+
+## Quality bar
+
+The product should feel intentionally designed, distinctive, polished, responsive, and trustworthy. Give each feature visual attention in proportion to its importance. Every major design decision should serve the product, the content, the brand, or the user's task. Quality means more than technical correctness, and decoration alone does not make an experience better.

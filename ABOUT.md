@@ -1,125 +1,92 @@
-# Fixora — Product Overview
+# Fixora — Product Brief
 
-## Product overview
+> Fixora is a temporary product name.
 
-Fixora is a household-services marketplace with a social discovery feed. It connects people who need household problems solved with skilled professionals who can solve them.
+## Product vision
 
-The product brings together two experiences:
+Fixora is a household-services marketplace built around social discovery. It connects people who need domestic work done with skilled professionals who can show what they do, build a visible track record, and find customers.
 
-- A marketplace for posting household problems and finding service providers.
-- A social discovery experience for exploring real household problems, completed projects, before-and-after photos, and the professionals responsible for the work.
+The product should make it easier to go from a real household problem to a suitable professional. It should also give professionals useful ways to demonstrate their abilities and earn trust. Discovery through problems, completed projects, portfolios, and reviews is central to that experience; Fixora is not just a list of names and phone numbers.
 
-Fixora is a temporary product name. Keep the name easy to change later.
+This document describes the product vision and intended direction. It does not claim that the features below have been implemented.
 
-## The problem Fixora solves
-
-People often struggle to find reliable professionals for household repairs and maintenance. They may not know whom to trust, how to compare workers, or where to find evidence of previous work. Skilled workers also struggle to gain visibility, demonstrate their abilities, and find customers.
-
-Fixora aims to make these connections easier through real job requests, provider applications, professional profiles, portfolios, and customer reviews.
-
-## User types
+## Who Fixora serves
 
 ### Customers
 
-Customers are people who need household services. They can:
+People who need household services, repairs, installations, maintenance, or other relevant domestic work. They need to explain what is wrong, find capable professionals, evaluate their work and feedback, compare applicants, and manage the job.
 
-- Browse the discovery feed.
-- Post a household problem with a description, photos, and service category.
-- Optionally provide relevant information such as location, budget, and urgency.
-- Receive applications from service providers.
-- Review provider profiles, portfolios, and reviews.
-- Select a suitable provider.
-- Track or manage their requests.
-- Mark work as completed and review the provider.
+### Service professionals
 
-### Service providers
+Technicians, repairers, installers, and other skilled workers who provide household services. They need to present their skills and completed work, reach relevant customers, apply for suitable jobs, manage accepted work, and build a reputation over time.
 
-Service providers are skilled professionals offering household services, such as plumbing, electrical repairs, painting, carpentry, and appliance repairs. They can:
+## The problem
 
-- Create a professional profile.
-- Select their skills and service categories.
-- Specify relevant service areas.
-- Discover relevant job requests.
-- Apply for jobs.
-- Manage their applications and accepted jobs.
-- Showcase completed projects through photos and portfolio entries.
-- Build credibility through customer reviews.
+Customers can have a hard time finding reliable professionals, judging the quality of their work, and knowing whom to trust before hiring. Professionals with strong skills may have limited visibility and few good ways to demonstrate their abilities, build a reputation, or connect with potential customers.
 
-Do not assume every user must permanently belong to only one category. Whether a single account can act as both a customer and a provider is a product decision that must be resolved before implementing authentication and role management.
+Fixora aims to connect real customer needs with demonstrated skills and informative professional profiles. Useful work, relevant details, and reviews should help both sides make better decisions.
 
-## Main product experience
+## How it is intended to work
 
-### Job discovery and posting
+The intended experience links a customer request to professional discovery, selection, job progress, completed work, and feedback. Visual project content helps people discover that work and the professionals behind it.
 
-Customers publish household problems. Providers can discover relevant requests through a feed or service filters and submit applications.
+### Customer problem posting
 
-### Provider selection
+Customers should be able to describe a household problem, add photographs where useful, select a relevant category, and optionally provide location, budget, or urgency. They should be able to review professionals who apply and choose someone suitable.
 
-Customers review applicants and their profiles, work samples, and reviews before choosing a provider.
+### Professional discovery and applications
 
-### Job completion
+Professionals should be able to discover relevant problems and service opportunities, assess whether a request suits their skills and service area, and apply. Customers should be able to evaluate applicants using relevant profile details, portfolios, and reviews.
 
-The customer and provider arrange and complete the work. The platform should support an appropriate way to represent job status, completed work, and customer feedback.
+Customers should also be able to discover professionals through their profiles and showcased work. Profiles are intended to communicate skills, experience, service areas, completed projects, and reviews.
 
-In-app payments, real-time tracking, dispute resolution, and sophisticated scheduling are not assumed to be first-version requirements.
+### Job management and reputation
 
-### Social discovery
+After a customer selects a professional, both sides should be able to track job status and manage the working relationship. Customers should be able to mark work complete and leave a review. Over time, completed work and reviews should contribute to a professional's visible track record.
 
-The feed can display unresolved household problems and completed projects. A completed project can feature before-and-after photos, details of the work, the responsible provider, and customer feedback. Users should be able to discover a provider through a completed project and explore their profile.
+### Social discovery feed
+
+A visual feed should showcase unresolved household problems and completed projects. Photography should make the situation, work, or result understandable. People should be able to follow project content to relevant professional profiles, portfolios, and reviews.
+
+The feed exists to improve discovery, show skills, build trust, and create opportunities for customers and professionals. It is part of the marketplace experience, not a separate general-purpose social network.
+
+## What makes Fixora distinct
+
+Fixora brings together three connected experiences:
+
+- **Marketplace:** find and hire household-service professionals.
+- **Job workflow:** connect customers and suitable professionals from request through completion and review.
+- **Visual discovery:** make real problems, completed work, and professional capabilities easier to discover.
+
+The connections between these experiences matter. Project content can help a customer recognize relevant expertise; a profile can give context to that work; reviews can add useful feedback; and requests can create opportunities for professionals.
 
 ## Product principles
 
-- Support trust with useful evidence, not unsupported claims.
-- Make posting a problem and finding help straightforward.
-- Help providers demonstrate real skills and completed work.
-- Make the social feed useful for discovering services, not merely scrolling.
-- Keep the experience accessible and easy to understand.
-- Prioritise useful functionality over unnecessary features.
-- Clearly distinguish implemented features from planned functionality.
+- **Earn trust:** use visible work, useful information, and reviews to support credibility.
+- **Make discovery clear:** help people understand what they are seeing and what they can do next.
+- **Serve both sides:** support customers looking for help and professionals building their business.
+- **Prioritize usefulness:** favor features that solve real needs over feature count.
+- **Treat presentation as meaningful:** photography and project context help people understand the work.
+- **Be transparent:** distinguish real, verified, illustrative, and not-yet-available information.
+- **Design for access:** make the experience responsive, accessible, and easy to understand.
+- **Build incrementally:** validate each feature before expanding the product's scope.
 
-## Initial product scope
+## Intended technical direction
 
-Fixora is a hackathon project with limited development time. The initial product should be a coherent minimum viable product (MVP). Candidate capabilities include:
+The current architectural intentions are React, Vite, and JavaScript with JSX, with Supabase as the intended backend for database, authentication, and storage, and Cloudflare Pages as the intended frontend hosting platform. A progressive web app experience may be introduced later.
 
-- Landing page or first-visit experience.
-- Customer and provider onboarding.
-- Discovery feed.
-- Problem posting.
-- Provider profiles and portfolios.
-- Job applications and customer selection.
-- Job status and completed projects.
-- Customer reviews.
+These are planning decisions, not authorization to scaffold or integrate the stack. They do not imply that any of these services are configured or in use.
 
-These are candidate features, not a requirement to implement everything immediately. The MVP and build order will be decided separately.
+## Development philosophy
 
-Potential future features include messaging, notifications, advanced search, saved posts, likes, comments, payments, identity verification, and additional trust and safety controls. Do not present planned features as already implemented.
+Future implementation should proceed one feature at a time:
 
-## AI usage
+1. Understand the relevant product context.
+2. Inspect the existing code and project instructions.
+3. Implement the requested scope.
+4. Reuse components and patterns where they fit.
+5. Test the work with available tools.
+6. Report what changed and any known limitations.
+7. Stop for review before moving to another feature.
 
-AI tools may assist development during the hackathon. This does not mean the finished product must contain AI-powered features. Do not add AI functionality to the product unless explicitly decided.
-
-## Technical direction
-
-The intended stack is:
-
-- React.
-- Vite.
-- JavaScript and JSX only.
-- Plain CSS with reusable styles and CSS custom properties.
-- Supabase for backend services, authentication, database, and initial file storage.
-- Cloudflare Pages for frontend hosting.
-- Progressive Web App (PWA) support, allowing installation on compatible devices.
-
-The PWA should be mobile-friendly. Installability does not automatically imply complete offline functionality. Keep architecture simple. Do not add Convex, Better Auth, or Cloudflare R2 alongside Supabase without an explicit architectural decision.
-
-## Development workflow
-
-- Implement the product incrementally.
-- Work only on the feature explicitly requested in each task.
-- Inspect existing files before making changes.
-- Preserve working code and existing decisions.
-- Do not implement the whole product in one task.
-- Test each meaningful change before proceeding.
-- Use conventional commit messages, such as `feat: add problem posting form`, `fix: correct provider filtering`, and `style: refine mobile navigation`.
-- Provide the proposed commit message, but never commit or push automatically unless explicitly instructed.
-- Do not introduce TypeScript.
+Do not attempt to build the entire marketplace in one pass. Avoid premature abstractions and unnecessary dependencies, while maintaining a high quality bar. AI tools may assist with development; that does not mean the product itself needs AI features.
