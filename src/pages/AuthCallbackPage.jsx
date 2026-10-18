@@ -4,6 +4,19 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { authConfigured, supabase } from '../lib/supabase.js'
 import './AuthPage.css'
 
+function getCallbackError() {
+  const params = new URLSearchParams([
+    window.location.search.replace(/^\?/, ''),
+    window.location.hash.replace(/^#/, ''),
+  ].filter(Boolean).join('&'))
+  const code = params.get('error_code') || params.get('error')
+  const description = params.get('error_description')
+  if (!code && !description) return ''
+  if (/expired|otp_expired/i.test(code)) return 'This link has expired. Request a new confirmation email and try again.'
+  if (/access_denied/i.test(code)) return 'This sign-in was cancelled. You can try again from the sign-in page.'
+  return 'We couldn’t verify this link. Request a new link and try again.'
+}
+
 export default function AuthCallbackPage() {
   const [message, setMessage] = useState('Finishing your secure sign-in…')
   const [failed, setFailed] = useState(false)
@@ -13,15 +26,14 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     if (loading || handled.current) return undefined
-    const queryError = new URLSearchParams(window.location.search).get('error_description')
-      || new URLSearchParams(window.location.hash.replace(/^#/, '')).get('error_description')
-    if (!authConfigured || queryError) {
-      setMessage(queryError || 'Account services are not configured yet.')
+    const callbackError = getCallbackError()
+    if (!authConfigured || callbackError) {
+      setMessage(callbackError || 'Account services are not configured yet.')
       setFailed(true)
       return undefined
     }
     if (!user) {
-      setMessage('This sign-in link may have expired. Start again from the sign-in page.')
+      setMessage('This link did not provide a valid Fixora session. It may be expired or incomplete. Request a new link and try again.')
       setFailed(true)
       return undefined
     }

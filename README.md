@@ -32,6 +32,31 @@ The app builds redirect URLs from the current origin. For local work, Vite reads
 
 Google sign-in and password-reset links return to the app routes above. Phone numbers are validated and saved in E.164 format but are **not verified**. Provider service areas expose city, region, and country only after onboarding; private profile phone data is never public. Profile account type is persisted once through a guarded database function; editable Auth user metadata is only used to prefill signup/onboarding and is not an RLS authorization source.
 
+### Production email confirmation and branding
+
+The app sends email/password signups to `/auth/callback` through `emailRedirectTo`. The callback is a client-side React route; `vercel.json` rewrites direct requests to the app shell so Vercel serves it instead of returning a route-level 404. Supabase's client detects the confirmation session from the callback URL, then the app uses the signup intent stored in Auth user metadata to send customers or professionals to the corresponding onboarding flow. Email confirmations and Google OAuth can return different URL parameters; `detectSessionInUrl` in the Supabase client handles the supported callback formats. Password-reset emails continue to return to `/auth/reset-password`.
+
+In **Supabase Dashboard → Authentication → Email Templates → Confirm signup**, set the subject to:
+
+```text
+Confirm your email to get started with Fixora
+```
+
+Use this HTML body (keep the `{{ .ConfirmationURL }}` variable intact so Supabase supplies the one-time confirmation link and the requested redirect):
+
+```html
+<h2>Welcome to Fixora</h2>
+<p>Thanks for joining Fixora. Confirm your email address to finish setting up your account and get started connecting with trusted household service professionals.</p>
+<p><a href="{{ .ConfirmationURL }}">Confirm email address</a></p>
+<p>If the button does not work, copy and paste this link into your browser:</p>
+<p>{{ .ConfirmationURL }}</p>
+<p>If you did not create a Fixora account, you can ignore this email.</p>
+```
+
+The template is only a repository recommendation; it does not change the live Supabase email. In **Authentication → SMTP Settings** (or the project's Auth SMTP settings), configure a verified sending domain and custom SMTP provider, then set the sender display name to **Fixora** and a sender address on that domain. The sender name/from-address cannot be changed by the frontend or the email template alone. Do not put SMTP credentials in this repository or in Vite environment variables. Supabase's built-in sender may retain Supabase branding and has delivery limits, so production delivery requires the provider settings to be completed in the dashboard.
+
+After deploying, verify that Supabase **Authentication → URL Configuration** has the production Site URL and the exact production callback and password-reset URLs in its redirect allow list. A successful local build confirms the rewrite configuration is bundled as repository configuration; it does not prove the new Vercel deployment is live. Test a newly generated confirmation email after deployment because old links may expire or still reflect earlier template settings.
+
 The connected Supabase project currently has no Storage buckets. This onboarding version does not upload profile or portfolio photos. It does not implement marketplace jobs, payments, phone verification, or offline account workflows.
 
 ## Build, lint, and preview
