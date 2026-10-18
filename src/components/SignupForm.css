@@ -366,6 +366,27 @@
   font-weight: 600;
 }
 
+.signup-google {
+  display: flex;
+  width: 100%;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  margin: 1rem 0;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.signup-google:hover { border-color: var(--color-primary); background: var(--color-pale-blue); }
+.signup-google:disabled { cursor: wait; opacity: 0.65; }
+.signup-account-privacy { margin: 0.9rem 0 0; color: var(--color-text-secondary); font-size: 0.8rem; line-height: 1.45; }
+.signup-form__signin a { color: var(--color-primary-dark); font-weight: 700; text-underline-offset: 0.16em; }
+
 @media (max-width: 560px) {
   .signup-form {
     padding: 0;

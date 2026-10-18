@@ -73,9 +73,9 @@ The connections between these experiences matter. Project content can help a cus
 
 ## Intended technical direction
 
-The current architectural direction is React, Vite, and JavaScript with JSX, with Supabase as the intended backend for database, authentication, and storage, and Cloudflare Pages as the intended frontend hosting platform. The current app includes an installable public shell with static-asset caching; this does not provide offline account creation, job posting, or marketplace features. A fuller progressive web app experience may be developed later.
+The application uses React, Vite, and JavaScript with JSX. The frontend includes Supabase Auth and profile-onboarding integration, with the initial schema and corrective access-control migration applied to the Fixora project. Local and deployed frontend environments still need the correct browser-safe Supabase URL and publishable key. Cloudflare Pages remains the intended frontend hosting platform. The current app includes an installable public shell with static-asset caching; this does not provide offline account creation, job posting, or marketplace features. A fuller progressive web app experience may be developed later.
 
-These are planning decisions, not authorization to scaffold or integrate the stack. They do not imply that any of these services are configured or in use.
+This file describes the product vision and intended direction; it is not proof that every marketplace feature is implemented. See `README.md` for the current Supabase setup and implemented boundaries.
 
 ## Development philosophy
 
