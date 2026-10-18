@@ -29,12 +29,6 @@ function safeReturnTo(value) {
     : null
 }
 
-function getDestination(profile) {
-  if (!profile?.account_type) return '/onboarding/account-type'
-  if (!profile.onboarding_completed_at) return `/onboarding/${profile.account_type}`
-  return '/app'
-}
-
 export default function AuthPage({ mode = 'login' }) {
   const config = modes[mode]
   const [email, setEmail] = useState('')
@@ -46,10 +40,10 @@ export default function AuthPage({ mode = 'login' }) {
   const [notice, setNotice] = useState('')
   const location = useLocation()
   const navigate = useNavigate()
-  const { authConfigured: configured, user, profile, loading, profileLoading } = useAuth()
+  const { authConfigured: configured, user, loading, profileLoading, retrySession } = useAuth()
 
-  if (mode === 'login' && !loading && user && !profileLoading && profile) {
-    return <Navigate replace to={safeReturnTo(location.state?.returnTo) ?? getDestination(profile)} />
+  if (mode === 'login' && !loading && user && !profileLoading) {
+    return <Navigate replace to="/auth/callback" state={{ returnTo: safeReturnTo(location.state?.returnTo) }} />
   }
 
   async function handleSubmit(event) {
@@ -72,15 +66,11 @@ export default function AuthPage({ mode = 'login' }) {
     setBusy(true)
     try {
       if (mode === 'login') {
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+        const { error: authError } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
         if (authError) throw authError
-        const { data: signedInProfile, error: profileError } = await supabase
-          .from('profiles')
-          .select('account_type, onboarding_completed_at')
-          .eq('id', authData.user.id)
-          .maybeSingle()
-        if (profileError || !signedInProfile) throw new Error('Your session started, but we could not load your profile. Please retry.')
-        navigate(safeReturnTo(location.state?.returnTo) ?? getDestination(signedInProfile), { replace: true })
+        const { error: syncError } = await retrySession()
+        if (syncError) throw new Error('You are signed in, but Fixora could not restore the session yet. Please try again.')
+        navigate('/auth/callback', { replace: true, state: { returnTo: safeReturnTo(location.state?.returnTo) } })
       } else if (mode === 'forgot') {
         const { error: authError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
           redirectTo: `${window.location.origin}/auth/reset-password`,

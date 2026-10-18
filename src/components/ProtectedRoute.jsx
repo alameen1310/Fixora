@@ -11,12 +11,21 @@ function AuthMessage({ children }) {
 
 export default function ProtectedRoute({ children, onboarding = false }) {
   const location = useLocation()
-  const { authConfigured, user, profile, loading, profileLoading, profileError, refreshProfile } = useAuth()
+  const { authConfigured, user, profile, loading, sessionError, retrySession, profileLoading, profileError, refreshProfile } = useAuth()
 
   if (!authConfigured) {
     return <AuthMessage><h1>Connect Fixora to Supabase</h1><p>Add the required Vite environment variables to enable accounts.</p></AuthMessage>
   }
   if (loading) return <AuthMessage><p role="status">Checking your session…</p></AuthMessage>
+  if (sessionError) {
+    return (
+      <AuthMessage>
+        <h1>We couldn’t restore your session</h1>
+        <p>Check your connection and try again. You’ll stay on this page while Fixora checks your account.</p>
+        <button className="account-action" onClick={retrySession} type="button">Try again</button>
+      </AuthMessage>
+    )
+  }
   if (!user) {
     const returnTo = `${location.pathname}${location.search}`
     return <Navigate replace state={{ returnTo }} to="/auth/login" />
