@@ -1,0 +1,7 @@
+.fixora-spinner { flex: 0 0 auto; animation: fixora-spin 850ms linear infinite; }
+
+@keyframes fixora-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .fixora-spinner { animation: none; }
+}

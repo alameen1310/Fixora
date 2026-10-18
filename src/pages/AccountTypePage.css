@@ -1,0 +1,11 @@
+.account-type-page { display: grid; min-height: 100svh; place-items: center; padding: 1rem; background: var(--color-background); font-family: 'Outfit', 'Satoshi', system-ui, sans-serif; }
+.account-type-card { width: min(100%, 620px); padding: clamp(1.35rem, 5vw, 2.8rem); border: 1px solid var(--color-border); border-radius: 1.3rem; background: var(--color-surface); box-shadow: 0 16px 42px rgb(23 25 29 / 5%); }
+.account-type-card h1 { margin: 0; font-size: clamp(2rem, 6vw, 2.7rem); letter-spacing: -0.055em; line-height: 1.05; }
+.account-type-card > p:not(.auth-kicker) { margin: 0.65rem 0 1.5rem; color: var(--color-text-secondary); line-height: 1.5; }
+.account-type-options { display: grid; gap: 0.75rem; }
+.account-type-options button { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; min-height: 84px; align-items: center; gap: 0.9rem; padding: 0.95rem; border: 1px solid var(--color-border); border-radius: 0.9rem; color: var(--color-primary-dark); background: var(--color-surface); cursor: pointer; text-align: left; }
+.account-type-options button:hover { border-color: var(--color-primary); background: var(--color-pale-blue); }
+.account-type-options span { display: grid; gap: 0.25rem; color: var(--color-text-primary); }
+.account-type-options small { color: var(--color-text-secondary); font-size: 0.84rem; line-height: 1.4; }
+.account-type-options button:disabled { opacity: 0.6; cursor: wait; }
+@media (max-width: 480px) { .account-type-page { display: block; padding: 1rem 0.8rem; background: var(--color-surface); } .account-type-card { padding: 0.8rem 0.2rem; border: 0; border-radius: 0; box-shadow: none; } }

@@ -1,21 +1,27 @@
-const SHELL_CACHE = 'fixora-shell-v1'
-const ASSET_CACHE = 'fixora-assets-v1'
+const SHELL_CACHE = 'fixora-shell-v2'
+const ASSET_CACHE = 'fixora-assets-v2'
+const APP_ROOT = new URL('./', self.registration.scope)
+const APP_BASE_PATH = APP_ROOT.pathname
+const appUrl = (path) => new URL(path, APP_ROOT).href
+const MANIFEST_URL = appUrl('manifest.webmanifest')
 const APP_SHELL = [
-  '/',
-  '/manifest.webmanifest',
-  '/icons/fixora-192.png',
-  '/icons/fixora-512.png',
-  '/icons/fixora-maskable-512.png',
+  APP_ROOT.href,
+  MANIFEST_URL,
+  appUrl('icons/fixora-192.png'),
+  appUrl('icons/fixora-512.png'),
+  appUrl('icons/fixora-maskable-512.png'),
 ]
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(SHELL_CACHE)
-    const response = await fetch('/')
+    const response = await fetch(APP_ROOT.href)
     const html = await response.clone().text()
-    await cache.put('/', response)
-    const shellAssets = [...html.matchAll(/(?:src|href)="(\/assets\/[^"]+)"/g)]
-      .map((match) => match[1])
+    await cache.put(APP_ROOT.href, response)
+    const shellAssets = [...html.matchAll(/(?:src|href)="([^"]+)"/g)]
+      .map((match) => new URL(match[1], APP_ROOT))
+      .filter((url) => url.origin === self.location.origin && url.pathname.startsWith(`${APP_BASE_PATH}assets/`))
+      .map((url) => url.href)
     await cache.addAll([...APP_SHELL.slice(1), ...shellAssets])
   })())
 })
@@ -48,13 +54,13 @@ self.addEventListener('fetch', (event) => {
           }
           return response
         })
-        .catch(async () => (await caches.match(request)) || caches.match('/')),
+        .catch(async () => (await caches.match(request)) || caches.match(APP_ROOT.href)),
     )
     return
   }
 
-  const isAppAsset = ['/assets/', '/icons/'].some((path) => url.pathname.startsWith(path))
-  if (!isAppAsset && url.pathname !== '/manifest.webmanifest') return
+  const isAppAsset = ['assets/', 'icons/'].some((path) => url.pathname.startsWith(`${APP_BASE_PATH}${path}`))
+  if (!isAppAsset && url.pathname !== new URL(MANIFEST_URL).pathname) return
 
   event.respondWith(
     caches.open(ASSET_CACHE).then(async (cache) => {

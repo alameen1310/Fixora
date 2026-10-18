@@ -1,83 +1,244 @@
 import { useEffect, useRef, useState } from 'react'
+import { ArrowClockwise, DownloadSimple, X } from '@phosphor-icons/react'
 import './PwaControls.css'
 
+const DISMISSED_AT_KEY = 'fixora-install-prompt-dismissed-at'
+const DISMISSAL_COOLDOWN = 7 * 24 * 60 * 60 * 1000
+
+function isRunningInstalled() {
+  return Boolean(
+    window.matchMedia?.('(display-mode: standalone)').matches ||
+      window.navigator.standalone,
+  )
+}
+
+function getIOSInstallGuide() {
+  const userAgent = window.navigator.userAgent || ''
+  const isIOS = /iPad|iPhone|iPod/.test(userAgent) ||
+    (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1)
+
+  return isIOS ? {
+    title: 'Add Fixora to your Home Screen',
+    description: 'Keep Fixora close by adding it to your Home Screen.',
+    steps: [
+      'Open this page in Safari.',
+      'Tap the Share button.',
+      'Choose “Add to Home Screen”, then tap Add.',
+    ],
+  } : null
+}
+
+function hasRecentlyDismissed() {
+  try {
+    const dismissedAt = Number(window.localStorage.getItem(DISMISSED_AT_KEY))
+    return dismissedAt > 0 && Date.now() - dismissedAt < DISMISSAL_COOLDOWN
+  } catch {
+    return false
+  }
+}
+
+function markDismissed() {
+  try {
+    window.localStorage.setItem(DISMISSED_AT_KEY, String(Date.now()))
+  } catch {
+    // The current page remains protected by its in-memory state.
+  }
+}
+
 export default function PwaControls() {
-  const [installPrompt, setInstallPrompt] = useState(null)
-  const [updateAvailable, setUpdateAvailable] = useState(false)
-  const registrationRef = useRef(null)
-  const updateOnControllerChange = useRef(false)
+  const dialogRef = useRef(null)
+  const promptEventRef = useRef(null)
+  const dismissedRef = useRef(false)
+  const [guide, setGuide] = useState(null)
+  const [fallbackError, setFallbackError] = useState(false)
+  const [promptOpen, setPromptOpen] = useState(false)
+  const [installAvailable, setInstallAvailable] = useState(false)
+  const [installed, setInstalled] = useState(() => isRunningInstalled())
+  const [updateWorker, setUpdateWorker] = useState(null)
+  const [installing, setInstalling] = useState(false)
 
   useEffect(() => {
-    function captureInstallPrompt(event) {
+    const iosGuide = getIOSInstallGuide()
+    if (!installed && !isRunningInstalled() && !hasRecentlyDismissed() && iosGuide) {
+      setGuide(iosGuide)
+      setPromptOpen(true)
+    }
+
+    function openInstallPrompt() {
+      if (dismissedRef.current || installed || isRunningInstalled() || hasRecentlyDismissed()) return
+      setGuide(null)
+      setPromptOpen(true)
+    }
+
+    function handleBeforeInstallPrompt(event) {
       event.preventDefault()
-      setInstallPrompt(event)
+      promptEventRef.current = event
+      setInstallAvailable(true)
+      openInstallPrompt()
     }
 
-    function clearInstallPrompt() {
-      setInstallPrompt(null)
+    function handleInstalled() {
+      setInstalled(true)
+      setPromptOpen(false)
+      promptEventRef.current = null
+      setInstallAvailable(false)
+      try {
+        window.localStorage.removeItem(DISMISSED_AT_KEY)
+      } catch {
+        // Installation state is still updated for this running page.
+      }
     }
 
-    function reloadAfterUpdate() {
-      if (updateOnControllerChange.current) window.location.reload()
-    }
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    window.addEventListener('appinstalled', handleInstalled)
 
-    window.addEventListener('beforeinstallprompt', captureInstallPrompt)
-    window.addEventListener('appinstalled', clearInstallPrompt)
-    navigator.serviceWorker?.addEventListener('controllerchange', reloadAfterUpdate)
-
+    let registration
+    let cancelled = false
     if ('serviceWorker' in navigator && import.meta.env.PROD) {
-      navigator.serviceWorker.register('/sw.js')
-        .then((registration) => {
-          registrationRef.current = registration
-          setUpdateAvailable(Boolean(registration.waiting && navigator.serviceWorker.controller))
-
+      navigator.serviceWorker
+        .getRegistration(`${import.meta.env.BASE_URL}`)
+        .then((currentRegistration) => {
+          if (cancelled || !currentRegistration) return
+          registration = currentRegistration
+          if (registration.waiting) setUpdateWorker(registration.waiting)
           registration.addEventListener('updatefound', () => {
-            const installing = registration.installing
-            installing?.addEventListener('statechange', () => {
-              if (installing.state === 'installed' && navigator.serviceWorker.controller) {
-                setUpdateAvailable(true)
+            const installingWorker = registration.installing
+            installingWorker?.addEventListener('statechange', () => {
+              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                setUpdateWorker(installingWorker)
               }
             })
           })
-
           registration.update().catch(() => {})
         })
-        .catch((error) => console.error('Fixora service worker registration failed.', error))
+        .catch(() => {})
     }
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', captureInstallPrompt)
-      window.removeEventListener('appinstalled', clearInstallPrompt)
-      navigator.serviceWorker?.removeEventListener('controllerchange', reloadAfterUpdate)
+      cancelled = true
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      window.removeEventListener('appinstalled', handleInstalled)
     }
-  }, [])
+  }, [installed])
 
-  async function installApp() {
-    if (!installPrompt) return
-    await installPrompt.prompt()
-    await installPrompt.userChoice
-    setInstallPrompt(null)
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
+    if (promptOpen && !dialog.open) dialog.showModal()
+    if (!promptOpen && dialog.open) dialog.close()
+  }, [promptOpen])
+
+  async function install() {
+    const installEvent = promptEventRef.current
+    if (!installEvent || installing) return
+    setInstalling(true)
+    promptEventRef.current = null
+    setInstallAvailable(false)
+    try {
+      await installEvent.prompt()
+      const choice = await installEvent.userChoice
+      if (choice?.outcome === 'accepted') {
+        setInstalled(true)
+        setPromptOpen(false)
+      } else {
+        markDismissed()
+        setPromptOpen(false)
+      }
+    } catch {
+      setFallbackError(true)
+    } finally {
+      setInstalling(false)
+    }
+  }
+
+  function dismissPrompt() {
+    dismissedRef.current = true
+    markDismissed()
+    setPromptOpen(false)
   }
 
   function applyUpdate() {
-    const waitingWorker = registrationRef.current?.waiting
-    if (!waitingWorker) return
-    updateOnControllerChange.current = true
-    waitingWorker.postMessage({ type: 'SKIP_WAITING' })
+    if (!updateWorker) return
+    updateWorker.postMessage({ type: 'SKIP_WAITING' })
+    navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload(), {
+      once: true,
+    })
+    setUpdateWorker(null)
   }
 
+  const canInstall = installAvailable
+
   return (
-    <div className="pwa-controls">
-      {installPrompt && (
-        <button className="pwa-controls__button" onClick={installApp} type="button">
-          Install Fixora
-        </button>
+    <>
+      <dialog
+        aria-labelledby="pwa-install-title"
+        className="pwa-install-dialog"
+        onCancel={(event) => {
+          event.preventDefault()
+          dismissPrompt()
+        }}
+        onClose={() => setPromptOpen(false)}
+        ref={dialogRef}
+      >
+        <div className="pwa-install-dialog__content">
+          <button
+            aria-label="Close installation prompt"
+            className="pwa-install-dialog__dismiss"
+            onClick={dismissPrompt}
+            type="button"
+          >
+            <X aria-hidden="true" size={20} />
+          </button>
+          <span aria-hidden="true" className="pwa-install-dialog__icon">
+            <DownloadSimple size={24} weight="bold" />
+          </span>
+          <p className="pwa-install-dialog__eyebrow">Fixora, ready when you need it</p>
+          <h2 id="pwa-install-title">
+            {fallbackError
+              ? 'Installation is unavailable right now'
+              : guide?.title || 'Install Fixora?'}
+          </h2>
+          <p className="pwa-install-dialog__description">
+            {fallbackError
+              ? 'Your browser could not open the install prompt. You can try again later.'
+              : guide?.description || 'Get quicker access to Fixora by adding it to your device.'}
+          </p>
+          {guide?.steps?.length > 0 && (
+            <ol>
+              {guide.steps.map((step) => <li key={step}>{step}</li>)}
+            </ol>
+          )}
+          <div className="pwa-install-dialog__actions">
+            {canInstall && !guide && !fallbackError && (
+              <button
+                className="pwa-install-dialog__install"
+                disabled={installing}
+                onClick={install}
+                type="button"
+              >
+                {installing ? 'Opening install…' : 'Install'}
+              </button>
+            )}
+            <button
+              className="pwa-install-dialog__close"
+              onClick={dismissPrompt}
+              type="button"
+            >
+              {guide ? 'Got it' : 'Not now'}
+            </button>
+          </div>
+        </div>
+      </dialog>
+
+      {updateWorker && (
+        <aside aria-label="Application update available" className="pwa-update-notice" role="status">
+          <span>A Fixora update is ready.</span>
+          <button onClick={applyUpdate} type="button">
+            <ArrowClockwise aria-hidden="true" size={18} weight="bold" />
+            Update
+          </button>
+        </aside>
       )}
-      {updateAvailable && (
-        <button className="pwa-controls__button" onClick={applyUpdate} type="button">
-          Update app
-        </button>
-      )}
-    </div>
+    </>
   )
 }

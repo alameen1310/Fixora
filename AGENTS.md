@@ -33,3 +33,7 @@ Treat `ABOUT.md` as product vision, not proof that features exist. Use `DESIGN.m
 ## Interface Icons
 
 Use Phosphor Icons for all new interface icons and replace existing icon glyphs with suitable Phosphor icons when changing those controls. Do not add another icon library or use arbitrary Unicode symbols as UI icons without explicit approval. Keep Fixora's brand mark and meaningful illustrations intact.
+
+## Supabase and Configuration
+
+Use only the browser-safe Supabase URL and publishable key through `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. Never add service-role keys, OAuth secrets, or real credentials to frontend code or committed files. Keep schema changes in `supabase/migrations/`, review RLS and grants before applying, and use the connected Supabase integration only for the confirmed Fixora project. Persist authorization state in protected database columns, not editable user metadata. Treat phone numbers as private and unverified unless a real verification flow is implemented.

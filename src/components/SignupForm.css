@@ -6,6 +6,25 @@
   box-shadow: 0 12px 30px rgb(23 25 29 / 5%);
 }
 
+.signup-form__section-heading {
+  margin-bottom: 1rem;
+}
+
+.signup-form__section-heading h2 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 1.12rem;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+.signup-form__section-heading p {
+  margin: 0.3rem 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
 .signup-account-type {
   display: flex;
   gap: 0.65rem;
@@ -33,7 +52,8 @@
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 600;
-  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+  transition: color var(--signup-motion-fast) ease, border-color var(--signup-motion-fast) ease,
+    background-color var(--signup-motion-fast) ease;
 }
 
 .signup-account-type label.is-selected {
@@ -145,7 +165,8 @@
   cursor: pointer;
   font-size: 0.86rem;
   font-weight: 500;
-  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+  transition: color var(--signup-motion-fast) ease, border-color var(--signup-motion-fast) ease,
+    background-color var(--signup-motion-fast) ease;
 }
 
 .signup-category-options label.is-selected {
@@ -196,7 +217,8 @@
   color: var(--color-text-primary);
   background: var(--color-surface);
   font-size: 0.95rem;
-  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  transition: border-color var(--signup-motion-standard) ease, box-shadow var(--signup-motion-standard) ease,
+    background-color var(--signup-motion-standard) ease;
 }
 
 .signup-field input::placeholder {
@@ -238,6 +260,10 @@
 }
 
 .signup-password-toggle {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 0.28rem;
   position: absolute;
   top: 50%;
   right: 0.75rem;
@@ -298,7 +324,9 @@
   cursor: pointer;
   font-size: 0.98rem;
   font-weight: 700;
-  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+  transition: background-color var(--signup-motion-standard) ease,
+    border-color var(--signup-motion-standard) ease,
+    transform var(--signup-motion-fast) var(--signup-ease);
 }
 
 .signup-submit:hover {
@@ -337,6 +365,27 @@
   color: var(--color-text-primary);
   font-weight: 600;
 }
+
+.signup-google {
+  display: flex;
+  width: 100%;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  margin: 1rem 0;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.signup-google:hover { border-color: var(--color-primary); background: var(--color-pale-blue); }
+.signup-google:disabled { cursor: wait; opacity: 0.65; }
+.signup-account-privacy { margin: 0.9rem 0 0; color: var(--color-text-secondary); font-size: 0.8rem; line-height: 1.45; }
+.signup-form__signin a { color: var(--color-primary-dark); font-weight: 700; text-underline-offset: 0.16em; }
 
 @media (max-width: 560px) {
   .signup-form {
@@ -380,6 +429,18 @@
     border-radius: 0.8rem;
     font-size: 1rem;
     scroll-margin-block: 5rem;
+  }
+
+  .signup-form__section-heading {
+    margin-bottom: 1rem;
+  }
+
+  .signup-form__section-heading h2 {
+    font-size: 1.08rem;
+  }
+
+  .signup-form__section-heading p {
+    font-size: 0.88rem;
   }
 
   .signup-category-options label {
