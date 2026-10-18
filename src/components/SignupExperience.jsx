@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { ArrowLeft } from '@phosphor-icons/react'
 import SignupForm from './SignupForm.jsx'
 import kitchenWork from '../assets/kitchen-renovation.jpg'
 import finishedKitchen from '../assets/finished-kitchen.jpg'
@@ -60,9 +61,9 @@ export default function SignupExperience({ audience }) {
 
       entrance.from('[data-signup-enter]', {
         autoAlpha: 0,
-        y: 20,
-        duration: 0.65,
-        stagger: 0.08,
+        y: 12,
+        duration: 0.48,
+        stagger: 0.06,
         clearProps: 'all',
       })
 
@@ -114,8 +115,9 @@ export default function SignupExperience({ audience }) {
           <span>fixora</span>
         </Link>
         <div className="signup-header__actions">
-          <Link aria-label="Return to the Fixora home page" className="signup-header__back" to="/">
-            <span aria-hidden="true">←</span> Back to Fixora
+          <Link aria-label="Back to Fixora home page" className="signup-header__back" to="/">
+            <ArrowLeft aria-hidden="true" size={19} weight="bold" />
+            <span>Back to Fixora</span>
           </Link>
         </div>
       </header>

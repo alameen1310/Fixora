@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ArrowUpRight, Eye, EyeSlash } from '@phosphor-icons/react'
 import serviceCategories from '../data/serviceCategories.js'
 import './SignupForm.css'
 
@@ -32,7 +33,8 @@ function PasswordField({ error, id, label, onChange, value, visible, onToggle, h
           onClick={onToggle}
           type="button"
         >
-          {visible ? 'Hide' : 'Show'}
+          {visible ? <EyeSlash aria-hidden="true" size={18} /> : <Eye aria-hidden="true" size={18} />}
+          <span>{visible ? 'Hide' : 'Show'}</span>
         </button>
       </div>
       {hint && <span className="signup-field__hint" id={hintId}>{hint}</span>}
@@ -251,7 +253,13 @@ export default function SignupForm({ audience }) {
   )
 
   return (
-    <form className="signup-form" noValidate onSubmit={handleSubmit}>
+    <form className="signup-form" data-signup-enter noValidate onSubmit={handleSubmit}>
+      <div className="signup-form__section-heading">
+        <h2>{isProvider ? 'Professional details' : 'Your details'}</h2>
+        <p>{isProvider
+          ? 'Choose your account type and the services you provide.'
+          : 'A few essentials to get your Fixora account started.'}</p>
+      </div>
       {isProvider && (
         <fieldset className="signup-account-type">
           <legend>Register as</legend>
@@ -317,7 +325,7 @@ export default function SignupForm({ audience }) {
 
       <button className="signup-submit" type="submit">
         Create {isProvider ? 'professional' : 'customer'} account
-        <span aria-hidden="true">↗</span>
+        <ArrowUpRight aria-hidden="true" size={20} weight="bold" />
       </button>
 
       {notice && <p aria-live="polite" className="signup-form__notice" role="status">{notice}</p>}
