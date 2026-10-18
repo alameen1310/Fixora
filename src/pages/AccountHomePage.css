@@ -1,9 +1,0 @@
-.account-home { min-height: 100svh; padding: 0 1.5rem; background: var(--color-background); font-family: 'Outfit', 'Satoshi', system-ui, sans-serif; }
-.account-home__header { display: flex; max-width: 1040px; min-height: 72px; align-items: center; justify-content: space-between; margin: 0 auto; border-bottom: 1px solid var(--color-border); }
-.account-home__brand { color: var(--color-text-primary); font-size: 1.4rem; font-weight: 750; letter-spacing: -0.06em; text-decoration: none; }
-.account-home__header button { display: inline-flex; min-height: 44px; align-items: center; gap: 0.45rem; padding: 0.5rem 0.75rem; border: 1px solid var(--color-border); border-radius: 0.7rem; background: var(--color-surface); cursor: pointer; }
-.account-home__content { width: min(100%, 740px); margin: clamp(3rem, 12vh, 8rem) auto; padding: clamp(1.4rem, 5vw, 3rem); border: 1px solid var(--color-border); border-radius: 1.3rem; background: var(--color-surface); }
-.account-home__content h1 { margin: 0; font-size: clamp(2rem, 6vw, 3rem); letter-spacing: -0.055em; line-height: 1.05; }
-.account-home__content > p:not(.auth-kicker) { color: var(--color-text-secondary); line-height: 1.6; }
-.account-home__email { font-size: 0.87rem; }
-@media (max-width: 480px) { .account-home { padding: 0 0.8rem; background: var(--color-surface); } .account-home__content { margin-top: 2rem; padding-inline: 0.2rem; border: 0; } }

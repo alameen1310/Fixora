@@ -1,0 +1,1 @@
+export const publishedProviderSelection = 'profile_id, display_name, provider_type, service_description, is_published, created_at, provider_service_categories(category:service_categories(name, slug)), provider_service_areas(country_code, region, city)'
