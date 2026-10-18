@@ -146,27 +146,9 @@
   line-height: 1.6;
 }
 
-.signup-switch {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  column-gap: 0.25rem;
-  row-gap: 0.2rem;
-  margin-top: 0.85rem !important;
-  color: var(--color-text-secondary);
-  font-size: 0.9rem !important;
-  line-height: 1.45 !important;
-}
-
-.signup-switch a {
-  display: inline-flex;
-  min-height: 40px;
-  align-items: center;
-  color: var(--color-primary-dark);
-  font-weight: 700;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.18em;
-}
+.signup-segmented-control { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.25rem; max-width: 25rem; margin-top: 1rem; padding: 0.25rem; border-radius: var(--radius-md); background: var(--color-background-grouped); }
+.signup-segmented-control a { display: flex; min-height: 44px; align-items: center; justify-content: center; border-radius: 10px; color: var(--color-text-secondary); font-size: var(--type-footnote); font-weight: 700; text-decoration: none; }
+.signup-segmented-control a.is-selected { color: var(--color-primary-dark); background: var(--color-surface); box-shadow: 0 1px 3px rgb(23 25 29 / 10%); }
 
 .signup-story {
   position: relative;
@@ -395,10 +377,7 @@
     line-height: 1.5;
   }
 
-  .signup-switch {
-    margin-top: 0.65rem !important;
-    font-size: 0.86rem !important;
-  }
+  .signup-segmented-control { margin-top: 0.8rem; }
 
   .signup-story,
   .signup-footer {

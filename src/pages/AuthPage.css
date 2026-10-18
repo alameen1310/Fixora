@@ -158,3 +158,7 @@
   .auth-back { margin-bottom: 1.5rem; }
   .auth-phone-control { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.25fr); }
 }
+.auth-back .fixora-logo { font-size: 1rem; }
+.auth-back .fixora-logo__mark { width: 25px; height: 25px; }
+.auth-support-actions { display: grid; gap: 0.65rem; margin-top: 1.15rem; }
+.auth-support-actions__provider { margin-top: 0.65rem; }

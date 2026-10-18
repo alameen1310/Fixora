@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ArrowUpRight, Briefcase, MapPin, Wrench } from '@phosphor-icons/react'
+import { CaretRight, Briefcase, MapPin, Wrench } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { publishedProviderSelection } from '../lib/providerQueries.js'
+import { Button, Skeleton } from './UiPrimitives.jsx'
 import './PublishedProfessionals.css'
 
-export default function PublishedProfessionals({ limit = 12 }) {
+export default function PublishedProfessionals({ categorySlug = '', limit = 12, query = '' }) {
   const [profiles, setProfiles] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -38,40 +39,53 @@ export default function PublishedProfessionals({ limit = 12 }) {
 
   useEffect(() => { loadProfiles() }, [loadProfiles, attempt])
 
-  if (loading) return <p className="professional-feed__status" role="status">Finding Fixora professionals…</p>
+  if (loading) return <div aria-label="Loading professionals" aria-live="polite" className="professional-feed professional-feed--loading" role="status"><Skeleton /><Skeleton /><Skeleton /></div>
   if (error) {
     return (
       <div className="professional-feed__state" role="alert">
         <p>We couldn’t load professional profiles just now.</p>
-        <button onClick={() => setAttempt((value) => value + 1)} type="button">Try again</button>
+        <Button onClick={() => setAttempt((value) => value + 1)} variant="secondary">Try again</Button>
       </div>
     )
   }
-  if (!profiles.length) {
+  const normalizedQuery = query.trim().toLocaleLowerCase()
+  const filteredProfiles = profiles.filter((provider) => {
+    const categories = (provider.provider_service_categories ?? []).map((relation) => relation.category)
+    const matchesCategory = !categorySlug || categories.some((category) => category?.slug === categorySlug)
+    if (!matchesCategory) return false
+    if (!normalizedQuery) return true
+    const searchable = [provider.display_name, provider.service_description, ...categories.map((category) => category?.name), ...(provider.provider_service_areas ?? []).flatMap((area) => [area.city, area.region])]
+      .filter(Boolean)
+      .join(' ')
+      .toLocaleLowerCase()
+    return searchable.includes(normalizedQuery)
+  })
+
+  if (!filteredProfiles.length) {
     return (
       <div className="professional-feed__state">
-        <p>Professional profiles will appear here as Fixora’s community grows.</p>
-        <span>There are no published profiles to show yet.</span>
+        <p>No professionals match those filters yet.</p>
+        <span>Try another service or clear your search.</span>
       </div>
     )
   }
 
   return (
     <div aria-label="Published professional profiles" className="professional-feed">
-      {profiles.map((provider) => {
+      {filteredProfiles.map((provider) => {
         const services = (provider.provider_service_categories ?? []).map((relation) => relation.category?.name).filter(Boolean)
         const areas = (provider.provider_service_areas ?? []).map((area) => [area.city, area.region].filter(Boolean).join(', ')).filter(Boolean)
         return (
-          <article className="professional-card" key={provider.profile_id}>
+          <Link aria-label={`View ${provider.display_name}'s profile`} className="professional-card" key={provider.profile_id} to={`/app/professionals/${provider.profile_id}`}>
             <div className="professional-card__identity">
               <span aria-hidden="true" className="professional-card__mark"><Briefcase size={21} weight="duotone" /></span>
-              <div><p className="professional-card__eyebrow">{provider.provider_type === 'business' ? 'Service business' : 'Independent professional'}</p><h3><Link to={'/app/professionals/' + provider.profile_id}>{provider.display_name}<ArrowUpRight aria-hidden="true" size={17} /></Link></h3></div>
+              <div><p className="professional-card__eyebrow">{provider.provider_type === 'business' ? 'Service business' : 'Independent professional'}</p><h3>{provider.display_name}</h3></div><CaretRight aria-hidden="true" className="professional-card__chevron" size={20} />
             </div>
             {provider.service_description && <p className="professional-card__description">{provider.service_description}</p>}
             {services.length > 0 && <div className="professional-card__services"><Wrench aria-hidden="true" size={16} /><span>{services.join(' · ')}</span></div>}
             {areas.length > 0 && <div className="professional-card__areas"><MapPin aria-hidden="true" size={16} /><span>{areas.join(' · ')}</span></div>}
             {!services.length && !areas.length && <p className="professional-card__note">More profile details are being added.</p>}
-          </article>
+          </Link>
         )
       })}
     </div>

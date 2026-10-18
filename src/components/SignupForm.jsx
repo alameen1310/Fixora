@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ArrowUpRight, Eye, EyeSlash, GoogleLogo } from '@phosphor-icons/react'
 import PhoneNumberField, { getE164Phone } from './PhoneNumberField.jsx'
 import LoadingIndicator from './LoadingIndicator.jsx'
+import { Button } from './UiPrimitives.jsx'
 import { useToast } from './ToastProvider.jsx'
 import { authConfigured, supabase } from '../lib/supabase.js'
 import './SignupForm.css'
@@ -199,10 +200,10 @@ export default function SignupForm({ audience }) {
       </div>
 
       <p className="signup-account-privacy">Your phone number is kept private on your Fixora profile. It is not verified during signup.</p>
-      <button className="signup-submit" disabled={busy} type="submit">{busy ? <><LoadingIndicator /> Creating account…</> : <>Create {isProvider ? 'professional' : 'customer'} account<ArrowUpRight aria-hidden="true" size={20} weight="bold" /></>}</button>
+      <Button className="signup-submit" loading={busy} type="submit" variant="primary" wide>{busy ? 'Creating account…' : <>Create {isProvider ? 'professional' : 'customer'} account<ArrowUpRight aria-hidden="true" size={20} weight="bold" /></>}</Button>
       {notice && <p aria-live="polite" className="signup-form__notice" role="status">{notice}</p>}
       {!authConfigured && <p className="signup-form__notice">Add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> to connect account services.</p>}
-      <p className="signup-form__signin">Already have an account? <Link to="/auth/login">Sign in</Link></p>
+      <Button as={Link} className="signup-form__signin" to="/auth/login" variant="secondary" wide>Already have an account? Sign in</Button>
     </form>
   )
 }

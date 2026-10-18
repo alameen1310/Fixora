@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, Plus, Wrench } from '@phosphor-icons/react'
+import { ArrowRight, Wrench } from '@phosphor-icons/react'
 import { useAuth } from '../context/AuthContext.jsx'
 import PublishedProfessionals from '../components/PublishedProfessionals.jsx'
 import './AuthenticatedPages.css'
@@ -20,12 +20,9 @@ export default function AccountHomePage() {
             : 'Discover skilled household professionals through the services and profiles they share.'}</p>
         </div>
         {isProvider ? (
-          <Link className="app-primary-action" to="/app/discover?kind=problems"><Wrench aria-hidden="true" size={20} /> Find jobs <ArrowRight aria-hidden="true" size={18} /></Link>
+          <div className="app-primary-action-wrap app-coming-soon-row" aria-disabled="true"><Wrench aria-hidden="true" size={20} /><div><strong>Job discovery is coming soon</strong><span>Professional opportunities are not available yet.</span></div></div>
         ) : (
-          <div className="app-primary-action-wrap">
-            <button className="app-primary-action is-unavailable" disabled type="button"><Plus aria-hidden="true" size={21} /> Post a problem</button>
-            <p>Problem posting is not available yet. You can still explore the professional community.</p>
-          </div>
+          <div className="app-primary-action-wrap app-coming-soon-row" aria-disabled="true"><div><strong>Post a problem · Coming soon</strong><span>For now, browse professionals for the help you need.</span></div></div>
         )}
       </section>
 

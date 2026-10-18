@@ -5,6 +5,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { ArrowLeft } from '@phosphor-icons/react'
 import SignupForm from './SignupForm.jsx'
+import { Logo } from './UiPrimitives.jsx'
 import kitchenWork from '../assets/kitchen-renovation.jpg'
 import finishedKitchen from '../assets/finished-kitchen.jpg'
 import plumberAtWork from '../assets/plumber-at-work.jpg'
@@ -37,16 +38,6 @@ const experiences = {
     storyTitle: 'Let the work speak clearly.',
     storyCopy: 'Projects and useful details can help customers understand what you do.',
   },
-}
-
-function HouseMark() {
-  return (
-    <svg aria-hidden="true" className="signup-brand__mark" fill="none" viewBox="0 0 40 40">
-      <path d="M6.5 18.25 20 7l13.5 11.25V33H6.5V18.25Z" />
-      <path d="M15.5 33V22.5h9V33M6.5 18.25 20 7l13.5 11.25" />
-      <path d="m27.5 11.5 4.25-3.25v7" />
-    </svg>
-  )
 }
 
 export default function SignupExperience({ audience }) {
@@ -110,10 +101,7 @@ export default function SignupExperience({ audience }) {
   return (
     <div className="signup-page" ref={pageRef}>
       <header className="signup-header">
-        <Link aria-label="Fixora home" className="signup-brand" to="/">
-          <HouseMark />
-          <span>fixora</span>
-        </Link>
+        <Logo className="signup-brand" />
         <div className="signup-header__actions">
           <Link aria-label="Back to Fixora home page" className="signup-header__back" to="/">
             <ArrowLeft aria-hidden="true" size={19} weight="bold" />
@@ -128,14 +116,10 @@ export default function SignupExperience({ audience }) {
             <span className="signup-eyebrow">{experience.audienceLabel}</span>
             <h1 id="signup-title">{experience.title}</h1>
             <p>{experience.introduction}</p>
-            <p className="signup-switch">
-              {audience === 'customer'
-                ? 'Want to offer your services instead?'
-                : 'Looking for help at home?'}{' '}
-              <Link to={audience === 'customer' ? '/signup/provider' : '/signup/customer'}>
-                Sign up as a {audience === 'customer' ? 'professional' : 'customer'}
-              </Link>
-            </p>
+            <nav aria-label="Choose account type" className="signup-segmented-control">
+              <Link aria-current={audience === 'customer' ? 'page' : undefined} className={audience === 'customer' ? 'is-selected' : ''} to="/signup/customer">Customer</Link>
+              <Link aria-current={audience === 'provider' ? 'page' : undefined} className={audience === 'provider' ? 'is-selected' : ''} to="/signup/provider">Professional</Link>
+            </nav>
           </div>
           <SignupForm audience={audience} />
         </section>

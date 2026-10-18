@@ -1,7 +1,7 @@
 @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,800&display=swap');
 
 :root {
-  font-family: 'Satoshi', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Satoshi', -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif;
   color: var(--color-text-primary);
   background: var(--color-background);
   font-synthesis: none;
@@ -17,6 +17,35 @@
   --color-border: #e4e7ec;
   --color-pale-blue: #eef3ff;
   --color-success: #23845b;
+  --color-surface-tinted: #f0f4ff;
+  --color-background-grouped: #f2f4f8;
+  --color-separator: rgb(60 60 67 / 18%);
+  --color-warning: #9a6700;
+  --color-danger: #b3261e;
+  --color-danger-surface: #fff1f0;
+  --shadow-raised: 0 10px 28px rgb(25 70 184 / 8%), 0 2px 5px rgb(23 25 29 / 5%);
+  --shadow-floating: 0 20px 48px rgb(25 70 184 / 12%), 0 4px 12px rgb(23 25 29 / 9%);
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --type-caption: 0.75rem;
+  --type-footnote: 0.8125rem;
+  --type-body: 1rem;
+  --type-headline: 1.0625rem;
+  --type-title: 1.375rem;
+  --type-large-title: 2.125rem;
+  --motion-fast: 120ms;
+  --motion-standard: 220ms;
+  --motion-slow: 350ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 *,
@@ -39,7 +68,7 @@ html {
 }
 
 body {
-  min-height: 100vh;
+  min-height: 100dvh;
   color: var(--color-text-primary);
   background: var(--color-background);
   -webkit-font-smoothing: antialiased;
@@ -58,6 +87,22 @@ a {
 
 button {
   color: inherit;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+button,
+[role='button'],
+nav a {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 ::selection {

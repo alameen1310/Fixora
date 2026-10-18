@@ -89,3 +89,11 @@ The installed `gpt-taste` skill was consulted while preparing this direction. It
 ## Quality bar
 
 The product should feel intentionally designed, distinctive, polished, responsive, and trustworthy. Give each feature visual attention in proportion to its importance. Every major design decision should serve the product, the content, the brand, or the user's task. Quality means more than technical correctness, and decoration alone does not make an experience better.
+
+## Mobile app foundation
+
+The installed app uses the same Fixora identity as public entry points: the house mark and `fixora` wordmark, the blue-and-white palette, and readable Satoshi-first typography with platform system fallbacks. Use a light cool-grey grouped background with white elevated surfaces, pale-blue tonal surfaces, and hairline separators so information groups remain clear without heavy decoration.
+
+Use shared primitives for buttons, icon buttons, inputs, grouped lists, account-type controls, chips, avatars, badges, skeletons, empty states, toasts, and action sheets. Primary actions should be at least 52px high; all other interactive controls must keep a 44px target. Use visible focus states, immediate pressed feedback, safe-area padding, and `100dvh` layouts where a screen fills the device.
+
+Use restrained depth: two soft blue-tinted shadows and a 10/14/20/28px radius scale. Keep copy in sentence case and do not use warning treatment for information that does not require action. Motion uses 120/220/350ms durations with `cubic-bezier(0.2, 0, 0, 1)` as the standard curve and `cubic-bezier(0.32, 0.72, 0, 1)` for sheets; reduced-motion users receive static or opacity-only feedback.

@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import { publishedProviderSelection } from '../lib/providerQueries.js'
 import './AuthenticatedPages.css'
+import SignOutAction from '../components/SignOutAction.jsx'
+import { ListGroup, PrivacyValue } from '../components/UiPrimitives.jsx'
 
 export default function ProfilePage() {
   const { user, profile } = useAuth()
@@ -54,7 +56,7 @@ export default function ProfilePage() {
         <dl className="app-detail-list">
           <div><dt>Email</dt><dd>{user?.email || 'Not available'}</dd></div>
           <div><dt>Account type</dt><dd>{isProvider ? 'Service professional' : 'Customer'}</dd></div>
-          <div><dt>Phone</dt><dd>{profile?.phone_number || 'Not added'}{profile?.phone_number && <span className="app-unverified">Not verified</span>}</dd></div>
+          <div><dt>Phone</dt><dd>{profile?.phone_number ? <PrivacyValue>{profile.phone_number} · Private</PrivacyValue> : 'Not added'}</dd></div>
         </dl>
       </section>
 
@@ -81,6 +83,9 @@ export default function ProfilePage() {
       <section className="app-profile-footnote">
         <p>Profile editing, customer history, portfolios, and reviews are not available in this release.</p>
         <Link className="app-text-link" to="/app/discover">Back to discovery <ArrowRight aria-hidden="true" size={17} /></Link>
+      </section>
+      <section aria-label="Account actions" className="app-profile-actions">
+        <ListGroup><SignOutAction location="profile" /></ListGroup>
       </section>
     </main>
   )

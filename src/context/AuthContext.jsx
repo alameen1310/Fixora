@@ -208,6 +208,29 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  const signOut = useCallback(async () => {
+    if (!supabase) return { error: new Error('Account services are not configured.') }
+
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+    } catch (error) {
+      // An expired or missing remote session is already signed out from the user's perspective.
+      if (!/session|jwt|token|not found|missing/i.test(error?.message ?? '')) return { error }
+    }
+
+    authRevision.current += 1
+    profileRequest.current += 1
+    sessionRef.current = null
+    setSession(null)
+    setSessionReady(true)
+    setSessionError('')
+    setProfile(null)
+    setProfileError('')
+    setProfileLoading(false)
+    return { error: null }
+  }, [])
+
   const value = useMemo(() => ({
     authConfigured,
     session,
@@ -220,7 +243,8 @@ export function AuthProvider({ children }) {
     profileError,
     setProfile,
     refreshProfile,
-  }), [session, profile, sessionReady, sessionError, retrySession, profileLoading, profileError, refreshProfile])
+    signOut,
+  }), [session, profile, sessionReady, sessionError, retrySession, profileLoading, profileError, refreshProfile, signOut])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

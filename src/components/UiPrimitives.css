@@ -1,0 +1,48 @@
+.ui-button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 0.55rem; padding: 0.65rem 1rem; border: 1px solid transparent; border-radius: var(--radius-md); font: inherit; font-size: var(--type-body); font-weight: 700; line-height: 1.2; text-decoration: none; cursor: pointer; transition: transform var(--motion-fast) var(--ease-standard), background-color var(--motion-standard) var(--ease-standard), border-color var(--motion-standard) var(--ease-standard), color var(--motion-standard) var(--ease-standard); }
+.ui-button--wide { width: 100%; min-height: 52px; }
+.ui-button--primary { color: #fff; background: var(--color-primary); box-shadow: var(--shadow-raised); }
+.ui-button--secondary { color: var(--color-primary-dark); background: var(--color-surface-tinted); border-color: rgb(36 87 214 / 15%); }
+.ui-button--ghost { color: var(--color-primary-dark); background: transparent; }
+.ui-button--destructive { color: #fff; background: var(--color-danger); }
+.ui-button:active:not(:disabled), .ui-icon-button:active:not(:disabled), .ui-list-row:active:not(:disabled) { transform: scale(0.97); }
+.ui-button:disabled { cursor: wait; opacity: 0.62; }
+.ui-button__spinner { animation: ui-spin 700ms linear infinite; }
+.ui-icon-button { display: inline-grid; width: 44px; min-width: 44px; height: 44px; place-items: center; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-primary); background: var(--color-surface); cursor: pointer; transition: transform var(--motion-fast) var(--ease-standard), background-color var(--motion-standard) var(--ease-standard); }
+.fixora-logo { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--color-text-primary); font-size: 1.45rem; font-weight: 800; letter-spacing: -0.07em; text-decoration: none; }
+.fixora-logo__mark { width: 34px; height: 34px; stroke: var(--color-primary); stroke-linecap: round; stroke-linejoin: round; stroke-width: 2.35; }
+.fixora-logo__mark path:nth-child(2) { stroke: var(--color-text-primary); stroke-width: 1.8; }
+.ui-list-group { overflow: hidden; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-raised); }
+.ui-list-row { display: flex; width: 100%; min-height: 52px; align-items: center; gap: 0.7rem; padding: 0.75rem 0.85rem; border: 0; border-bottom: 1px solid var(--color-separator); color: var(--color-text-primary); background: var(--color-surface); font: inherit; font-size: var(--type-body); text-align: left; text-decoration: none; cursor: pointer; transition: transform var(--motion-fast) var(--ease-standard), background-color var(--motion-standard) var(--ease-standard); }
+.ui-list-row:last-child { border-bottom: 0; }
+.ui-list-row__icon { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border-radius: 9px; color: var(--color-primary-dark); background: var(--color-pale-blue); }
+.ui-list-row__label { min-width: 0; flex: 1; font-weight: 650; }
+.ui-list-row__value { max-width: 48%; overflow: hidden; color: var(--color-text-secondary); font-size: var(--type-footnote); text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.ui-list-row__chevron { color: var(--color-text-secondary); }
+.ui-list-row--destructive, .ui-list-row--destructive .ui-list-row__icon { color: var(--color-danger); }
+.ui-list-row--destructive .ui-list-row__icon { background: var(--color-danger-surface); }
+.ui-private { display: inline-flex; align-items: center; gap: 0.28rem; color: var(--color-text-secondary); font-size: var(--type-footnote); }
+.ui-field { display: grid; gap: var(--space-2); color: var(--color-text-primary); font-size: var(--type-footnote); font-weight: 700; }
+.ui-field input, .ui-field select { width: 100%; min-height: 52px; padding: 0.75rem 0.9rem; border: 1px solid transparent; border-radius: var(--radius-md); outline: 0; color: var(--color-text-primary); background: var(--color-surface-tinted); font: inherit; font-size: 1rem; box-shadow: inset 0 0 0 1px rgb(36 87 214 / 7%); }
+.ui-field input:focus, .ui-field select:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgb(36 87 214 / 14%); }
+.ui-field small { color: var(--color-text-secondary); font-size: var(--type-footnote); font-weight: 500; }
+.ui-field--error input, .ui-field--error select { border-color: var(--color-danger); }
+.ui-field--error small:last-child { color: var(--color-danger); }
+.ui-segmented-control { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.25rem; padding: 0.25rem; border-radius: var(--radius-md); background: var(--color-background-grouped); }
+.ui-segmented-control button, .ui-chip { min-height: 44px; border: 0; border-radius: 10px; color: var(--color-text-secondary); background: transparent; font: inherit; font-weight: 700; cursor: pointer; }
+.ui-segmented-control button.is-selected { color: var(--color-primary-dark); background: var(--color-surface); box-shadow: 0 1px 3px rgb(23 25 29 / 10%); }
+.ui-chip { padding: 0.45rem 0.75rem; border: 1px solid var(--color-border); background: var(--color-surface); font-size: var(--type-footnote); }
+.ui-chip.is-selected { border-color: rgb(36 87 214 / 30%); color: var(--color-primary-dark); background: var(--color-pale-blue); }
+.ui-avatar { display: inline-grid; width: 44px; height: 44px; place-items: center; border-radius: 50%; color: var(--color-primary-dark); background: var(--color-pale-blue); font-weight: 800; }
+.ui-avatar--1 { color: #235a42; background: #e7f4ed; }.ui-avatar--2 { color: #75451d; background: #fff0dd; }.ui-avatar--3 { color: #703557; background: #f9e8f1; }
+.ui-badge { display: inline-flex; min-height: 24px; align-items: center; padding: 0.2rem 0.5rem; border-radius: 999px; color: var(--color-text-secondary); background: var(--color-background-grouped); font-size: var(--type-caption); font-weight: 700; }.ui-badge--success { color: var(--color-success); background: #e7f4ed; }.ui-badge--warning { color: var(--color-warning); background: #fff3d7; }
+.ui-skeleton { display: block; min-height: 1rem; border-radius: 8px; background: linear-gradient(90deg, #e9edf4 20%, #f7f9fc 50%, #e9edf4 80%); background-size: 200% 100%; animation: ui-shimmer 1.2s linear infinite; }
+.ui-empty-state { display: grid; min-height: 12rem; place-items: center; align-content: center; padding: var(--space-6); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); text-align: center; box-shadow: var(--shadow-raised); }.ui-empty-state__icon { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 16px; color: var(--color-primary-dark); background: var(--color-pale-blue); }.ui-empty-state h2 { margin: 0.85rem 0 0; font-size: var(--type-title); }.ui-empty-state p { max-width: 32rem; margin: 0.45rem 0 0; color: var(--color-text-secondary); line-height: 1.5; }
+.ui-sheet-backdrop { position: fixed; z-index: 100; inset: 0; display: flex; align-items: end; justify-content: center; padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom)); background: rgb(23 25 29 / 42%); }
+.ui-action-sheet { position: relative; width: min(100%, 32rem); padding: 1.5rem; border: 1px solid rgb(255 255 255 / 70%); border-radius: var(--radius-xl); background: rgb(255 255 255 / 96%); box-shadow: var(--shadow-floating); }
+.ui-action-sheet h2 { margin: 0 2.5rem 0 0; font-size: var(--type-title); letter-spacing: -0.025em; }
+.ui-action-sheet p { margin: 0.5rem 0 1.25rem; color: var(--color-text-secondary); line-height: 1.5; }
+.ui-action-sheet .ui-button + .ui-button { margin-top: 0.6rem; }
+.ui-action-sheet__close { position: absolute; top: 0.8rem; right: 0.8rem; display: grid; width: 44px; height: 44px; place-items: center; border: 0; border-radius: 50%; background: var(--color-surface-tinted); cursor: pointer; }
+@keyframes ui-spin { to { transform: rotate(360deg); } }
+@keyframes ui-shimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .ui-button, .ui-icon-button, .ui-list-row { transition: none; } .ui-button__spinner { animation-duration: 1.4s; } }

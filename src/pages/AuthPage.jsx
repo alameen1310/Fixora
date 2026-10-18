@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, GoogleLogo } from '@phosphor-icons/react'
+import { ArrowRight, GoogleLogo } from '@phosphor-icons/react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { authConfigured, supabase } from '../lib/supabase.js'
+import { Button, Logo } from '../components/UiPrimitives.jsx'
 import './AuthPage.css'
 
 const modes = {
@@ -118,10 +119,7 @@ export default function AuthPage({ mode = 'login' }) {
   return (
     <main className="auth-page">
       <section aria-labelledby="auth-title" className="auth-card">
-        <Link className="auth-back" to="/" aria-label="Back to Fixora home">
-          <ArrowLeft aria-hidden="true" size={19} weight="bold" />
-          <span>Fixora</span>
-        </Link>
+        <Logo className="auth-back" />
         <p className="auth-kicker">Your home, in good hands</p>
         <h1 id="auth-title">{config.title}</h1>
         <p className="auth-description">{config.description}</p>
@@ -169,17 +167,16 @@ export default function AuthPage({ mode = 'login' }) {
           {loginNotice && mode === 'login' && <p className="auth-notice" role="status">{loginNotice}</p>}
           {notice && <p className="auth-notice" role="status">{notice}</p>}
           {error && <p className="auth-error" role="alert">{error}</p>}
-          <button className="auth-submit" disabled={busy || !authConfigured || (mode === 'reset' && !user)} type="submit">
+          <Button className="auth-submit" disabled={busy || !authConfigured || (mode === 'reset' && !user)} loading={busy} type="submit" variant="primary" wide>
             {busy ? 'Please wait…' : config.action}
             <ArrowRight aria-hidden="true" size={19} weight="bold" />
-          </button>
+          </Button>
         </form>
 
-        {mode === 'login' && <p className="auth-support"><Link to="/auth/forgot-password">Forgot password?</Link></p>}
-        {mode === 'login' && <p className="auth-support">New to Fixora? <Link to="/signup/customer">Create an account</Link></p>}
-        {mode === 'login' && <p className="auth-support">Offer home services? <Link to="/signup/provider">Join as a professional</Link></p>}
-        {mode === 'forgot' && <p className="auth-support"><Link to="/auth/login">Return to sign in</Link></p>}
-        {mode === 'reset' && <p className="auth-support"><Link to="/auth/login">Return to sign in</Link></p>}
+        {mode === 'login' && <div className="auth-support-actions"><Button as={Link} to="/auth/forgot-password" variant="ghost" wide>Forgot password?</Button><Button as={Link} to="/signup/customer" variant="secondary" wide>Create an account</Button></div>}
+        {mode === 'login' && <Button as={Link} className="auth-support-actions__provider" to="/signup/provider" variant="ghost" wide>Join as a professional</Button>}
+        {mode === 'forgot' && <Button as={Link} className="auth-support-actions__provider" to="/auth/login" variant="secondary" wide>Return to sign in</Button>}
+        {mode === 'reset' && <Button as={Link} className="auth-support-actions__provider" to="/auth/login" variant="secondary" wide>Return to sign in</Button>}
         {!authConfigured && <p className="auth-config-hint">Set <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> in your local environment.</p>}
       </section>
     </main>
