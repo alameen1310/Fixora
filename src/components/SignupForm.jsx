@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowUpRight, Eye, EyeSlash, GoogleLogo } from '@phosphor-icons/react'
 import PhoneNumberField, { getE164Phone } from './PhoneNumberField.jsx'
@@ -45,7 +45,12 @@ function validate(values, audience) {
 function formatSignupError(error) {
   if (/user already registered/i.test(error?.message ?? '')) return 'An account with this email already exists. Sign in instead.'
   if (/password/i.test(error?.message ?? '') && /weak|short|length/i.test(error.message)) return 'Choose a stronger password with at least 8 characters.'
-  if (/rate limit/i.test(error?.message ?? '')) return 'Too many attempts. Please wait a little and try again.'
+  if (error?.code === 'over_email_send_rate_limit') {
+    return 'Fixora has reached its confirmation-email sending limit. Please wait before trying again. If you already confirmed your email, use the sign-in link below.'
+  }
+  if (error?.status === 429 || error?.code === 'over_request_rate_limit' || /rate limit/i.test(error?.message ?? '')) {
+    return 'The authentication service is temporarily limiting requests. Please wait before trying again.'
+  }
   return 'We couldn’t create your account. Check your details and try again.'
 }
 
@@ -75,6 +80,7 @@ export default function SignupForm({ audience }) {
   const [visiblePasswords, setVisiblePasswords] = useState({ password: false, confirmPassword: false })
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
+  const requestInFlight = useRef(false)
   const navigate = useNavigate()
 
   function update(field, value) {
@@ -104,10 +110,12 @@ export default function SignupForm({ audience }) {
   }
 
   async function beginGoogleSignup() {
+    if (requestInFlight.current) return
     if (!supabase) {
       setNotice('Account services are not configured yet. Add the Supabase environment variables to enable registration.')
       return
     }
+    requestInFlight.current = true
     setBusy(true)
     try {
       sessionStorage.setItem('fixora.signupType', audience)
@@ -119,6 +127,7 @@ export default function SignupForm({ audience }) {
       if (error) throw error
     } catch {
       clearSignupIntent()
+      requestInFlight.current = false
       setBusy(false)
       setNotice('Google sign-in could not start. Check that this browser allows site storage, then try again or continue with email.')
     }
@@ -126,6 +135,7 @@ export default function SignupForm({ audience }) {
 
   async function handleSubmit(event) {
     event.preventDefault()
+    if (requestInFlight.current) return
     const nextErrors = validate(values, audience)
     setErrors(nextErrors)
     setNotice('')
@@ -135,6 +145,7 @@ export default function SignupForm({ audience }) {
       return
     }
 
+    requestInFlight.current = true
     setBusy(true)
     try {
       const providerDisplayName = values.accountType === 'business' ? values.businessName.trim() : values.fullName.trim()
@@ -164,6 +175,7 @@ export default function SignupForm({ audience }) {
     } catch (error) {
       setNotice(formatSignupError(error))
     } finally {
+      requestInFlight.current = false
       setBusy(false)
     }
   }
