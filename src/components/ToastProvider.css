@@ -1,0 +1,53 @@
+.fixora-toasts {
+  position: fixed;
+  z-index: 1000;
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
+  display: grid;
+  width: min(390px, calc(100vw - 2rem));
+  max-height: min(75vh, 640px);
+  gap: 0.65rem;
+  overflow-y: auto;
+  pointer-events: none;
+}
+
+.fixora-toast {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.7rem;
+  padding: 0.9rem 0.85rem;
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: 0.9rem;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  box-shadow: 0 12px 34px rgb(23 25 29 / 13%);
+  animation: toast-arrive 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  pointer-events: auto;
+}
+
+.fixora-toast--success { border-left-color: var(--color-success); }
+.fixora-toast--error { border-left-color: #b54040; }
+.fixora-toast--warning { border-left-color: #a56816; }
+.fixora-toast__icon { color: var(--color-primary); }
+.fixora-toast--success .fixora-toast__icon { color: var(--color-success); }
+.fixora-toast--error .fixora-toast__icon { color: #a13232; }
+.fixora-toast--warning .fixora-toast__icon { color: #8d5813; }
+.fixora-toast p { margin: 0.05rem 0 0; font-size: 0.92rem; line-height: 1.45; }
+.fixora-toast__dismiss { display: grid; width: 36px; height: 36px; place-items: center; margin: -0.4rem -0.35rem 0 0; border: 0; border-radius: 0.55rem; color: var(--color-text-secondary); background: transparent; cursor: pointer; }
+.fixora-toast__dismiss:hover { color: var(--color-text-primary); background: var(--color-background); }
+.fixora-toast__dismiss:focus-visible { outline-offset: 1px; }
+
+@keyframes toast-arrive {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 560px) {
+  .fixora-toasts { right: max(0.75rem, env(safe-area-inset-right)); left: max(0.75rem, env(safe-area-inset-left)); width: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fixora-toast { animation: none; }
+}

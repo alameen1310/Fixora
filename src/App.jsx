@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import ScrollToTop from './components/ScrollToTop.jsx'
 import PwaControls from './components/PwaControls.jsx'
 import AuthenticatedAppShell from './components/AuthenticatedAppShell.jsx'
+import { ToastProvider } from './components/ToastProvider.jsx'
 import LandingPage from './pages/LandingPage.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
@@ -23,10 +24,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <ScrollToTop />
-        <PwaControls />
-        <Suspense fallback={<main className="account-state"><p role="status">Loading Fixora…</p></main>}>
-          <Routes>
+        <ToastProvider>
+          <ScrollToTop />
+          <PwaControls />
+          <Suspense fallback={<main className="account-state"><p role="status">Loading Fixora…</p></main>}>
+            <Routes>
             <Route element={<LandingPage />} path="/" />
             <Route element={<Navigate replace to="/signup/customer" />} path="/customer" />
             <Route element={<CustomerSignupPage />} path="/signup/customer" />
@@ -46,8 +48,9 @@ export default function App() {
               <Route element={<ProfessionalProfilePage />} path="professionals/:professionalId" />
             </Route>
             <Route element={<Navigate replace to="/" />} path="*" />
-          </Routes>
-        </Suspense>
+            </Routes>
+          </Suspense>
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   )

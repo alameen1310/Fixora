@@ -29,7 +29,7 @@ const experiences = {
     audienceLabel: 'For your craft',
     title: 'Make your skills easier to find.',
     introduction:
-      'Create a professional presence, showcase the work you do, and find household projects that fit your skills.',
+      'Create your account first. Once it is ready, add the services, work details, and locations customers need to find you.',
     primaryImage: plumberAtWork,
     primaryAlt: 'Plumber working on exposed residential bathroom pipes',
     detailImage: finishedKitchen,
