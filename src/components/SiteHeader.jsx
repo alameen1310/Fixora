@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import PwaControls from './PwaControls.jsx'
 import './SiteHeader.css'
 
 const links = [
@@ -69,7 +68,6 @@ export default function SiteHeader() {
             ))}
           </div>
           <div className="primary-navigation__actions">
-            <PwaControls />
             <Link className="nav-action nav-action--quiet" onClick={closeMenu} to="/signup/customer">
               Find a professional
             </Link>

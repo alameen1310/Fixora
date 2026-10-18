@@ -4,7 +4,6 @@ import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import SignupForm from './SignupForm.jsx'
-import PwaControls from './PwaControls.jsx'
 import kitchenWork from '../assets/kitchen-renovation.jpg'
 import finishedKitchen from '../assets/finished-kitchen.jpg'
 import plumberAtWork from '../assets/plumber-at-work.jpg'
@@ -115,7 +114,6 @@ export default function SignupExperience({ audience }) {
           <span>fixora</span>
         </Link>
         <div className="signup-header__actions">
-          <PwaControls />
           <Link aria-label="Return to the Fixora home page" className="signup-header__back" to="/">
             <span aria-hidden="true">←</span> Back to Fixora
           </Link>

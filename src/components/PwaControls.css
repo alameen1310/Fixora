@@ -1,39 +1,180 @@
-.pwa-controls {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
+.pwa-install-dialog {
+  width: min(28rem, calc(100vw - 2rem));
+  max-height: min(90dvh, 42rem);
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 1.25rem;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  box-shadow: 0 24px 70px rgb(23 25 29 / 22%);
 }
 
-.pwa-controls__button {
-  min-height: 44px;
-  padding: 0.55rem 0.75rem;
+.pwa-install-dialog::backdrop {
+  background: rgb(23 25 29 / 48%);
+}
+
+.pwa-install-dialog__content {
+  position: relative;
+  padding: 1.65rem;
+}
+
+.pwa-install-dialog__dismiss {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: inline-grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
   border: 1px solid var(--color-border);
-  border-radius: 0.7rem;
-  color: var(--color-primary-dark);
+  border-radius: 50%;
+  color: var(--color-text-secondary);
   background: var(--color-surface);
   cursor: pointer;
-  font-size: 0.88rem;
-  font-weight: 650;
 }
 
-.pwa-controls__button:hover {
-  border-color: var(--color-primary);
+.pwa-install-dialog__icon {
+  display: inline-grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  margin-bottom: 1rem;
+  border-radius: 1rem;
+  color: var(--color-primary-dark);
   background: var(--color-pale-blue);
 }
 
-.pwa-controls__button:focus-visible {
+.pwa-install-dialog__eyebrow {
+  margin: 0 2.5rem 0.45rem 0;
+  color: var(--color-primary-dark);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.pwa-install-dialog h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.025em;
+}
+
+.pwa-install-dialog__description {
+  margin: 0.65rem 0 0;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.pwa-install-dialog ol {
+  display: grid;
+  gap: 0.7rem;
+  margin: 1rem 0 1.25rem;
+  padding-left: 1.25rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.pwa-install-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+}
+
+.pwa-install-dialog__install,
+.pwa-install-dialog__close {
+  min-height: 46px;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--color-primary);
+  border-radius: 0.7rem;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+}
+
+.pwa-install-dialog__install {
+  color: #fff;
+  background: var(--color-primary);
+}
+
+.pwa-install-dialog__install:hover {
+  border-color: var(--color-primary-dark);
+  background: var(--color-primary-dark);
+}
+
+.pwa-install-dialog__install:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.pwa-install-dialog__close {
+  color: var(--color-primary-dark);
+  background: var(--color-surface);
+}
+
+.pwa-install-dialog__close:hover,
+.pwa-install-dialog__dismiss:hover {
+  background: var(--color-pale-blue);
+}
+
+.pwa-install-dialog button:focus-visible,
+.pwa-update-notice button:focus-visible {
   outline: 3px solid var(--color-primary);
   outline-offset: 3px;
 }
 
-@media (max-width: 960px) {
-  .pwa-controls {
-    align-items: stretch;
+.pwa-update-notice {
+  position: fixed;
+  z-index: 1000;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  left: max(1rem, env(safe-area-inset-left));
+  display: flex;
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-inline: auto;
+  padding: 0.7rem 0.8rem 0.7rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.9rem;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  box-shadow: 0 12px 36px rgb(23 25 29 / 16%);
+  font-size: 0.9rem;
+}
+
+.pwa-update-notice button {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  border-radius: 0.65rem;
+  color: #fff;
+  background: var(--color-primary);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+}
+
+@media (max-width: 480px) {
+  .pwa-install-dialog__content {
+    padding: 1.35rem;
+  }
+
+  .pwa-install-dialog__actions {
     flex-direction: column;
   }
 
-  .pwa-controls__button {
+  .pwa-install-dialog__actions button {
     width: 100%;
-    min-height: 48px;
+  }
+
+  .pwa-update-notice {
+    width: auto;
+    left: max(0.75rem, env(safe-area-inset-left));
+    right: max(0.75rem, env(safe-area-inset-right));
   }
 }

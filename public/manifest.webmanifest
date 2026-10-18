@@ -1,17 +1,17 @@
 {
-  "id": "/",
+  "id": "./",
   "name": "Fixora — Home services, seen differently",
   "short_name": "Fixora",
   "description": "Discover household-service professionals through real projects and demonstrated skills.",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
   "theme_color": "#F6F7F9",
   "background_color": "#F6F7F9",
   "icons": [
-    { "src": "/icons/fixora-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/fixora-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/fixora-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "icons/fixora-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/fixora-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/fixora-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

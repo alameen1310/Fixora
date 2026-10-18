@@ -75,9 +75,6 @@
   gap: 1rem;
 }
 
-.primary-navigation__actions .pwa-controls {
-  order: 3;
-}
 
 .nav-action {
   display: inline-flex;
@@ -187,9 +184,6 @@
     gap: 0.35rem;
   }
 
-  .primary-navigation__actions .pwa-controls {
-    order: 0;
-  }
 
   .nav-action--primary {
     justify-content: center;
