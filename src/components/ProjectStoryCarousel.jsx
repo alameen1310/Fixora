@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import plumberPhoto from '../assets/plumber-at-work.jpg'
 import renovationPhoto from '../assets/kitchen-renovation.jpg'
-import completedPhoto from '../assets/finished-kitchen.jpg'
+import completedPhoto from '../assets/african-kitchen.jpg'
 import './ProjectStoryCarousel.css'
 
 const stories = [

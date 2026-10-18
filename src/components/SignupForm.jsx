@@ -3,7 +3,7 @@ import serviceCategories from '../data/serviceCategories.js'
 import './SignupForm.css'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const phonePattern = /^[+()\d\s.-]{7,}$/
+const phonePattern = /^[+\d().\s-]+$/
 
 function PasswordField({ error, id, label, onChange, value, visible, onToggle, hint }) {
   const hintId = `${id}-hint`
@@ -41,7 +41,7 @@ function PasswordField({ error, id, label, onChange, value, visible, onToggle, h
   )
 }
 
-function TextField({ autoComplete, error, hint, id, label, name, onChange, required = true, type = 'text', value }) {
+function TextField({ autoComplete, error, hint, id, inputMode, label, name, onChange, required = true, showRequired = false, type = 'text', value }) {
   const hintId = `${id}-hint`
   const errorId = `${id}-error`
   const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ') || undefined
@@ -50,6 +50,7 @@ function TextField({ autoComplete, error, hint, id, label, name, onChange, requi
     <div className={`signup-field${error ? ' has-error' : ''}`}>
       <label htmlFor={id}>
         {label}
+        {showRequired && <span className="signup-field__required">Required</span>}
         {!required && <span className="signup-field__optional">Optional</span>}
       </label>
       <input
@@ -57,6 +58,7 @@ function TextField({ autoComplete, error, hint, id, label, name, onChange, requi
         aria-invalid={Boolean(error)}
         autoComplete={autoComplete}
         id={id}
+        inputMode={inputMode}
         name={name}
         onChange={onChange}
         required={required}
@@ -78,9 +80,13 @@ function validate(values, audience) {
       : 'Enter your full name.'
   }
   if (!emailPattern.test(values.email.trim())) errors.email = 'Enter a valid email address.'
-  if (audience === 'provider' && !values.serviceCategory) errors.serviceCategory = 'Choose your primary service.'
-  if (audience === 'provider' && values.phone && !phonePattern.test(values.phone)) {
-    errors.phone = 'Enter a valid phone number, or leave this optional field blank.'
+  if (audience === 'provider' && values.serviceCategories.length === 0) errors.serviceCategories = 'Choose at least one service.'
+  const phone = values.phone.trim()
+  const phoneDigits = phone.replace(/\D/g, '')
+  if (!phone) {
+    errors.phone = 'Enter your phone number.'
+  } else if (!phonePattern.test(phone) || phoneDigits.length < 7 || phoneDigits.length > 15) {
+    errors.phone = 'Enter a valid phone number with 7 to 15 digits.'
   }
   if (values.password.length < 8) errors.password = 'Use at least 8 characters for your password.'
   if (values.confirmPassword !== values.password) errors.confirmPassword = 'Passwords do not match.'
@@ -96,7 +102,7 @@ export default function SignupForm({ audience }) {
     accountName: '',
     email: '',
     phone: '',
-    serviceCategory: '',
+    serviceCategories: [],
     password: '',
     confirmPassword: '',
     acknowledged: false,
@@ -138,8 +144,111 @@ export default function SignupForm({ audience }) {
     setVisiblePasswords((current) => ({ ...current, [field]: !current[field] }))
   }
 
+  function toggleServiceCategory(category, checked) {
+    setValues((current) => ({
+      ...current,
+      serviceCategories: checked
+        ? [...current.serviceCategories, category]
+        : current.serviceCategories.filter((item) => item !== category),
+    }))
+    setErrors((current) => {
+      if (!current.serviceCategories) return current
+      const next = { ...current }
+      delete next.serviceCategories
+      return next
+    })
+    setNotice('')
+  }
+
   const accountNameLabel = isProvider && values.accountType === 'business' ? 'Business name' : 'Full name'
   const accountNameAutoComplete = isProvider && values.accountType === 'business' ? 'organization' : 'name'
+  const accountNameField = (
+    <TextField
+      autoComplete={accountNameAutoComplete}
+      error={errors.accountName}
+      id="account-name"
+      label={accountNameLabel}
+      name="accountName"
+      onChange={(event) => update('accountName', event.target.value)}
+      value={values.accountName}
+    />
+  )
+  const emailField = (
+    <TextField
+      autoComplete="email"
+      error={errors.email}
+      id="email"
+      label="Email address"
+      name="email"
+      onChange={(event) => update('email', event.target.value)}
+      type="email"
+      value={values.email}
+    />
+  )
+  const phoneField = (
+    <TextField
+      autoComplete="tel"
+      error={errors.phone}
+      id="phone"
+      inputMode="tel"
+      label="Phone number"
+      name="phone"
+      onChange={(event) => update('phone', event.target.value)}
+      showRequired
+      type="tel"
+      value={values.phone}
+    />
+  )
+  const passwordFields = (
+    <>
+      <PasswordField
+        error={errors.password}
+        hint="Use at least 8 characters."
+        id="password"
+        label="Password"
+        onChange={(event) => update('password', event.target.value)}
+        onToggle={() => togglePassword('password')}
+        value={values.password}
+        visible={visiblePasswords.password}
+      />
+      <PasswordField
+        error={errors.confirmPassword}
+        id="confirm-password"
+        label="Confirm password"
+        onChange={(event) => update('confirmPassword', event.target.value)}
+        onToggle={() => togglePassword('confirmPassword')}
+        value={values.confirmPassword}
+        visible={visiblePasswords.confirmPassword}
+      />
+    </>
+  )
+  const serviceCategoryField = isProvider && (
+    <fieldset
+      aria-describedby={errors.serviceCategories ? 'service-categories-error' : undefined}
+      aria-invalid={Boolean(errors.serviceCategories)}
+      className={`signup-category-fieldset signup-field${errors.serviceCategories ? ' has-error' : ''}`}
+    >
+      <legend>Services you offer <span className="signup-field__required">Required</span></legend>
+      <div className="signup-category-options">
+        {serviceCategories.map((category) => {
+          const selected = values.serviceCategories.includes(category)
+          return (
+            <label className={selected ? 'is-selected' : ''} key={category}>
+              <input
+                checked={selected}
+                name="serviceCategories"
+                onChange={(event) => toggleServiceCategory(category, event.target.checked)}
+                type="checkbox"
+                value={category}
+              />
+              <span>{category}</span>
+            </label>
+          )
+        })}
+      </div>
+      {errors.serviceCategories && <span className="signup-field__error" id="service-categories-error" role="alert">{errors.serviceCategories}</span>}
+    </fieldset>
+  )
 
   return (
     <form className="signup-form" noValidate onSubmit={handleSubmit}>
@@ -169,76 +278,25 @@ export default function SignupForm({ audience }) {
         </fieldset>
       )}
 
-      <div className="signup-form__fields">
-        <TextField
-          autoComplete={accountNameAutoComplete}
-          error={errors.accountName}
-          id="account-name"
-          label={accountNameLabel}
-          name="accountName"
-          onChange={(event) => update('accountName', event.target.value)}
-          value={values.accountName}
-        />
-        {isProvider && (
-          <div className={`signup-field${errors.serviceCategory ? ' has-error' : ''}`}>
-            <label htmlFor="service-category">Primary service</label>
-            <select
-              aria-describedby={errors.serviceCategory ? 'service-category-error' : undefined}
-              aria-invalid={Boolean(errors.serviceCategory)}
-              id="service-category"
-              name="serviceCategory"
-              onChange={(event) => update('serviceCategory', event.target.value)}
-              required
-              value={values.serviceCategory}
-            >
-              <option disabled value="">Choose a service</option>
-              {serviceCategories.map((category) => <option key={category} value={category}>{category}</option>)}
-            </select>
-            {errors.serviceCategory && <span className="signup-field__error" id="service-category-error" role="alert">{errors.serviceCategory}</span>}
-          </div>
+      <div className={`signup-form__fields${isProvider ? ' signup-form__fields--provider' : ''}`}>
+        {isProvider ? (
+          <>
+            <div className="signup-provider-name">{accountNameField}</div>
+            <div className="signup-provider-contact">
+              {emailField}
+              {phoneField}
+            </div>
+            {serviceCategoryField}
+            <div className="signup-provider-passwords">{passwordFields}</div>
+          </>
+        ) : (
+          <>
+            {accountNameField}
+            {emailField}
+            {phoneField}
+            {passwordFields}
+          </>
         )}
-        <TextField
-          autoComplete="email"
-          error={errors.email}
-          id="email"
-          label="Email address"
-          name="email"
-          onChange={(event) => update('email', event.target.value)}
-          type="email"
-          value={values.email}
-        />
-        {isProvider && (
-          <TextField
-            autoComplete="tel"
-            error={errors.phone}
-            id="phone"
-            label="Phone number"
-            name="phone"
-            onChange={(event) => update('phone', event.target.value)}
-            required={false}
-            type="tel"
-            value={values.phone}
-          />
-        )}
-        <PasswordField
-          error={errors.password}
-          hint="Use at least 8 characters."
-          id="password"
-          label="Password"
-          onChange={(event) => update('password', event.target.value)}
-          onToggle={() => togglePassword('password')}
-          value={values.password}
-          visible={visiblePasswords.password}
-        />
-        <PasswordField
-          error={errors.confirmPassword}
-          id="confirm-password"
-          label="Confirm password"
-          onChange={(event) => update('confirmPassword', event.target.value)}
-          onToggle={() => togglePassword('confirmPassword')}
-          value={values.confirmPassword}
-          visible={visiblePasswords.confirmPassword}
-        />
       </div>
 
       <div className={`signup-acknowledgement${errors.acknowledged ? ' has-error' : ''}`}>
