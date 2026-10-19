@@ -10,8 +10,8 @@ export default function PostRoleGuard({ children, customersOnly = false }) {
   const blocked = customersOnly && profile?.account_type !== 'customer'
 
   useEffect(() => {
-    if (blocked) showToast({ type: 'info', message: 'Only customers can create posts.' })
-  }, [blocked, showToast])
+    if (blocked) showToast({ type: 'info', message: location.pathname.endsWith('/applicants') ? 'Only the customer who created this post can review applicants.' : 'Only customers can create posts.' })
+  }, [blocked, location.pathname, showToast])
 
   if (blocked) return <Navigate replace state={{ from: location.pathname }} to="/app" />
   return children

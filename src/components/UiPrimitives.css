@@ -352,7 +352,7 @@
 /* SegmentedControl */
 .ui-segmented-control {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--segmented-count, 2), minmax(0, 1fr));
   gap: 0.25rem;
   padding: 0.25rem;
   border-radius: var(--radius-md);
@@ -368,6 +368,8 @@
   font: inherit;
   font-size: var(--type-footnote);
   font-weight: 700;
+  line-height: 1.2;
+  white-space: normal;
   cursor: pointer;
   transition:
     background-color var(--motion-fast) var(--ease-standard),
@@ -458,6 +460,11 @@
 .ui-badge--success {
   color: var(--color-success);
   background: #e7f4ed;
+}
+
+.ui-badge--info {
+  color: var(--color-primary-dark);
+  background: var(--color-pale-blue);
 }
 
 .ui-badge--warning {

@@ -3,10 +3,14 @@ import { useSearchParams } from 'react-router-dom'
 import { MagnifyingGlass, XCircle } from '@phosphor-icons/react'
 import PublishedProfessionals from '../components/PublishedProfessionals.jsx'
 import { Chip } from '../components/UiPrimitives.jsx'
+import { PostsFeed } from '../components/PostsFeed.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import './AuthenticatedPages.css'
 
 export default function DiscoverPage() {
+  const { profile, user } = useAuth()
+  const isProvider = profile?.account_type === 'provider'
   const [searchParams, setSearchParams] = useSearchParams()
   const initialCategory = searchParams.get('category') || ''
   const initialQuery = searchParams.get('q') || ''
@@ -150,9 +154,10 @@ export default function DiscoverPage() {
         )}
       </section>
 
-      <footer className="discover-upcoming-note">
-        <p>Customer problem posting and completed projects are coming in a future release.</p>
-      </footer>
+      {isProvider && <section aria-labelledby="discover-requests-title" className="app-section discover-requests">
+        <div className="app-section__heading"><h2 id="discover-requests-title">Open customer requests</h2><span className="home-read-only-label">Apply from the request page</span></div>
+        <PostsFeed categorySlug={selectedCategory} showOwnLatest={false} userId={user.id} />
+      </section>}
     </main>
   )
 }

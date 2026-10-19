@@ -1,0 +1,26 @@
+.app-page.applicants-page { width: min(100%, 1100px) !important; max-width: 1100px; }
+.applicants-heading { margin-bottom: 24px; }
+.applicants-heading p { overflow: hidden; max-width: 760px; text-overflow: ellipsis; white-space: nowrap; }
+.applicants-layout { display: grid; gap: 22px; align-items: start; }
+.applicants-list { display: grid; gap: 14px; min-width: 0; }
+.applicant-card, .applicants-summary { padding: 20px; border-radius: 20px; background: #fff; box-shadow: 0 8px 24px rgb(32 56 116 / 8%); }
+.applicant-card { display: grid; gap: 14px; }
+.applicant-card__head { display: flex; min-width: 0; align-items: center; gap: 12px; }
+.applicant-card__identity { flex: 1; min-width: 0; }
+.applicant-card__identity h2 { overflow: hidden; margin: 0; font-size: 1.12rem; text-overflow: ellipsis; white-space: nowrap; }
+.applicant-card__identity p, .applicant-card__description { margin: 4px 0 0; color: var(--color-text-secondary); font-size: var(--type-footnote); line-height: 1.5; }
+.applicant-card__services { display: flex; align-items: flex-start; gap: 8px; margin: 0; color: var(--color-text-secondary); font-size: var(--type-footnote); }
+.applicant-card__services svg { flex: 0 0 auto; color: var(--color-primary); }
+.applicant-card__message { margin: 0; padding: 12px 14px; border-left: 3px solid #adc2ff; border-radius: 0 12px 12px 0; color: var(--color-text-primary); background: #f5f7fc; line-height: 1.5; }
+.applicant-card__actions { display: flex; flex-wrap: wrap; gap: 9px; padding-top: 2px; }
+.applicants-summary { position: sticky; top: 92px; display: grid; gap: 10px; }
+.applicants-summary strong { color: var(--color-text-primary); font-size: 1.15rem; }
+.applicants-summary p { margin: 0; color: var(--color-text-secondary); line-height: 1.5; }
+.applicants-summary a { display: inline-flex; min-height: 44px; align-items: center; color: var(--color-primary); font-weight: 700; text-decoration: none; }
+.applicants-empty { display: flex; min-height: 250px; align-items: center; justify-content: center; gap: clamp(18px, 4vw, 44px); padding: 28px; border-radius: 22px; background: #fff; box-shadow: 0 8px 24px rgb(32 56 116 / 8%); }
+.applicants-empty .marketplace-doodle { width: min(34%, 190px); }
+.applicants-empty h2 { margin: 0; font-size: 1.3rem; }
+.applicants-empty p { margin: 6px 0 0; color: var(--color-text-secondary); }
+.marketplace-doodle { display: block; width: 160px; max-width: 100%; color: #809bd9; }
+@media (min-width: 900px) { .applicants-layout { grid-template-columns: minmax(0, 1fr) 280px; gap: 24px; } }
+@media (max-width: 560px) { .applicants-empty { min-height: 220px; flex-direction: column; text-align: center; } .applicants-empty .marketplace-doodle { width: 150px; } .applicant-card__head { align-items: flex-start; flex-wrap: wrap; } .applicant-card__head > .ui-badge { margin-left: 64px; } }

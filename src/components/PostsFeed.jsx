@@ -5,13 +5,12 @@ import { Button, EmptyState } from './UiPrimitives.jsx'
 import PostCard, { PostCardSkeleton } from './PostCard.jsx'
 import { fetchAuthorNames, fetchLatestOwnPost, fetchOtherOpenPosts, fetchMyPosts, invalidateSignedPostImage, postCursor, signPostImages } from '../lib/postQueries.js'
 import { useToast } from './ToastProvider.jsx'
+import { homeFeedCache, myPostsCache } from '../lib/postListCache.js'
 
 const PAGE_SIZE = 10
-const homeFeedCache = new Map()
-const myPostsCache = new Map()
-
-export function PostsFeed({ userId, showOwnLatest = false }) {
-  const saved = homeFeedCache.get(userId)
+export function PostsFeed({ userId, showOwnLatest = false, categorySlug = '' }) {
+  const cacheKey = `${userId}:${categorySlug || 'all'}`
+  const saved = homeFeedCache.get(cacheKey)
   const [posts, setPosts] = useState(() => saved?.posts ?? [])
   const [ownLatest, setOwnLatest] = useState(() => saved?.ownLatest ?? null)
   const [pendingOwnLatest, setPendingOwnLatest] = useState(() => saved?.pendingOwnLatest ?? null)
@@ -56,7 +55,7 @@ export function PostsFeed({ userId, showOwnLatest = false }) {
     }
     try {
       const [firstPage, latest] = await Promise.all([
-        fetchOtherOpenPosts(userId, { limit: PAGE_SIZE }),
+        fetchOtherOpenPosts(userId, { limit: PAGE_SIZE, categorySlug }),
         showOwnLatest ? fetchLatestOwnPost(userId) : Promise.resolve(null),
       ])
       await attachAssets([...firstPage, ...(latest ? [latest] : [])])
@@ -80,14 +79,14 @@ export function PostsFeed({ userId, showOwnLatest = false }) {
       busy.current = false
       setLoading(false)
     }
-  }, [attachAssets, showOwnLatest, userId])
+  }, [attachAssets, categorySlug, showOwnLatest, userId])
 
   const loadMore = useCallback(async () => {
     if (busy.current || !hasMore || !cursor.current) return
     busy.current = true
     setLoadingMore(true)
     try {
-      const page = await fetchOtherOpenPosts(userId, { cursor: cursor.current, limit: PAGE_SIZE })
+      const page = await fetchOtherOpenPosts(userId, { cursor: cursor.current, limit: PAGE_SIZE, categorySlug })
       await attachAssets(page)
       setPosts((current) => {
         const known = new Set(current.map(({ id }) => id))
@@ -104,7 +103,7 @@ export function PostsFeed({ userId, showOwnLatest = false }) {
       busy.current = false
       setLoadingMore(false)
     }
-  }, [attachAssets, hasMore, userId])
+  }, [attachAssets, categorySlug, hasMore, userId])
 
   const refreshNew = useCallback(() => {
     if (newPostsRef.current.length) {
@@ -128,11 +127,11 @@ export function PostsFeed({ userId, showOwnLatest = false }) {
   }, [loadFirstPage, saved?.lastRefreshAt, userId, showOwnLatest])
 
   useEffect(() => {
-    homeFeedCache.set(userId, {
+    homeFeedCache.set(cacheKey, {
       posts, ownLatest, pendingOwnLatest, authors, covers, hasMore, newPosts,
       cursor: cursor.current, lastRefreshAt: lastRefreshAt.current,
     })
-  }, [userId, posts, ownLatest, pendingOwnLatest, authors, covers, hasMore, newPosts])
+  }, [cacheKey, posts, ownLatest, pendingOwnLatest, authors, covers, hasMore, newPosts])
 
   useEffect(() => {
     const onVisible = () => {

@@ -1,4 +1,4 @@
-.post-form-page { max-width: 680px; padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+.post-form-page { max-width: 980px; padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
 .post-form-heading { margin: 4px 0 24px; }
 .post-form-heading p { margin: 0 0 8px; color: var(--color-primary); font-size: var(--type-footnote); font-weight: 700; }
 .post-form-heading h1 { margin: 0 0 18px; font-size: clamp(1.8rem, 6vw, 2.5rem); letter-spacing: -.04em; }
@@ -25,6 +25,18 @@
 .post-form-review p { margin: 0; color: var(--color-text-secondary); white-space: pre-wrap; }
 .post-form-actions { position: fixed; z-index: 10; right: 0; bottom: 0; left: 0; display: flex; justify-content: flex-end; gap: 10px; padding: 12px 18px calc(12px + env(safe-area-inset-bottom)); background: rgb(255 255 255 / 96%); box-shadow: 0 -8px 24px rgb(20 40 120 / 8%); }
 .post-form-actions .ui-button { min-width: 120px; }
+.post-form-content--step-3 .ui-segmented-control,
+.post-form-content--step-3 .post-form-budget,
+.post-form-content--step-3 .post-form-switch,
+.post-form-content--step-3 .post-form-options { grid-column: 1 / -1; }
 @media (min-width: 768px) { .post-form-actions { left: 76px; padding-inline: max(32px, calc((100vw - 820px) / 2)); } }
 @media (min-width: 1024px) { .post-form-actions { left: 264px; } }
+@media (min-width: 900px) { .post-form-content--step-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 28px; padding: 28px; } }
+@media (min-width: 900px) {
+  .post-form-content--step-1 { grid-template-columns: minmax(0, 1fr) minmax(250px, .8fr); align-items: start; }
+  .post-form-content--step-1 > :first-child { grid-column: 1 / -1; }
+  .post-form-content--step-2 { grid-template-columns: minmax(240px, .7fr) minmax(0, 1.3fr); align-items: start; }
+  .post-form-content--step-2 .ui-field textarea { min-height: 220px; }
+}
+@media (min-width: 1024px) { .post-form-actions { right: max(32px, calc((100vw - 264px - 1040px) / 2)); left: calc(264px + max(32px, (100vw - 264px - 1040px) / 2)); padding-inline: 32px; } }
 @media (prefers-reduced-motion: reduce) { .post-form-content, .post-form-progress span { animation: none; transition: none; } }

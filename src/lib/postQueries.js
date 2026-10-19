@@ -1,8 +1,8 @@
 import { supabase } from './supabase.js'
 
 export const POST_PAGE_SIZE = 10
-export const POST_COLUMNS = 'id, author_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, job_type, status, created_at, published_at, service_categories(name, slug), problem_post_images(storage_path, sort_order)'
-export const POST_DETAIL_COLUMNS = 'id, author_id, category_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, job_type, status, created_at, published_at, closed_at, service_categories(name, slug), problem_post_images(storage_path, sort_order)'
+export const POST_COLUMNS = 'id, author_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, job_type, status, created_at, published_at, hired_at, service_categories(name, slug), problem_post_images(storage_path, sort_order)'
+export const POST_DETAIL_COLUMNS = 'id, author_id, category_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, job_type, status, created_at, published_at, closed_at, hired_professional_id, hired_at, service_categories(name, slug), problem_post_images(storage_path, sort_order)'
 
 const signedUrlCache = new Map()
 const SIGNED_URL_TTL = 10 * 60 * 1000
@@ -13,10 +13,10 @@ function applyCursor(query, cursor) {
   return query.or(`created_at.lt.${timestamp},and(created_at.eq.${timestamp},id.lt.${cursor.id})`)
 }
 
-function postQuery() {
+function postQuery({ categorySlug } = {}) {
   if (!supabase) throw new Error('Post services are unavailable.')
   return supabase.from('problem_posts')
-    .select(POST_COLUMNS)
+    .select(categorySlug ? POST_COLUMNS.replace('service_categories(name, slug)', 'service_categories!inner(name, slug)') : POST_COLUMNS)
     .order('sort_order', { referencedTable: 'problem_post_images', ascending: true })
     .limit(1, { referencedTable: 'problem_post_images' })
 }
@@ -41,11 +41,12 @@ export async function fetchLatestOwnPost(userId) {
   return withCover(data)[0] ?? null
 }
 
-export async function fetchOtherOpenPosts(userId, { cursor, limit = POST_PAGE_SIZE } = {}) {
-  let query = postQuery()
+export async function fetchOtherOpenPosts(userId, { cursor, limit = POST_PAGE_SIZE, categorySlug } = {}) {
+  let query = postQuery({ categorySlug })
     .eq('status', 'open')
     .not('published_at', 'is', null)
     .neq('author_id', userId)
+  if (categorySlug) query = query.eq('service_categories.slug', categorySlug)
   query = applyCursor(query, cursor)
   const { data, error } = await query
     .order('created_at', { ascending: false })

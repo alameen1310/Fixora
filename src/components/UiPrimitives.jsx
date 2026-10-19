@@ -147,7 +147,7 @@ export function SelectField({ children, error, hint, label, id, ...props }) {
 
 export function SegmentedControl({ label, options, value, onChange }) {
   return (
-    <div aria-label={label} className="ui-segmented-control" role="group">
+    <div aria-label={label} className="ui-segmented-control" role="group" style={{ '--segmented-count': options.length }}>
       {options.map((option) => (
         <button
           aria-pressed={option.value === value}

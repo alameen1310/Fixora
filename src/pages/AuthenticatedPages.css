@@ -107,7 +107,7 @@
 .home-my-posts-link:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
 .home-status-link { display: inline-flex; width: fit-content; min-height: 44px; align-items: center; color: var(--color-primary); font-weight: 700; text-decoration: none; }
 .home-read-only-label { color: var(--color-text-secondary); font-size: var(--type-caption); }
-.app-home-layout { display: grid; width: min(calc(100% - 2rem), 1200px); grid-template-columns: minmax(0, 680px); justify-content: center; gap: 28px; margin: 0 auto; }
+.app-home-layout { display: grid; width: min(calc(100% - 2rem), 1480px); grid-template-columns: minmax(0, 680px); justify-content: center; gap: 28px; margin: 0 auto; }
 .app-home__main.app-page { width: 100%; max-width: 680px; margin: 0; }
 .app-home__rail { display: none; }
 .home-rail-card, .home-rail-discover { padding: 18px; border-radius: 18px; background: #fff; box-shadow: 0 8px 24px rgb(32 56 116 / 8%); }
@@ -429,6 +429,7 @@
   background: var(--color-surface);
   box-shadow: var(--shadow-raised);
 }
+.app-page.app-page--profile-detail { width: min(100%, 1180px) !important; }
 
 .app-public-profile__header {
   display: flex;
@@ -632,9 +633,17 @@
 }
 
 @media (min-width: 1200px) {
-  .app-home-layout { grid-template-columns: minmax(0, 680px) minmax(240px, 280px); justify-content: space-between; }
+  .app-home-layout { grid-template-columns: minmax(0, 920px) minmax(260px, 320px); justify-content: center; }
+  .app-home__main.app-page { max-width: 920px; }
   .app-home__rail { display: grid; align-content: start; gap: 16px; padding-top: 1.5rem; }
   .app-home__main .posts-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (min-width: 1024px) {
+  .app-public-profile { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 36px; }
+  .app-public-profile__header, .app-public-profile__contact-card { grid-column: 1 / -1; }
+  .app-page.app-page--profile { width: min(100%, 1120px) !important; max-width: 1120px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 0 28px; }
+  .app-page--profile > .app-page__heading, .app-page--profile > .profile-hero { grid-column: 1 / -1; }
+  .app-profile-section { min-width: 0; }
 }
 .app-page--posts .posts-grid { grid-template-columns: minmax(0, 1fr); }
 @media (prefers-reduced-motion: reduce) { .home-my-posts-link { transition: none; } }
