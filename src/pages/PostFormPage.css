@@ -45,6 +45,14 @@
 .post-form-heading h1 { font-size: clamp(2rem, 3.2vw, 2.75rem); }
 .post-form-progress { height: 5px; }
 .post-form-content { min-width: 0; padding: clamp(18px, 2.3vw, 30px); border-radius: 24px; box-shadow: 0 12px 32px rgb(32 56 116 / 8%); }
+.post-form-back { width: fit-content; gap: 9px; margin-bottom: 20px; padding: 4px 14px 4px 5px; border-radius: 999px; color: var(--color-primary-dark); background: #fff; box-shadow: 0 4px 14px rgb(32 56 116 / 7%); text-decoration: none; }
+.post-form-back:hover { background: #f7f9ff; text-decoration: none; }
+.post-form-back:active { transform: scale(.97); }
+.post-form-back__icon { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border-radius: 50%; color: var(--color-primary); background: var(--color-pale-blue); }
+.post-form-description { display: block; width: 100%; min-height: 220px; padding: 14px 16px; border: 1px solid #dce4f5; border-radius: 16px; outline: 0; color: var(--color-text-primary); background: #f7f9ff; font: inherit; font-size: 1rem; font-weight: 450; line-height: 1.6; resize: vertical; transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease; }
+.post-form-description::placeholder { color: #8791a3; }
+.post-form-description:hover { border-color: #b9c9ee; }
+.post-form-description:focus { border-color: var(--color-primary); background: #fff; box-shadow: 0 0 0 4px rgb(36 87 214 / 12%); }
 .post-form-workspace { display: grid; min-width: 0; gap: 20px; }
 .post-form-page--loading { display: grid; gap: 16px; }
 .post-form-loading__status { margin: 0; color: var(--color-text-secondary); font-size: .9rem; }
