@@ -4,7 +4,8 @@ import { ArrowRight, CircleNotch, Eye, EyeSlash, GoogleLogo } from '@phosphor-ic
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../components/ToastProvider.jsx'
 import { authConfigured, supabase } from '../lib/supabase.js'
-import { AuthHeader, Button } from '../components/UiPrimitives.jsx'
+import { Button } from '../components/UiPrimitives.jsx'
+import AuthLayout from '../components/AuthLayout.jsx'
 import './AuthPage.css'
 
 const modes = {
@@ -148,10 +149,7 @@ export default function AuthPage({ mode = 'login' }) {
   const loginNotice = location.state?.notice
 
   return (
-    <main className="auth-page">
-      <div className="auth-container">
-        <AuthHeader className="auth-header" />
-
+    <AuthLayout>
         <section aria-labelledby="auth-title" className="auth-card">
           <div className="auth-heading">
             <h1 className="text-large-title" id="auth-title">{config.title}</h1>
@@ -303,8 +301,7 @@ export default function AuthPage({ mode = 'login' }) {
             </p>
           )}
         </section>
-      </div>
-    </main>
+    </AuthLayout>
   )
 }
 

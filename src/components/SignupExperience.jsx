@@ -1,39 +1,24 @@
 import { useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import AuthLayout from './AuthLayout.jsx'
 import SignupForm from './SignupForm.jsx'
-import { AuthHeader, SegmentedControl } from './UiPrimitives.jsx'
-import kitchenWork from '../assets/kitchen-renovation.jpg'
-import finishedKitchen from '../assets/finished-kitchen.jpg'
-import plumberAtWork from '../assets/plumber-at-work.png'
+import { SegmentedControl } from './UiPrimitives.jsx'
 import './SignupExperience.css'
 
-gsap.registerPlugin(ScrollTrigger, useGSAP)
+gsap.registerPlugin(useGSAP)
 
 const experiences = {
   customer: {
     audienceLabel: 'For your home',
     title: 'Find help for the work ahead.',
     introduction: 'Create an account to explore skilled professionals on Fixora.',
-    primaryImage: kitchenWork,
-    primaryAlt: 'Kitchen renovation underway with protected work surfaces',
-    detailImage: finishedKitchen,
-    detailAlt: 'Finished kitchen with a central island and light cabinetry',
-    storyTitle: 'Start with what needs attention.',
-    storyCopy: 'A clear picture of the work helps you discover the right kind of skill.',
   },
   provider: {
     audienceLabel: 'For your craft',
     title: 'Make your skills easier to find.',
     introduction: 'Create your professional account to list your services and reach customers in your area.',
-    primaryImage: plumberAtWork,
-    primaryAlt: 'Plumber working on residential bathroom pipes',
-    detailImage: finishedKitchen,
-    detailAlt: 'Finished kitchen project with light cabinetry',
-    storyTitle: 'Let the work speak clearly.',
-    storyCopy: 'Projects and useful details help customers understand what you do.',
   },
 }
 
@@ -56,32 +41,14 @@ export default function SignupExperience({ audience }) {
         clearProps: 'all',
       })
 
-      gsap.fromTo(
-        '.signup-visual__primary',
-        { autoAlpha: 0.65, scale: 0.9 },
-        {
-          autoAlpha: 1,
-          scale: 1,
-          ease: 'none',
-          immediateRender: false,
-          scrollTrigger: {
-            trigger: '.signup-visual',
-            start: 'top 88%',
-            end: 'top 44%',
-            scrub: 0.5,
-          },
-        },
-      )
     })
 
     return () => motion.revert()
   }, { scope: pageRef })
 
   return (
-    <div className="signup-page" ref={pageRef}>
-      <AuthHeader className="signup-header" />
-
-      <main className="signup-layout">
+    <AuthLayout>
+      <main className="signup-layout" ref={pageRef}>
         <section aria-labelledby="signup-title" className="signup-form-column">
           <div className="signup-intro" data-signup-enter>
             <span className="signup-eyebrow">{experience.audienceLabel}</span>
@@ -103,31 +70,7 @@ export default function SignupExperience({ audience }) {
           <SignupForm audience={audience} />
         </section>
 
-        <aside aria-label="How Fixora makes work discoverable" className="signup-story">
-          <div className="signup-visual" data-signup-enter>
-            <img
-              alt={experience.primaryAlt}
-              className="signup-visual__primary"
-              src={experience.primaryImage}
-            />
-            <figure className="signup-visual__detail">
-              <img alt={experience.detailAlt} src={experience.detailImage} />
-              <figcaption>Illustrative project photo</figcaption>
-            </figure>
-          </div>
-          <div className="signup-story__copy" data-signup-enter>
-            <span className="signup-story__label">Problems, projects, people</span>
-            <h2>{experience.storyTitle}</h2>
-            <p>{experience.storyCopy}</p>
-            <span className="signup-story__disclaimer">Example imagery only. No real profiles or listings are shown.</span>
-          </div>
-        </aside>
       </main>
-
-      <footer className="signup-footer">
-        <span>Fixora · Household services marketplace</span>
-        <Link to="/">Return to home</Link>
-      </footer>
-    </div>
+    </AuthLayout>
   )
 }
