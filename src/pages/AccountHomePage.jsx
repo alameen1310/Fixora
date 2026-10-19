@@ -1,24 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, Briefcase, CheckCircle, Drop, Hammer, Lightning, MagnifyingGlass, PaintBrush, WarningCircle, Wrench } from '@phosphor-icons/react'
+import { ArrowRight, CheckCircle, WarningCircle } from '@phosphor-icons/react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-import PublishedProfessionals from '../components/PublishedProfessionals.jsx'
-import { Button, Card, Skeleton } from '../components/UiPrimitives.jsx'
+import { Card, Skeleton } from '../components/UiPrimitives.jsx'
+import { PostsFeed } from '../components/PostsFeed.jsx'
 import { supabase } from '../lib/supabase.js'
+import { fetchLatestMyPosts } from '../lib/postQueries.js'
 import './AuthenticatedPages.css'
-
-const categoryIcons = {
-  repairs: Wrench,
-  plumbing: Drop,
-  installations: Hammer,
-  electrical: Lightning,
-  maintenance: Wrench,
-  renovation: PaintBrush,
-}
 
 export default function AccountHomePage() {
   const { profile, user } = useAuth()
-  const navigate = useNavigate()
   const isProvider = profile?.account_type === 'provider'
   const firstName = profile?.full_name?.trim().split(/\s+/)[0] || 'there'
   const [animateEntrance] = useState(() => {
@@ -28,26 +19,16 @@ export default function AccountHomePage() {
       return true
     } catch { return true }
   })
-
-  const [categories, setCategories] = useState([])
   const [providerProfile, setProviderProfile] = useState(null)
   const [providerLoading, setProviderLoading] = useState(isProvider)
-
-  useEffect(() => {
-    let active = true
-    supabase?.from('service_categories').select('id, name, slug').order('name')
-      .then(({ data }) => {
-        if (active) setCategories(data ?? [])
-      })
-    return () => {
-      active = false
-    }
-  }, [])
+  const [railPosts, setRailPosts] = useState([])
+  const [railError, setRailError] = useState(false)
+  const [railLoading, setRailLoading] = useState(!isProvider)
 
   useEffect(() => {
     if (!isProvider || !user?.id) {
       setProviderLoading(false)
-      return
+      return undefined
     }
     let active = true
     setProviderLoading(true)
@@ -61,32 +42,38 @@ export default function AccountHomePage() {
           setProviderLoading(false)
         }
       })
-      .catch(() => {
-        if (active) setProviderLoading(false)
-      })
-    return () => {
-      active = false
-    }
+      .catch(() => { if (active) setProviderLoading(false) })
+    return () => { active = false }
   }, [isProvider, user?.id])
 
-  if (isProvider) {
-    const isPublished = Boolean(providerProfile?.is_published)
-    const isOnboardingComplete = Boolean(profile?.onboarding_completed_at)
+  useEffect(() => {
+    if (isProvider || !user?.id) return undefined
+    let active = true
+    setRailLoading(true)
+    fetchLatestMyPosts(user.id, 3)
+      .then((posts) => { if (active) { setRailPosts(posts); setRailError(false) } })
+      .catch(() => { if (active) setRailError(true) })
+      .finally(() => { if (active) setRailLoading(false) })
+    return () => { active = false }
+  }, [isProvider, user?.id])
 
-    return (
-      <main className={`app-page app-home${animateEntrance ? ' app-home--enter' : ''}`}>
-        <header className="home-hero">
-          <div className="home-hero__copy">
-            <h1 className="text-large-title">Good to see you, {firstName}.</h1>
-            <p className="home-hero__subtitle">Manage your professional profile and services.</p>
-          </div>
-        </header>
+  const isPublished = Boolean(providerProfile?.is_published)
+  const isOnboardingComplete = Boolean(profile?.onboarding_completed_at)
 
+  return (
+    <div className="app-home-layout">
+    <main className={`app-page app-home app-home__main${animateEntrance ? ' app-home--enter' : ''}`}>
+      <header className="home-hero">
+        <div className="home-hero__copy">
+          <h1 className="text-large-title">Good to see you, {firstName}.</h1>
+          <p className="home-hero__subtitle">{isProvider ? 'Your Fixora home.' : 'Local help starts with a clear request.'}</p>
+        </div>
+        {!isProvider && <Link className="home-my-posts-link" to="/app/my-posts">My Posts <ArrowRight aria-hidden="true" size={16} /></Link>}
+      </header>
+
+      {isProvider && (
         <section aria-labelledby="provider-status-title" className="app-section">
-          <div className="app-section__heading">
-            <h2 id="provider-status-title">Profile status</h2>
-          </div>
-
+          <div className="app-section__heading"><h2 id="provider-status-title">Profile status</h2></div>
           {providerLoading ? (
             <Card><Skeleton style={{ height: '4rem' }} /></Card>
           ) : (
@@ -97,114 +84,40 @@ export default function AccountHomePage() {
                 </span>
                 <div>
                   <h3>{isPublished ? 'Profile is published' : 'Profile in progress'}</h3>
-                  <p>
-                    {isPublished
-                      ? 'Customers can discover your profile, services, and areas.'
-                      : 'Complete your profile setup to appear in public searches.'}
-                  </p>
+                  <p>{isPublished ? 'Customers can discover your profile, services, and areas.' : 'Complete your profile setup to appear in public searches.'}</p>
                 </div>
               </div>
-
-              {!isOnboardingComplete && (
-                <div className="home-status-card__action">
-                  <Button as={Link} to="/onboarding/provider" variant="primary" wide>
-                    Finish your profile
-                  </Button>
-                </div>
-              )}
+              {!isOnboardingComplete && <Link className="home-status-link" to="/onboarding/provider">Finish your profile</Link>}
             </Card>
           )}
         </section>
-
-        <section className="app-section">
-          <div className="home-coming-soon-banner" aria-disabled="true">
-            <Wrench aria-hidden="true" size={22} />
-            <div>
-              <strong>Job marketplace coming soon</strong>
-              <span>Customer problem requests and bids will appear here once live.</span>
-            </div>
-          </div>
-        </section>
-
-        <section aria-labelledby="provider-discovery-title" className="app-section">
-          <div className="app-section__heading">
-            <h2 id="provider-discovery-title">Professionals on Fixora</h2>
-            <Link className="app-text-link" to="/app/discover">
-              Explore all <ArrowRight aria-hidden="true" size={16} />
-            </Link>
-          </div>
-          <PublishedProfessionals limit={4} />
-        </section>
-      </main>
-    )
-  }
-
-  // Customer Home
-  return (
-    <main className={`app-page app-home${animateEntrance ? ' app-home--enter' : ''}`}>
-      <header className="home-hero">
-        <div className="home-hero__copy">
-          <h1 className="text-large-title">Good to see you, {firstName}.</h1>
-          <p className="home-hero__subtitle">Find skilled household professionals for your home.</p>
-        </div>
-
-        <button
-          aria-label="Search for professionals"
-          className="home-search-trigger"
-          onClick={() => navigate('/app/discover?focus=true')}
-          type="button"
-        >
-          <MagnifyingGlass aria-hidden="true" size={20} />
-          <span>Search professionals or services…</span>
-        </button>
-      </header>
-
-      {categories.length > 0 && (
-        <section aria-labelledby="home-categories-title" className="app-section">
-          <div className="app-section__heading">
-            <h2 id="home-categories-title">Categories</h2>
-            <Link className="app-text-link" to="/app/discover">
-              See all <ArrowRight aria-hidden="true" size={16} />
-            </Link>
-          </div>
-
-          <div className="home-category-grid">
-            {categories.slice(0, 6).map((cat) => {
-              const Icon = categoryIcons[cat.slug] || Briefcase
-              return (
-                <Link
-                  className="home-category-tile"
-                  key={cat.id}
-                  to={`/app/discover?category=${cat.slug}`}
-                >
-                  <span className={`home-category-tile__icon home-category-tile__icon--${cat.slug}`}>
-                    <Icon aria-hidden="true" size={22} weight="regular" />
-                  </span>
-                  <span className="home-category-tile__name">{cat.name}</span>
-                </Link>
-              )
-            })}
-          </div>
-        </section>
       )}
 
-      <section aria-labelledby="home-pros-title" className="app-section">
+      <section aria-labelledby="home-posts-title" className="app-section">
         <div className="app-section__heading">
-          <h2 id="home-pros-title">Professionals</h2>
-          <Link className="app-text-link" to="/app/discover">
-            See all <ArrowRight aria-hidden="true" size={16} />
-          </Link>
+          <h2 id="home-posts-title">{isProvider ? 'Open posts' : 'Posts'}</h2>
+          {isProvider ? (
+            <span className="home-read-only-label">Read only</span>
+          ) : (
+            <Link className="app-text-link" to="/app/my-posts">My Posts <ArrowRight aria-hidden="true" size={16} /></Link>
+          )}
         </div>
-        <PublishedProfessionals limit={4} />
-      </section>
-
-      <section className="app-section">
-        <div aria-disabled="true" className="home-coming-soon-banner">
-          <div>
-              <strong>Post a problem · Coming soon</strong>
-          </div>
-        </div>
+        <PostsFeed showOwnLatest={!isProvider} userId={user.id} />
       </section>
     </main>
+    <aside aria-label="More from Fixora" className="app-home__rail">
+      {!isProvider && (
+        <section aria-labelledby="home-your-posts-title" className="home-rail-card">
+          <div className="app-section__heading"><h2 id="home-your-posts-title">Your posts</h2><Link aria-label="View all your posts" to="/app/my-posts">All</Link></div>
+          {railLoading ? <p className="home-rail-empty">Loading your posts…</p> : railError ? <button className="home-rail-retry" onClick={() => { setRailError(false); setRailLoading(true); fetchLatestMyPosts(user.id, 3).then(setRailPosts).catch(() => setRailError(true)).finally(() => setRailLoading(false)) }} type="button">Couldn’t load posts · Retry</button> : railPosts.length ? railPosts.map((post) => (
+            <Link className="home-rail-post" key={post.id} to={`/app/posts/${post.id}`}>
+              <span>{post.title}</span><small>{post.status === 'closed' ? 'Closed' : 'Open'}</small>
+            </Link>
+          )) : <p className="home-rail-empty">Your published posts will appear here.</p>}
+        </section>
+      )}
+      <Link className="home-rail-discover" to="/app/discover"><strong>Find professionals</strong><span>Browse local services and profiles.</span><ArrowRight aria-hidden="true" size={18} /></Link>
+    </aside>
+    </div>
   )
 }
