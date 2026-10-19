@@ -6,6 +6,7 @@ import AuthenticatedAppShell from './components/AuthenticatedAppShell.jsx'
 import { ToastProvider } from './components/ToastProvider.jsx'
 import LandingPage from './pages/LandingPage.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
+import PostRoleGuard from './components/PostRoleGuard.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 
 const CustomerSignupPage = lazy(() => import('./pages/CustomerSignupPage.jsx'))
@@ -19,6 +20,8 @@ const DiscoverPage = lazy(() => import('./pages/DiscoverPage.jsx'))
 const ActivityPage = lazy(() => import('./pages/ActivityPage.jsx'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'))
 const ProfessionalProfilePage = lazy(() => import('./pages/ProfessionalProfilePage.jsx'))
+const MyPostsPage = lazy(() => import('./pages/MyPostsPage.jsx'))
+const PostDetailPage = lazy(() => import('./pages/PostDetailPage.jsx'))
 
 export default function App() {
   return (
@@ -46,6 +49,8 @@ export default function App() {
               <Route element={<ActivityPage />} path="activity" />
               <Route element={<ProfilePage />} path="profile" />
               <Route element={<ProfessionalProfilePage />} path="professionals/:professionalId" />
+              <Route element={<PostRoleGuard customersOnly><MyPostsPage /></PostRoleGuard>} path="my-posts" />
+              <Route element={<PostDetailPage />} path="posts/:postId" />
             </Route>
             <Route element={<Navigate replace to="/" />} path="*" />
             </Routes>
