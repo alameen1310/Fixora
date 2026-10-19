@@ -17,7 +17,7 @@ const experiences = {
   customer: {
     audienceLabel: 'For your home',
     title: 'Find help for the work ahead.',
-    introduction: 'Create an account to explore skilled professionals and connect with the right help.',
+    introduction: 'Create an account to explore skilled professionals on Fixora.',
     primaryImage: kitchenWork,
     primaryAlt: 'Kitchen renovation underway with protected work surfaces',
     detailImage: finishedKitchen,

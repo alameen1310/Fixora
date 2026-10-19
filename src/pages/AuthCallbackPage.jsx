@@ -183,7 +183,7 @@ function CallbackExperience() {
             <div className="auth-callback__tool-icon"><Wrench weight="duotone" /></div>
             <div className="auth-callback__trust-chip"><CheckCircle weight="fill" /><span>Work you can see</span></div>
           </motion.div>
-          <div className="auth-callback__story-note"><span className="auth-callback__note-line" />One clear journey from request to trusted work.</div>
+          <div className="auth-callback__story-note"><span className="auth-callback__note-line" />A clear path to skilled professionals.</div>
         </section>
 
         <section className="auth-callback__status" aria-live="polite">

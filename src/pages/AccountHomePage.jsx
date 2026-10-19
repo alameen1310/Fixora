@@ -71,7 +71,7 @@ export default function AccountHomePage() {
         <header className="home-hero">
           <div className="home-hero__copy">
             <h1 className="text-large-title">Good to see you, {firstName}.</h1>
-            <p className="home-hero__subtitle">Your professional profile and opportunities overview.</p>
+            <p className="home-hero__subtitle">Manage your professional profile and services.</p>
           </div>
         </header>
 

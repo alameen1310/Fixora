@@ -1,6 +1,5 @@
-import { Link } from 'react-router-dom'
 import { ClipboardText } from '@phosphor-icons/react'
-import { Button, EmptyState } from '../components/UiPrimitives.jsx'
+import { EmptyState } from '../components/UiPrimitives.jsx'
 import './AuthenticatedPages.css'
 
 export default function ActivityPage() {
@@ -12,11 +11,6 @@ export default function ActivityPage() {
       </header>
 
       <EmptyState
-        action={
-          <Button as={Link} to="/app/discover" variant="primary">
-            Browse professionals
-          </Button>
-        }
         icon={ClipboardText}
         message="Requests and jobs will appear here once they’re available."
         title="No activity yet"
