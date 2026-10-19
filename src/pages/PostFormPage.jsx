@@ -18,11 +18,13 @@ const timings = [['urgent', 'Urgent'], ['this_week', 'This week'], ['flexible', 
 const jobTypes = [['repair', 'Repair'], ['installation', 'Installation'], ['maintenance', 'Maintenance'], ['new_project', 'New project']]
 const editColumns = 'id, author_id, category_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, job_type, status, published_at, hired_professional_id, problem_post_images(storage_path, sort_order)'
 
-function errorText(error) {
+function errorText(error, step) {
   const message = error?.message || ''
   if (message.includes('Unpublished post limit reached')) return 'You have reached the draft limit. Remove an unfinished post before starting another.'
   if (message.includes('Post limit reached')) return 'You have published several posts recently. Please try again later.'
   if (message.includes('Some post photos are not ready')) return 'A photo is still uploading. Retry publishing when it is ready.'
+  if (error?.code === '42501' && ['identity', 'stage', 'insert'].includes(step)) return 'Fixora could not authorize this new post. Sign out, sign back in to your Customer account, and try again.'
+  if (error?.code === '42501' && step === 'publish') return 'This draft is no longer eligible to publish. Start a fresh post or contact support if this keeps happening.'
   if (error?.code === '42501') return 'This post can no longer be changed with your account.'
   return 'We couldn’t save this post. Check your connection and try again.'
 }
@@ -143,7 +145,19 @@ function PostFormPage({ editing = false }) {
     if (!supabase) { setError('Post services are unavailable.'); return }
     setSaving(true); setError('')
     let currentPostId = editing ? postId : stagedId
+    let writeStep = editing ? 'update' : 'stage'
+    let authorId = user.id
     try {
+      if (!editing) {
+        writeStep = 'identity'
+        const { data: authResult, error: authError } = await supabase.auth.getUser()
+        const verifiedUser = authResult?.user
+        if (authError || !verifiedUser?.id) throw authError || new Error('No authenticated customer session is available.')
+        const { data: verifiedProfile, error: profileError } = await supabase.from('profiles').select('id, account_type').eq('id', verifiedUser.id).maybeSingle()
+        if (profileError) throw profileError
+        if (verifiedProfile?.account_type !== 'customer') throw Object.assign(new Error('A customer account is required to create posts.'), { code: 'CUSTOMER_REQUIRED' })
+        authorId = verifiedUser.id
+      }
       if (editing) {
         if (existing.length + photos.length > 5) throw new Error('Keep no more than five photos.')
         const { data: updatedPost, error: updateError } = await supabase.from('problem_posts').update(payload()).eq('id', postId).eq('author_id', user.id).neq('status', 'removed').select('id').maybeSingle()
@@ -156,16 +170,21 @@ function PostFormPage({ editing = false }) {
         showToast({ type: 'success', message: 'Post updated.' }); navigate(`/app/posts/${postId}`); return
       }
       if (!currentPostId) {
-        const { error: staleError } = await supabase.from('problem_posts').update({ status: 'removed' }).eq('author_id', user.id).is('published_at', null).neq('status', 'removed')
+        writeStep = 'stage'
+        const { error: staleError } = await supabase.from('problem_posts').update({ status: 'removed' }).eq('author_id', authorId).is('published_at', null).neq('status', 'removed')
         if (staleError) { console.error('[post-write]', { step: 'stage', postId: null, code: staleError.code, message: staleError.message }); throw staleError }
-        const { data, error: insertError } = await supabase.from('problem_posts').insert({ author_id: user.id, ...payload() }).select('id').single()
+        writeStep = 'insert'
+        const { data, error: insertError } = await supabase.from('problem_posts').insert({ author_id: authorId, ...payload() }).select('id').single()
         if (insertError) { console.error('[post-write]', { step: 'insert', postId: null, code: insertError.code, message: insertError.message }); throw insertError }
         currentPostId = data.id; setStagedId(data.id)
       }
+      writeStep = 'reserve'
       const { data: reservationRows, error: reservationError } = await supabase.from('problem_post_images').select('storage_path, sort_order').eq('post_id', currentPostId)
       if (reservationError) { console.error('[post-write]', { step: 'reserve', postId: currentPostId, code: reservationError.code, message: reservationError.message }); throw reservationError }
       const taken = new Set((reservationRows ?? []).map((row) => row.sort_order))
-      for (const photo of photos) if (!uploaded.has(photo)) await uploadPhoto(photo, currentPostId, user.id, [...(reservationRows ?? [])], uploaded, setUploaded, taken)
+      writeStep = 'upload'
+      for (const photo of photos) if (!uploaded.has(photo)) await uploadPhoto(photo, currentPostId, authorId, [...(reservationRows ?? [])], uploaded, setUploaded, taken)
+      writeStep = 'publish'
       const { error: publishError } = await supabase.rpc('publish_problem_post', { requested_post_id: currentPostId })
       if (publishError) { console.error('[post-write]', { step: 'publish', postId: currentPostId, code: publishError.code, message: publishError.message }); throw publishError }
       const { data: published, error: verifyError } = await supabase.from('problem_posts').select('id, published_at').eq('id', currentPostId).single()
@@ -174,11 +193,14 @@ function PostFormPage({ editing = false }) {
         console.error('[post-write]', { step: 'publish', postId: currentPostId, code: problem.code || 'unconfirmed', message: problem.message })
         throw problem
       }
-      try { localStorage.removeItem(`fixora-post-draft-${user.id}`) } catch { /* ignore */ }
-      invalidatePostListCaches(user.id)
+      try { localStorage.removeItem(`fixora-post-draft-${authorId}`) } catch { /* ignore */ }
+      invalidatePostListCaches(authorId)
       showToast({ type: 'success', message: 'Your post is live.' })
       navigate(`/app/posts/${currentPostId}`)
-    } catch (problem) { setError(errorText(problem)) }
+    } catch (problem) {
+      if (problem?.code === 'CUSTOMER_REQUIRED') setError('Only a Customer account can create posts. Switch to your Customer account and try again.')
+      else setError(errorText(problem, writeStep))
+    }
     finally { setSaving(false) }
   }
 
