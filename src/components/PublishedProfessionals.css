@@ -1,8 +1,10 @@
 .professional-feed {
+  animation: professional-feed-enter 180ms var(--ease-standard) both;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
 }
+@keyframes professional-feed-enter { from { opacity: 0; } to { opacity: 1; } }
 
 .professional-feed--loading {
   display: grid;
@@ -16,8 +18,8 @@
 }
 
 .professional-skeleton-avatar {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
 }
 
@@ -81,12 +83,12 @@
   flex-direction: column;
   justify-content: space-between;
   gap: 0.85rem;
-  padding: 1.15rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  padding: 1.3rem;
+  border: 0;
+  border-radius: 20px;
   color: inherit;
   background: var(--color-surface);
-  box-shadow: var(--shadow-raised);
+  box-shadow: 0 8px 24px rgb(25 70 184 / 7%), 0 2px 6px rgb(23 25 29 / 4%);
   text-decoration: none;
   cursor: pointer;
   -webkit-user-select: none;
@@ -98,9 +100,7 @@
 }
 
 .professional-card:hover {
-  border-color: rgb(36 87 214 / 28%);
-  box-shadow: var(--shadow-floating);
-  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgb(25 70 184 / 12%), 0 3px 8px rgb(23 25 29 / 6%);
 }
 
 .professional-card:active {
@@ -125,6 +125,7 @@
 }
 
 .professional-card__eyebrow {
+  display: none;
   margin: 0 0 0.15rem;
   color: var(--color-text-secondary);
   font-size: var(--type-caption);
@@ -136,7 +137,7 @@
   margin: 0;
   color: var(--color-text-primary);
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 750;
   line-height: 1.25;
   letter-spacing: -0.015em;
   text-overflow: ellipsis;
@@ -168,8 +169,7 @@
 .professional-card__footer {
   display: grid;
   gap: 0.35rem;
-  padding-top: 0.65rem;
-  border-top: 1px solid var(--color-separator);
+  padding-top: 0;
 }
 
 .professional-card__services,
@@ -204,7 +204,7 @@
   }
 
   .professional-card {
-    padding: 1rem;
+    padding: 1.15rem;
     gap: 0.75rem;
   }
 }
@@ -216,4 +216,5 @@
   .professional-card:hover {
     transform: none !important;
   }
+  .professional-feed { animation: none; }
 }

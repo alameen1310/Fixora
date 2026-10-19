@@ -84,7 +84,12 @@
 
 /* Home Screen */
 .home-hero {
+  padding: clamp(1.25rem, 4vw, 2rem);
   margin-bottom: 1.75rem;
+  border-radius: var(--radius-xl);
+  color: #fff;
+  background: linear-gradient(135deg, #1946b8 0%, #2457d6 100%);
+  box-shadow: var(--shadow-raised);
 }
 
 .home-hero__subtitle {
@@ -92,6 +97,7 @@
   color: var(--color-text-secondary);
   font-size: var(--type-body);
   line-height: 1.5;
+  color: rgb(255 255 255 / 84%);
 }
 
 .home-search-trigger {
@@ -102,11 +108,11 @@
   gap: 0.75rem;
   margin-top: 1.15rem;
   padding: 0 1.1rem;
-  border: 1px solid rgb(36 87 214 / 8%);
+  border: 0;
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   background: var(--color-surface);
-  box-shadow: var(--shadow-raised);
+  box-shadow: 0 4px 14px rgb(9 31 86 / 14%);
   font: inherit;
   font-size: var(--type-body);
   cursor: pointer;
@@ -174,12 +180,12 @@
 
 .home-category-tile__icon {
   display: grid;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 15px;
   color: var(--color-primary-dark);
-  background: var(--color-pale-blue);
+  background: #eaf0ff;
 }
 
 .home-category-tile__name {
@@ -187,11 +193,19 @@
   font-weight: 650;
   line-height: 1.25;
 }
+.home-category-tile__icon--repairs { color: #2457d6; background: #eaf0ff; }
+.home-category-tile__icon--plumbing { color: #176b82; background: #e3f4f7; }
+.home-category-tile__icon--installations { color: #7551a6; background: #f0eafa; }
+.home-category-tile__icon--electrical { color: #8b5b08; background: #fff3dc; }
+.home-category-tile__icon--maintenance { color: #287455; background: #e6f4ed; }
+.home-category-tile__icon--renovation { color: #a34c61; background: #faeaf0; }
 
 /* Home Status & Coming Soon Banners */
 .home-status-card {
   display: grid;
   gap: 1rem;
+  border: 0;
+  background: #fff;
 }
 
 .home-status-card__header {
@@ -318,8 +332,9 @@
   display: flex;
   gap: 0.5rem;
   overflow-x: auto;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.35rem;
+  margin: 0 -1rem 1.5rem;
+  padding: 0.2rem 1rem 0.65rem;
+  mask-image: linear-gradient(90deg, transparent 0, #000 1rem, #000 calc(100% - 1rem), transparent 100%);
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
@@ -487,6 +502,12 @@
   font-size: var(--type-footnote);
 }
 
+.profile-hero .ui-avatar { color: #fff; background: linear-gradient(145deg, #4779e7, #1946b8); box-shadow: 0 6px 18px rgb(25 70 184 / 22%); }
+.profile-phone-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.2rem 0.8rem; min-height: 58px; padding: 0.65rem 1rem; }
+.profile-phone-row__label { font-weight: 600; }
+.profile-phone-row__value { min-width: 0; overflow-wrap: anywhere; color: var(--color-text-secondary); font-size: var(--type-footnote); text-align: right; }
+.profile-phone-row__private { display: inline-flex; grid-column: 2; align-items: center; gap: 0.3rem; justify-self: end; color: var(--color-text-secondary); font-size: var(--type-caption); }
+
 .app-profile-section {
   margin-bottom: 1.75rem;
 }
@@ -501,6 +522,8 @@
   font-size: var(--type-caption);
   text-align: center;
 }
+.profile-phone-row { border-top: 1px solid var(--color-separator); }
+.profile-quiet-footer p { margin: 0; }
 
 /* Unavailable / Error State Container */
 .app-unavailable-state {

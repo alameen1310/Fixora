@@ -52,6 +52,19 @@
   width: fit-content;
 }
 
+.fixora-app__brand-placeholder { width: 36px; }
+.fixora-app__compact-title {
+  position: absolute;
+  left: 50%;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition: opacity 180ms ease, transform 180ms ease;
+  color: var(--color-text-primary);
+  font-weight: 700;
+  pointer-events: none;
+}
+.fixora-app__compact-title.is-visible { opacity: 1; transform: translate(-50%, 0); }
+
 .fixora-app__desktop-nav {
   display: flex;
   align-items: center;
@@ -130,6 +143,18 @@
 .fixora-app__viewport {
   padding-bottom: 3rem;
 }
+
+.fixora-app__route-stage { animation: app-route-enter 220ms var(--ease-standard) both; }
+.fixora-app__route-stage--tab { animation-name: app-tab-enter; }
+@keyframes app-route-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes app-tab-enter { from { opacity: 0; } to { opacity: 1; } }
+.app-home--enter .home-hero { animation: app-route-enter 230ms var(--ease-standard) both; }
+.app-home--enter .app-section { animation: app-route-enter 230ms var(--ease-standard) both; }
+.app-home--enter .app-section:nth-of-type(2) { animation-delay: 70ms; }
+.app-home--enter .app-section:nth-of-type(3) { animation-delay: 140ms; }
+@media (prefers-reduced-motion: reduce) { .fixora-app__route-stage, .app-home--enter .home-hero, .app-home--enter .app-section { animation: none; } }
+.account-state { display: grid; min-height: 100dvh; align-content: center; justify-items: center; gap: 0.75rem; padding: calc(1rem + env(safe-area-inset-top)) 1rem calc(1rem + env(safe-area-inset-bottom)); background: var(--color-background-grouped); }
+.account-state p { margin: 0; color: var(--color-text-secondary); }
 
 /* Mobile Bottom Navigation Tab Bar */
 .fixora-app__mobile-nav {
@@ -219,4 +244,5 @@
   .fixora-app__mobile-link {
     transition: none !important;
   }
+  .fixora-app__compact-title { transition: none; }
 }

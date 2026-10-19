@@ -1,4 +1,5 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ClockCounterClockwise, Compass, House, UserCircle } from '@phosphor-icons/react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { Avatar, Logo } from './UiPrimitives.jsx'
@@ -14,6 +15,12 @@ const destinations = [
 export default function AuthenticatedAppShell() {
   const { profile } = useAuth()
   const location = useLocation()
+  const isHome = location.pathname === '/app'
+  const pageTitle = destinations.find(({ to }) => location.pathname === to)?.label || 'Professional'
+  const isTabRoute = destinations.some(({ to }) => location.pathname === to)
+  const [showCompactTitle, setShowCompactTitle] = useState(false)
+  const scrollPositions = useRef({})
+  const activePath = useRef(location.pathname)
   const firstName = profile?.full_name?.trim().split(/\s+/)[0] || 'Account'
 
   function handleTabClick(targetPath) {
@@ -22,12 +29,26 @@ export default function AuthenticatedAppShell() {
     }
   }
 
+  useEffect(() => {
+    const onScroll = () => setShowCompactTitle(!isHome && window.scrollY > 108)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [isHome, location.pathname])
+
+  useLayoutEffect(() => {
+    scrollPositions.current[activePath.current] = window.scrollY
+    activePath.current = location.pathname
+    window.scrollTo(0, scrollPositions.current[location.pathname] || 0)
+  }, [location.pathname])
+
   return (
     <div className="fixora-app">
       <a className="fixora-app__skip" href="#app-content">Skip to content</a>
 
       <header className="fixora-app__topbar">
-        <Logo className="fixora-app__brand" to="/app" />
+        {isHome ? <Logo className="fixora-app__brand" to="/app" /> : <span aria-hidden="true" className="fixora-app__brand-placeholder" />}
+        <span aria-hidden="true" className={`fixora-app__compact-title${showCompactTitle ? ' is-visible' : ''}`}>{pageTitle}</span>
 
         <nav aria-label="Main navigation" className="fixora-app__desktop-nav">
           {destinations.map(({ label, to, end }) => (
@@ -47,7 +68,7 @@ export default function AuthenticatedAppShell() {
         </div>
       </header>
 
-      <div className="fixora-app__viewport" id="app-content">
+      <div className={`fixora-app__viewport fixora-app__route-stage${isTabRoute ? ' fixora-app__route-stage--tab' : ''}`} id="app-content" key={location.pathname}>
         <Outlet />
       </div>
 

@@ -21,6 +21,13 @@ export default function AccountHomePage() {
   const navigate = useNavigate()
   const isProvider = profile?.account_type === 'provider'
   const firstName = profile?.full_name?.trim().split(/\s+/)[0] || 'there'
+  const [animateEntrance] = useState(() => {
+    try {
+      if (window.sessionStorage.getItem('fixora.homeEntranceSeen')) return false
+      window.sessionStorage.setItem('fixora.homeEntranceSeen', '1')
+      return true
+    } catch { return true }
+  })
 
   const [categories, setCategories] = useState([])
   const [providerProfile, setProviderProfile] = useState(null)
@@ -67,7 +74,7 @@ export default function AccountHomePage() {
     const isOnboardingComplete = Boolean(profile?.onboarding_completed_at)
 
     return (
-      <main className="app-page app-home">
+      <main className={`app-page app-home${animateEntrance ? ' app-home--enter' : ''}`}>
         <header className="home-hero">
           <div className="home-hero__copy">
             <h1 className="text-large-title">Good to see you, {firstName}.</h1>
@@ -134,7 +141,7 @@ export default function AccountHomePage() {
 
   // Customer Home
   return (
-    <main className="app-page app-home">
+    <main className={`app-page app-home${animateEntrance ? ' app-home--enter' : ''}`}>
       <header className="home-hero">
         <div className="home-hero__copy">
           <h1 className="text-large-title">Good to see you, {firstName}.</h1>
@@ -170,8 +177,8 @@ export default function AccountHomePage() {
                   key={cat.id}
                   to={`/app/discover?category=${cat.slug}`}
                 >
-                  <span className="home-category-tile__icon">
-                    <Icon aria-hidden="true" size={22} weight="duotone" />
+                  <span className={`home-category-tile__icon home-category-tile__icon--${cat.slug}`}>
+                    <Icon aria-hidden="true" size={22} weight="regular" />
                   </span>
                   <span className="home-category-tile__name">{cat.name}</span>
                 </Link>
@@ -194,8 +201,7 @@ export default function AccountHomePage() {
       <section className="app-section">
         <div aria-disabled="true" className="home-coming-soon-banner">
           <div>
-            <strong>Post a problem · Coming soon</strong>
-            <span>Posting a problem is coming soon.</span>
+              <strong>Post a problem · Coming soon</strong>
           </div>
         </div>
       </section>

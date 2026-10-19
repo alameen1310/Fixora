@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Briefcase, CaretRight, ShieldCheck, User } from '@phosphor-icons/react'
+import { Briefcase, LockKey } from '@phosphor-icons/react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import { publishedProviderSelection } from '../lib/providerQueries.js'
 import SignOutAction from '../components/SignOutAction.jsx'
-import { Avatar, Badge, Card, ListGroup, ListRow, PrivacyValue } from '../components/UiPrimitives.jsx'
+import { Avatar, Card, ListGroup, ListRow } from '../components/UiPrimitives.jsx'
 import './AuthenticatedPages.css'
 
 export default function ProfilePage() {
@@ -48,41 +47,28 @@ export default function ProfilePage() {
 
   return (
     <main className="app-page app-page--profile">
+      <header className="app-page__heading">
+        <h1 className="text-large-title">Profile</h1>
+      </header>
       <header className="profile-hero">
         <Avatar name={displayName} size={72} />
         <div className="profile-hero__meta">
-          <h1 className="profile-hero__name">{displayName}</h1>
+          <h2 className="profile-hero__name">{displayName}</h2>
           <p className="profile-hero__email">{user?.email || 'Authenticated account'}</p>
-          <Badge tone={isProvider ? 'success' : 'neutral'}>
-            {isProvider ? 'Service Professional' : 'Customer'}
-          </Badge>
         </div>
       </header>
 
       <section className="app-profile-section">
         <h2 className="app-group-title">Account details</h2>
         <ListGroup>
-          <ListRow icon={User} value={profile?.full_name || 'Not provided'}>
-            Full name
-          </ListRow>
-          <ListRow icon={ShieldCheck} value={user?.email || 'Not available'}>
-            Email address
-          </ListRow>
           <ListRow icon={Briefcase} value={isProvider ? 'Professional' : 'Customer'}>
             Account type
           </ListRow>
-          <ListRow
-            icon={ShieldCheck}
-            value={
-              profile?.phone_number ? (
-                <PrivacyValue>{profile.phone_number} · Private</PrivacyValue>
-              ) : (
-                'Not added'
-              )
-            }
-          >
-            Phone number
-          </ListRow>
+          <div className="profile-phone-row">
+            <span className="profile-phone-row__label">Phone</span>
+            <span className="profile-phone-row__value">{profile?.phone_number || 'Not added'}</span>
+            {profile?.phone_number && <span className="profile-phone-row__private"><LockKey aria-hidden="true" size={13} weight="fill" /> Private</span>}
+          </div>
         </ListGroup>
       </section>
 
@@ -126,9 +112,6 @@ export default function ProfilePage() {
         <h2 className="app-group-title">About Fixora</h2>
         <ListGroup>
           <ListRow value="v0.1.0">App version</ListRow>
-          <ListRow to="/app/discover">
-            <span>Explore marketplace</span>
-          </ListRow>
         </ListGroup>
       </section>
 
@@ -141,9 +124,6 @@ export default function ProfilePage() {
 
       <footer className="profile-quiet-footer">
         <p>Profile editing and customer history are coming in a future release.</p>
-        <Link className="ui-text-link" to="/app/discover">
-          Back to discovery <CaretRight aria-hidden="true" size={14} />
-        </Link>
       </footer>
     </main>
   )

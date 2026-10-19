@@ -60,8 +60,8 @@ export default function PublishedProfessionals({ categorySlug = '', limit = 12, 
   })
 
   useEffect(() => {
-    onCountChange?.(filteredProfiles.length, loading)
-  }, [filteredProfiles.length, loading, onCountChange])
+    onCountChange?.(filteredProfiles.length, loading, error)
+  }, [filteredProfiles.length, loading, error, onCountChange])
 
   if (loading) {
     return (
@@ -125,7 +125,7 @@ export default function PublishedProfessionals({ categorySlug = '', limit = 12, 
             to={`/app/professionals/${provider.profile_id}`}
           >
             <div className="professional-card__identity">
-              <Avatar name={provider.display_name} size={44} />
+              <Avatar name={provider.display_name} size={48} />
               <div className="professional-card__titles">
                 <p className="professional-card__eyebrow">
                   {provider.provider_type === 'business' ? 'Service business' : 'Independent professional'}
@@ -134,10 +134,6 @@ export default function PublishedProfessionals({ categorySlug = '', limit = 12, 
               </div>
               <CaretRight aria-hidden="true" className="professional-card__chevron" size={18} />
             </div>
-
-            {provider.service_description && (
-              <p className="professional-card__description">{provider.service_description}</p>
-            )}
 
             <div className="professional-card__footer">
               {services.length > 0 && (
