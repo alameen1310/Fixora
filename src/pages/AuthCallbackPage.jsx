@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { ArrowLeft, ArrowClockwise, CheckCircle, CircleNotch, HouseLine, ShieldCheck, Wrench } from '@phosphor-icons/react'
 import { ReducedMotionConfig, blur, scale, shift, spring, transition, useShouldReduceMotion, useTempoTransition } from '@animate-ui/react/utils/motion'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Logo } from '../components/UiPrimitives.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { authConfigured, supabase } from '../lib/supabase.js'
 import './AuthCallbackPage.css'
@@ -160,16 +161,7 @@ function CallbackExperience() {
         <span className="auth-callback__grid" />
       </div>
       <header className="auth-callback__topbar">
-        <Link aria-label="Back to Fixora home" className="auth-callback__brand" to="/">
-          <span className="auth-callback__brandmark" aria-hidden="true">
-            <svg viewBox="0 0 40 40" fill="none">
-              <path d="M6.5 18.25 20 7l13.5 11.25V33H6.5V18.25Z" />
-              <path d="M15.5 33V22.5h9V33M6.5 18.25 20 7l13.5 11.25" />
-              <path d="m27.5 11.5 4.25-3.25v7" />
-            </svg>
-          </span>
-          <span>fixora</span>
-        </Link>
+        <Logo to="/" />
         <span className="auth-callback__secure"><ShieldCheck aria-hidden="true" weight="duotone" /> Secure account access</span>
       </header>
 

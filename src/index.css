@@ -9,38 +9,48 @@
   color-scheme: light;
 
   --color-primary: #2457d6;
+  --color-primary-hover: #1c4bc2;
+  --color-primary-pressed: #173fa6;
   --color-primary-dark: #1946b8;
   --color-background: #f6f7f9;
+  --color-background-grouped: #f2f4f8;
   --color-surface: #ffffff;
+  --color-surface-tinted: #f0f4ff;
+  --color-pale-blue: #eef3ff;
+  --color-border: #e4e7ec;
+  --color-separator: rgb(60 60 67 / 18%);
   --color-text-primary: #17191d;
   --color-text-secondary: #686d76;
-  --color-border: #e4e7ec;
-  --color-pale-blue: #eef3ff;
+  --color-text-tertiary: #8e95a2;
   --color-success: #23845b;
-  --color-surface-tinted: #f0f4ff;
-  --color-background-grouped: #f2f4f8;
-  --color-separator: rgb(60 60 67 / 18%);
   --color-warning: #9a6700;
   --color-danger: #b3261e;
   --color-danger-surface: #fff1f0;
+
   --shadow-raised: 0 10px 28px rgb(25 70 184 / 8%), 0 2px 5px rgb(23 25 29 / 5%);
   --shadow-floating: 0 20px 48px rgb(25 70 184 / 12%), 0 4px 12px rgb(23 25 29 / 9%);
+
   --radius-sm: 10px;
   --radius-md: 14px;
   --radius-lg: 20px;
   --radius-xl: 28px;
+
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 20px;
   --space-6: 24px;
-  --type-caption: 0.75rem;
-  --type-footnote: 0.8125rem;
-  --type-body: 1rem;
-  --type-headline: 1.0625rem;
-  --type-title: 1.375rem;
-  --type-large-title: 2.125rem;
+  --space-7: 28px;
+  --space-8: 32px;
+
+  --type-caption: 0.75rem; /* 12px / 16px */
+  --type-footnote: 0.8125rem; /* 13px / 18px */
+  --type-body: 1rem; /* 16px / 24px */
+  --type-headline: 1.0625rem; /* 17px / 24px */
+  --type-title: 1.375rem; /* 22px / 28px */
+  --type-large-title: 2.125rem; /* 34px / 40px */
+
   --motion-fast: 120ms;
   --motion-standard: 220ms;
   --motion-slow: 350ms;
@@ -111,8 +121,47 @@ nav a {
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-primary);
-  outline-offset: 4px;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgb(36 87 214 / 16%);
+}
+
+.text-large-title {
+  font-size: var(--type-large-title);
+  line-height: 1.18;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.text-title {
+  font-size: var(--type-title);
+  line-height: 1.28;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.text-headline {
+  font-size: var(--type-headline);
+  line-height: 1.41;
+  font-weight: 600;
+}
+
+.text-body {
+  font-size: var(--type-body);
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.text-footnote {
+  font-size: var(--type-footnote);
+  line-height: 1.38;
+  font-weight: 400;
+}
+
+.text-caption {
+  font-size: var(--type-caption);
+  line-height: 1.33;
+  font-weight: 400;
 }
 
 @media (prefers-reduced-motion: reduce) {

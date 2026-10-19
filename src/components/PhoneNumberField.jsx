@@ -6,14 +6,28 @@ export const countryOptions = getCountries()
   .sort((first, second) => first.label.localeCompare(second.label))
 
 export function getE164Phone(value, country) {
+  if (!value) return null
   const parsed = parsePhoneNumberFromString(value.trim(), country)
   return parsed?.isValid() ? parsed.number : null
 }
 
-export default function PhoneNumberField({ country, error, onChange, onCountryChange, value }) {
+export default function PhoneNumberField({
+  country,
+  error,
+  hint = 'Kept private. Not verified at signup.',
+  id = 'phone-number',
+  onBlur,
+  onChange,
+  onCountryChange,
+  value,
+}) {
+  const errorId = error ? `${id}-error` : undefined
+  const hintId = hint ? `${id}-hint` : undefined
+  const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined
+
   return (
     <div className={`auth-field${error ? ' has-error' : ''}`}>
-      <label htmlFor="phone-number">Phone number</label>
+      <label htmlFor={id}>Phone number</label>
       <div className="auth-phone-control">
         <select
           aria-label="Country calling code"
@@ -22,23 +36,27 @@ export default function PhoneNumberField({ country, error, onChange, onCountryCh
           value={country}
         >
           {countryOptions.map(({ code, label, callingCode }) => (
-            <option key={code} value={code}>{label} (+{callingCode})</option>
+            <option key={code} value={code}>
+              {label} (+{callingCode})
+            </option>
           ))}
         </select>
         <input
-          aria-describedby={error ? 'phone-number-error' : undefined}
+          aria-describedby={describedBy}
           aria-invalid={Boolean(error)}
           autoComplete="tel-national"
-          id="phone-number"
+          id={id}
           inputMode="tel"
+          onBlur={onBlur}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="Enter phone number"
+          placeholder="0801 234 5678"
           required
           type="tel"
           value={value}
         />
       </div>
-      {error && <span className="auth-field__error" id="phone-number-error" role="alert">{error}</span>}
+      {hint && <span className="auth-field__hint" id={hintId}>{hint}</span>}
+      {error && <span className="auth-field__error" id={errorId} role="alert">{error}</span>}
     </div>
   )
 }

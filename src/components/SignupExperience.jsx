@@ -1,11 +1,11 @@
 import { useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { ArrowLeft } from '@phosphor-icons/react'
 import SignupForm from './SignupForm.jsx'
-import { Logo } from './UiPrimitives.jsx'
+import { Logo, SegmentedControl } from './UiPrimitives.jsx'
 import kitchenWork from '../assets/kitchen-renovation.jpg'
 import finishedKitchen from '../assets/finished-kitchen.jpg'
 import plumberAtWork from '../assets/plumber-at-work.png'
@@ -17,8 +17,7 @@ const experiences = {
   customer: {
     audienceLabel: 'For your home',
     title: 'Find help for the work ahead.',
-    introduction:
-      'Create an account to explore skilled professionals through the problems they solve and the projects they share.',
+    introduction: 'Create an account to explore skilled professionals and connect with the right help.',
     primaryImage: kitchenWork,
     primaryAlt: 'Kitchen renovation underway with protected work surfaces',
     detailImage: finishedKitchen,
@@ -29,19 +28,19 @@ const experiences = {
   provider: {
     audienceLabel: 'For your craft',
     title: 'Make your skills easier to find.',
-    introduction:
-      'Create your account first. Once it is ready, add the services, work details, and locations customers need to find you.',
+    introduction: 'Create your professional account to list your services and reach customers in your area.',
     primaryImage: plumberAtWork,
-    primaryAlt: 'Plumber working on exposed residential bathroom pipes',
+    primaryAlt: 'Plumber working on residential bathroom pipes',
     detailImage: finishedKitchen,
-    detailAlt: 'Finished kitchen project with a central island and light cabinetry',
+    detailAlt: 'Finished kitchen project with light cabinetry',
     storyTitle: 'Let the work speak clearly.',
-    storyCopy: 'Projects and useful details can help customers understand what you do.',
+    storyCopy: 'Projects and useful details help customers understand what you do.',
   },
 }
 
 export default function SignupExperience({ audience }) {
   const pageRef = useRef(null)
+  const navigate = useNavigate()
   const experience = experiences[audience]
 
   useGSAP(() => {
@@ -74,25 +73,6 @@ export default function SignupExperience({ audience }) {
           },
         },
       )
-
-      gsap.fromTo(
-        '.signup-visual__detail',
-        { autoAlpha: 0.4, x: 20, y: 16, scale: 0.9 },
-        {
-          autoAlpha: 1,
-          x: 0,
-          y: 0,
-          scale: 1,
-          ease: 'none',
-          immediateRender: false,
-          scrollTrigger: {
-            trigger: '.signup-visual',
-            start: 'top 85%',
-            end: 'top 42%',
-            scrub: 0.45,
-          },
-        },
-      )
     })
 
     return () => motion.revert()
@@ -101,13 +81,12 @@ export default function SignupExperience({ audience }) {
   return (
     <div className="signup-page" ref={pageRef}>
       <header className="signup-header">
-        <Logo className="signup-brand" />
-        <div className="signup-header__actions">
-          <Link aria-label="Back to Fixora home page" className="signup-header__back" to="/">
-            <ArrowLeft aria-hidden="true" size={19} weight="bold" />
-            <span>Back to Fixora</span>
-          </Link>
-        </div>
+        <Link aria-label="Back to Fixora home page" className="signup-header__back" to="/">
+          <ArrowLeft aria-hidden="true" size={20} weight="bold" />
+          <span>Home</span>
+        </Link>
+        <Logo className="signup-brand" to="/" />
+        <div aria-hidden="true" className="signup-header__spacer" />
       </header>
 
       <main className="signup-layout">
@@ -116,10 +95,18 @@ export default function SignupExperience({ audience }) {
             <span className="signup-eyebrow">{experience.audienceLabel}</span>
             <h1 id="signup-title">{experience.title}</h1>
             <p>{experience.introduction}</p>
-            <nav aria-label="Choose account type" className="signup-segmented-control">
-              <Link aria-current={audience === 'customer' ? 'page' : undefined} className={audience === 'customer' ? 'is-selected' : ''} to="/signup/customer">Customer</Link>
-              <Link aria-current={audience === 'provider' ? 'page' : undefined} className={audience === 'provider' ? 'is-selected' : ''} to="/signup/provider">Professional</Link>
-            </nav>
+
+            <div className="signup-account-switch">
+              <SegmentedControl
+                label="Choose account type"
+                onChange={(val) => navigate(`/signup/${val}`)}
+                options={[
+                  { value: 'customer', label: 'Customer' },
+                  { value: 'provider', label: 'Professional' },
+                ]}
+                value={audience}
+              />
+            </div>
           </div>
           <SignupForm audience={audience} />
         </section>
@@ -146,8 +133,8 @@ export default function SignupExperience({ audience }) {
       </main>
 
       <footer className="signup-footer">
-        <span>Fixora is a product concept in progress.</span>
-        <Link to="/">Return to the home page</Link>
+        <span>Fixora · Household services marketplace</span>
+        <Link to="/">Return to home</Link>
       </footer>
     </div>
   )

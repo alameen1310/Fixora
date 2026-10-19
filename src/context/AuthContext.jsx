@@ -209,14 +209,14 @@ export function AuthProvider({ children }) {
   }, [])
 
   const signOut = useCallback(async () => {
-    if (!supabase) return { error: new Error('Account services are not configured.') }
-
-    try {
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
-    } catch (error) {
-      // An expired or missing remote session is already signed out from the user's perspective.
-      if (!/session|jwt|token|not found|missing/i.test(error?.message ?? '')) return { error }
+    let remoteError = null
+    if (supabase) {
+      try {
+        const { error } = await supabase.auth.signOut()
+        if (error) remoteError = error
+      } catch (err) {
+        remoteError = err
+      }
     }
 
     authRevision.current += 1
@@ -228,6 +228,17 @@ export function AuthProvider({ children }) {
     setProfile(null)
     setProfileError('')
     setProfileLoading(false)
+
+    try {
+      window.sessionStorage.removeItem('fixora.signupType')
+      window.sessionStorage.removeItem('fixora.providerType')
+    } catch {
+      // Ignore storage restrictions
+    }
+
+    if (remoteError && !/session|jwt|token|not found|missing|network|fetch|offline/i.test(remoteError?.message ?? '')) {
+      return { error: remoteError }
+    }
     return { error: null }
   }, [])
 

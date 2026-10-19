@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, Briefcase, Check, MapPin, SignOut, User, Wrench } from '@phosphor-icons/react'
 import PhoneNumberField, { countryOptions, getE164Phone } from '../components/PhoneNumberField.jsx'
 import LoadingIndicator from '../components/LoadingIndicator.jsx'
 import { useToast } from '../components/ToastProvider.jsx'
+import { Logo } from '../components/UiPrimitives.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import './OnboardingPage.css'
@@ -75,7 +76,7 @@ async function saveProviderProfile(userId, fields) {
 export default function OnboardingPage({ audience }) {
   const isProvider = audience === 'provider'
   const navigate = useNavigate()
-  const { user, profile, setProfile } = useAuth()
+  const { user, profile, setProfile, signOut } = useAuth()
   const { showToast } = useToast()
   const [step, setStep] = useState(1)
   const [categories, setCategories] = useState([])
@@ -298,11 +299,9 @@ export default function OnboardingPage({ audience }) {
     navigate('/app', { replace: true })
   }
 
-  async function signOut() {
+  async function handleSignOut() {
     try {
-      const { error: signOutError } = await supabase.auth.signOut()
-      if (signOutError) throw signOutError
-      navigate('/', { replace: true })
+      await signOut()
     } catch {
       showToast({ type: 'error', message: 'We couldn’t sign you out. Please try again.' })
     }
@@ -319,8 +318,10 @@ export default function OnboardingPage({ audience }) {
   return (
     <main className="onboarding-page">
       <header className="onboarding-header">
-        <Link aria-label="Return to Fixora home" className="onboarding-brand" to="/"><span>fixora</span></Link>
-        <button className="onboarding-signout" onClick={signOut} type="button"><SignOut aria-hidden="true" size={18} /> Sign out</button>
+        <Logo to="/" />
+        <button className="onboarding-signout" onClick={handleSignOut} type="button">
+          <SignOut aria-hidden="true" size={18} /> Sign out
+        </button>
       </header>
 
       <div className="onboarding-layout">
@@ -349,13 +350,20 @@ export default function OnboardingPage({ audience }) {
 
         <section aria-labelledby="onboarding-title" aria-busy={busy || loadingData} className="onboarding-card">
           {isProvider && (
-            <ol aria-label="Provider setup progress" className="onboarding-progress">
-              {progress.map(({ label, number, complete: isComplete }) => (
-                <li aria-current={number === currentStep ? 'step' : undefined} className={number === currentStep ? 'is-current' : isComplete ? 'is-complete' : ''} key={label}>
-                  <span>{isComplete ? <Check aria-hidden="true" size={15} weight="bold" /> : number}</span><small>{label}</small>
-                </li>
-              ))}
-            </ol>
+            <div className="onboarding-mobile-progress" aria-label={`Step ${currentStep} of 5: ${steps[currentStep - 1]}`}>
+              <div className="onboarding-step-bars">
+                {steps.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`onboarding-step-bar ${i + 1 < currentStep ? 'is-complete' : i + 1 === currentStep ? 'is-active' : ''}`}
+                  />
+                ))}
+              </div>
+              <div className="onboarding-step-meta">
+                <span className="onboarding-step-count">Step {currentStep} of 5</span>
+                <span className="onboarding-step-name">{steps[currentStep - 1]}</span>
+              </div>
+            </div>
           )}
 
           <p className="onboarding-kicker">{isProvider ? `Step ${currentStep} of 5` : 'Finish your Fixora account'}</p>
@@ -383,7 +391,13 @@ export default function OnboardingPage({ audience }) {
                   <div className="onboarding-contact-summary">
                     <dl>
                       <div><dt>Name</dt><dd>{values.fullName}</dd></div>
-                      <div><dt>Phone</dt><dd>{getE164Phone(values.phone, values.phoneCountry)} <small>Private · not verified</small></dd></div>
+                      <div>
+                        <dt>Phone</dt>
+                        <dd>
+                          {getE164Phone(values.phone, values.phoneCountry)}{' '}
+                          <span className="onboarding-privacy-badge">Private</span>
+                        </dd>
+                      </div>
                     </dl>
                     <button className="onboarding-text-action" onClick={() => setEditingContact(true)} type="button">Edit contact details</button>
                   </div>
@@ -392,7 +406,7 @@ export default function OnboardingPage({ audience }) {
                     <Field error={fieldErrors.fullName} id="onboarding-full-name" label="Full name" onChange={(value) => update('fullName', value)} value={values.fullName} />
                     {user?.user_metadata?.name && !profile?.full_name && <p className="onboarding-hint">Suggested from your Google account; change it if needed. It isn’t identity verification.</p>}
                     <PhoneNumberField country={values.phoneCountry} error={fieldErrors.phone} onChange={(value) => update('phone', value)} onCountryChange={(value) => update('phoneCountry', value)} value={values.phone} />
-                    <p className="onboarding-hint">Your phone number is saved privately and has not been verified.</p>
+                    <p className="onboarding-hint">Your phone number is saved securely and privately with your account. It is never displayed publicly.</p>
                     {!isProvider && contactAlreadySaved && <button className="onboarding-text-action" onClick={() => setEditingContact(false)} type="button">Cancel editing</button>}
                   </div>
                 )
@@ -402,8 +416,18 @@ export default function OnboardingPage({ audience }) {
                 <>
                   <fieldset className="onboarding-choice">
                     <legend>Profile type</legend>
-                    <label className={values.providerType === 'individual' ? 'is-selected' : ''}><input checked={values.providerType === 'individual'} name="providerType" onChange={() => update('providerType', 'individual')} type="radio" /> Individual</label>
-                    <label className={values.providerType === 'business' ? 'is-selected' : ''}><input checked={values.providerType === 'business'} name="providerType" onChange={() => update('providerType', 'business')} type="radio" /> Business</label>
+                    <div className="onboarding-choice-grid">
+                      <label className={`onboarding-choice-pill ${values.providerType === 'individual' ? 'is-selected' : ''}`}>
+                        <input checked={values.providerType === 'individual'} name="providerType" onChange={() => update('providerType', 'individual')} type="radio" />
+                        <User size={18} weight="duotone" />
+                        <span>Individual</span>
+                      </label>
+                      <label className={`onboarding-choice-pill ${values.providerType === 'business' ? 'is-selected' : ''}`}>
+                        <input checked={values.providerType === 'business'} name="providerType" onChange={() => update('providerType', 'business')} type="radio" />
+                        <Briefcase size={18} weight="duotone" />
+                        <span>Business</span>
+                      </label>
+                    </div>
                   </fieldset>
                   <Field error={fieldErrors.displayName} id="provider-display-name" label={values.providerType === 'business' ? 'Business name' : 'Professional name'} onChange={(value) => update('displayName', value)} value={values.displayName} />
                   <label className="onboarding-field" htmlFor="provider-description"><span>Short description <em>Optional</em></span><textarea id="provider-description" maxLength={1000} onChange={(event) => update('description', event.target.value)} placeholder="What kinds of projects do you take on?" rows={4} value={values.description} /></label>
@@ -413,12 +437,19 @@ export default function OnboardingPage({ audience }) {
               {currentStep === 3 && (
                 <fieldset aria-describedby={fieldErrors.categoryIds ? 'onboarding-categories-error' : undefined} aria-invalid={Boolean(fieldErrors.categoryIds)} className={`onboarding-categories${fieldErrors.categoryIds ? ' has-error' : ''}`}>
                   <legend>Services you offer</legend>
-                  <div>{categories.map((category) => (
-                    <label className={values.categoryIds.includes(category.id) ? 'is-selected' : ''} key={category.id}>
-                      <input checked={values.categoryIds.includes(category.id)} onChange={(event) => update('categoryIds', event.target.checked ? [...values.categoryIds, category.id] : values.categoryIds.filter((id) => id !== category.id))} type="checkbox" />
-                      <span>{category.name}</span>
-                    </label>
-                  ))}</div>
+                  <p className="onboarding-sublegend">Select all that apply to your work.</p>
+                  <div className="onboarding-category-grid">{categories.map((category) => {
+                    const isSelected = values.categoryIds.includes(category.id)
+                    return (
+                      <label className={`onboarding-category-item ${isSelected ? 'is-selected' : ''}`} key={category.id}>
+                        <input checked={isSelected} onChange={(event) => update('categoryIds', event.target.checked ? [...values.categoryIds, category.id] : values.categoryIds.filter((id) => id !== category.id))} type="checkbox" />
+                        <span className="onboarding-category-check" aria-hidden="true">
+                          {isSelected && <Check size={14} weight="bold" />}
+                        </span>
+                        <span className="onboarding-category-text">{category.name}</span>
+                      </label>
+                    )
+                  })}</div>
                   {fieldErrors.categoryIds && <span className="onboarding-field-error" id="onboarding-categories-error" role="alert">{fieldErrors.categoryIds}</span>}
                 </fieldset>
               )}
@@ -427,18 +458,27 @@ export default function OnboardingPage({ audience }) {
                 <div className="onboarding-areas">
                   {values.serviceAreas.map((area, index) => (
                     <div className="onboarding-area" key={`${index}-${area.country_code}`}>
+                      <div className="onboarding-area-header">
+                        <span className="onboarding-area-count">Area {index + 1}</span>
+                        {values.serviceAreas.length > 1 && (
+                          <button className="onboarding-remove-area" onClick={() => update('serviceAreas', values.serviceAreas.filter((_, areaIndex) => areaIndex !== index))} type="button">
+                            Remove
+                          </button>
+                        )}
+                      </div>
                       <label className="onboarding-field" htmlFor={`area-country-${index}`}>
                         <span>Country</span>
                         <select id={`area-country-${index}`} onChange={(event) => changeArea(index, 'country_code', event.target.value, values, update)} value={area.country_code}>
                           {countryOptions.map((country) => <option key={country.code} value={country.code}>{country.label}</option>)}
                         </select>
                       </label>
-                      <Field error={fieldErrors[`area-${index}-region`]} id={`area-region-${index}`} label="State or region" onChange={(value) => changeArea(index, 'region', value, values, update)} value={area.region} />
-                      <Field error={fieldErrors[`area-${index}-city`]} id={`area-city-${index}`} label="City" onChange={(value) => changeArea(index, 'city', value, values, update)} value={area.city} />
-                      {values.serviceAreas.length > 1 && <button className="onboarding-remove-area" onClick={() => update('serviceAreas', values.serviceAreas.filter((_, areaIndex) => areaIndex !== index))} type="button">Remove area</button>}
+                      <Field error={fieldErrors[`area-${index}-region`]} id={`area-region-${index}`} label="State or region" onChange={(value) => changeArea(index, 'region', value, values, update)} value={area.region} placeholder="e.g. Lagos State" />
+                      <Field error={fieldErrors[`area-${index}-city`]} id={`area-city-${index}`} label="City" onChange={(value) => changeArea(index, 'city', value, values, update)} value={area.city} placeholder="e.g. Ikeja, Lekki, or Surulere" />
                     </div>
                   ))}
-                  <button className="onboarding-add-area" onClick={() => update('serviceAreas', [...values.serviceAreas, { country_code: 'NG', region: '', city: '' }])} type="button">Add another service area</button>
+                  <button className="onboarding-add-area" onClick={() => update('serviceAreas', [...values.serviceAreas, { country_code: 'NG', region: '', city: '' }])} type="button">
+                    + Add another service area
+                  </button>
                   <p className="onboarding-hint">Only the country, region, and city are shown on your public professional profile.</p>
                 </div>
               )}
@@ -446,7 +486,11 @@ export default function OnboardingPage({ audience }) {
               {currentStep === 5 && <Review values={values} categories={categories} />}
 
               <div className="onboarding-actions">
-                {isProvider && currentStep > 1 && <button className="onboarding-secondary" disabled={busy} onClick={() => setStep((current) => current - 1)} type="button"><ArrowLeft aria-hidden="true" size={18} /> Back</button>}
+                {isProvider && currentStep > 1 && (
+                  <button className="onboarding-secondary" disabled={busy} onClick={() => setStep((current) => current - 1)} type="button">
+                    <ArrowLeft aria-hidden="true" size={18} /> Back
+                  </button>
+                )}
                 <button className="onboarding-primary" disabled={busy} type="submit">
                   {busy ? <><LoadingIndicator /> {currentStep === (isProvider ? 5 : 1) ? 'Finishing setup…' : 'Saving step…'}</> : currentStep === (isProvider ? 5 : 1) ? 'Finish setup' : 'Save and continue'}
                   {!busy && <ArrowRight aria-hidden="true" size={18} />}
@@ -473,7 +517,10 @@ function Field({ error, id, label, onChange, value }) {
 function LoadingOnboarding({ isProvider }) {
   return (
     <main className="onboarding-page onboarding-page--loading">
-      <header className="onboarding-header"><Link aria-label="Return to Fixora home" className="onboarding-brand" to="/"><span>fixora</span></Link><span className="onboarding-header__status">Account setup</span></header>
+      <header className="onboarding-header">
+        <Logo to="/" />
+        <span className="onboarding-header__status">Account setup</span>
+      </header>
       <div className="onboarding-layout" aria-busy="true">
         <aside className="onboarding-context onboarding-context--skeleton" aria-hidden="true"><span /><span /><span /></aside>
         <section className="onboarding-card onboarding-card--skeleton" aria-label="Loading your saved details">
@@ -513,13 +560,31 @@ function removeSessionValue(key) {
 function Review({ values, categories }) {
   const selectedCategories = categories.filter((category) => values.categoryIds.includes(category.id)).map((category) => category.name)
   return (
-    <dl className="onboarding-review">
-      <div><dt>Full name</dt><dd>{values.fullName || 'Not added'}</dd></div>
-      <div><dt>Phone number</dt><dd>{getE164Phone(values.phone, values.phoneCountry) || 'Not added'} <small>Not verified</small></dd></div>
-      <div><dt>{values.providerType === 'business' ? 'Business name' : 'Professional name'}</dt><dd>{values.displayName || 'Not added'}</dd></div>
-      <div><dt>Services</dt><dd>{selectedCategories.join(', ') || 'Not selected'}</dd></div>
-      <div><dt>Service areas</dt><dd>{values.serviceAreas.map((area) => [area.city, area.region, area.country_code].filter(Boolean).join(', ')).join(' · ') || 'Not added'}</dd></div>
-    </dl>
+    <div className="onboarding-review-card">
+      <div className="onboarding-review-row">
+        <span className="onboarding-review-label">Full name</span>
+        <span className="onboarding-review-val">{values.fullName || 'Not added'}</span>
+      </div>
+      <div className="onboarding-review-row">
+        <span className="onboarding-review-label">Phone number</span>
+        <span className="onboarding-review-val">
+          {getE164Phone(values.phone, values.phoneCountry) || 'Not added'}
+          <span className="onboarding-privacy-badge">Private</span>
+        </span>
+      </div>
+      <div className="onboarding-review-row">
+        <span className="onboarding-review-label">{values.providerType === 'business' ? 'Business name' : 'Professional name'}</span>
+        <span className="onboarding-review-val">{values.displayName || 'Not added'}</span>
+      </div>
+      <div className="onboarding-review-row">
+        <span className="onboarding-review-label">Services</span>
+        <span className="onboarding-review-val">{selectedCategories.join(', ') || 'Not selected'}</span>
+      </div>
+      <div className="onboarding-review-row">
+        <span className="onboarding-review-label">Service areas</span>
+        <span className="onboarding-review-val">{values.serviceAreas.map((area) => [area.city, area.region, area.country_code].filter(Boolean).join(', ')).join(' · ') || 'Not added'}</span>
+      </div>
+    </div>
   )
 }
 

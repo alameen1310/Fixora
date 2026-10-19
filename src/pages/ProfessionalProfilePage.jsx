@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Briefcase, MapPin, Wrench } from '@phosphor-icons/react'
+import { ArrowLeft, MapPin, Wrench } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { publishedProviderSelection } from '../lib/providerQueries.js'
+import { Avatar, Badge, Button, Chip, ListGroup, ListRow, Skeleton } from '../components/UiPrimitives.jsx'
 import './AuthenticatedPages.css'
 
 export default function ProfessionalProfilePage() {
@@ -31,30 +32,105 @@ export default function ProfessionalProfilePage() {
     }
   }, [professionalId])
 
-  useEffect(() => { loadProfile() }, [loadProfile, attempt])
+  useEffect(() => {
+    loadProfile()
+  }, [loadProfile, attempt])
 
   const services = (provider?.provider_service_categories ?? []).map((relation) => relation.category?.name).filter(Boolean)
-  const areas = (provider?.provider_service_areas ?? []).map((area) => [area.city, area.region, area.country_code].filter(Boolean).join(', ')).filter(Boolean)
+  const areas = (provider?.provider_service_areas ?? []).map((area) => [area.city, area.region].filter(Boolean).join(', ')).filter(Boolean)
 
   return (
-    <main className="app-page app-professional-profile">
-      <Link className="app-back-link" to="/app/discover"><ArrowLeft aria-hidden="true" size={18} />Back to discovery</Link>
-      {loading ? <p className="app-muted" role="status">Loading public profile…</p> : error ? (
-        <section className="app-unavailable-state" role="alert"><h1>We couldn’t load this profile.</h1><p>Check your connection and try again.</p><button className="app-secondary-action" onClick={() => setAttempt((value) => value + 1)} type="button">Try again</button></section>
+    <main className="app-page app-page--profile-detail">
+      <div className="app-nav-back">
+        <Link aria-label="Back to discovery" className="app-back-link" to="/app/discover">
+          <ArrowLeft aria-hidden="true" size={20} weight="bold" />
+          <span>Discover</span>
+        </Link>
+      </div>
+
+      {loading ? (
+        <article className="app-public-profile app-public-profile--skeleton" aria-busy="true">
+          <header className="app-public-profile__header">
+            <Skeleton className="app-profile-avatar-skeleton" />
+            <div className="app-profile-header-meta">
+              <Skeleton style={{ width: '40%', height: '1rem' }} />
+              <Skeleton style={{ width: '70%', height: '1.8rem', marginTop: '0.4rem' }} />
+            </div>
+          </header>
+          <Skeleton style={{ width: '100%', height: '4rem', marginTop: '1.5rem' }} />
+        </article>
+      ) : error ? (
+        <section className="app-unavailable-state" role="alert">
+          <h2>We couldn’t load this profile.</h2>
+          <p>Please check your internet connection and try again.</p>
+          <Button onClick={() => setAttempt((value) => value + 1)} variant="secondary">
+            Try again
+          </Button>
+        </section>
       ) : !provider ? (
-        <section className="app-unavailable-state"><p className="app-eyebrow">Professional profile</p><h1>This profile isn’t available.</h1><p>It may no longer be published, or it may not exist.</p><Link className="app-secondary-action" to="/app/discover">Explore profiles</Link></section>
+        <section className="app-unavailable-state">
+          <h2>Profile unavailable</h2>
+          <p>This profile may have been unpublished or does not exist.</p>
+          <Button as={Link} to="/app/discover" variant="primary">
+            Back to discovery
+          </Button>
+        </section>
       ) : (
         <article className="app-public-profile">
           <header className="app-public-profile__header">
-            <span className="app-public-profile__mark"><Briefcase aria-hidden="true" size={28} weight="duotone" /></span>
-            <div><p className="app-eyebrow">{provider.provider_type === 'business' ? 'Service business' : 'Independent professional'}</p><h1>{provider.display_name}</h1></div>
+            <Avatar name={provider.display_name} size={64} />
+            <div className="app-public-profile__titles">
+              <Badge tone="neutral">
+                {provider.provider_type === 'business' ? 'Service business' : 'Independent professional'}
+              </Badge>
+              <h1>{provider.display_name}</h1>
+            </div>
           </header>
-          <p className="app-public-profile__description">{provider.service_description || 'This professional has not added a description yet.'}</p>
-          <div className="app-public-profile__facts">
-            <section><h2><Wrench aria-hidden="true" size={19} /> Services</h2><p>{services.length ? services.join(' · ') : 'No services listed.'}</p></section>
-            <section><h2><MapPin aria-hidden="true" size={19} /> Service areas</h2><p>{areas.length ? areas.join(' · ') : 'No service areas listed.'}</p></section>
+
+          {provider.service_description && (
+            <div className="app-public-profile__section">
+              <h2 className="app-section-title">About the work</h2>
+              <p className="app-public-profile__description">{provider.service_description}</p>
+            </div>
+          )}
+
+          <div className="app-public-profile__section">
+            <h2 className="app-section-title">Services offered</h2>
+            {services.length ? (
+              <div className="app-public-profile__chips">
+                {services.map((service) => (
+                  <Chip key={service} selected>{service}</Chip>
+                ))}
+              </div>
+            ) : (
+              <p className="app-muted">No specific services listed yet.</p>
+            )}
           </div>
-          <p className="app-public-profile__note">Portfolio work, reviews, and direct contact options are not available yet.</p>
+
+          <div className="app-public-profile__section">
+            <h2 className="app-section-title">Service locations</h2>
+            {areas.length ? (
+              <ListGroup>
+                {areas.map((area) => (
+                  <ListRow icon={MapPin} key={area}>
+                    {area}
+                  </ListRow>
+                ))}
+              </ListGroup>
+            ) : (
+              <p className="app-muted">No specific areas listed yet.</p>
+            )}
+          </div>
+
+          <div className="app-public-profile__contact-card">
+            <div className="app-contact-notice">
+              <Wrench aria-hidden="true" size={20} />
+              <div>
+                <strong>Direct contact is coming soon</strong>
+                <span>Job requests and contact tools are coming in an upcoming release.</span>
+              </div>
+            </div>
+          </div>
         </article>
       )}
     </main>

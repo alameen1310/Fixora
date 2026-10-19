@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from './ToastProvider.jsx'
 import { ActionSheet, IconButton, ListRow } from './UiPrimitives.jsx'
 
-export default function SignOutAction({ location = 'header' }) {
+export default function SignOutAction({ className = '', location = 'profile' }) {
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const { signOut } = useAuth()
@@ -17,8 +17,7 @@ export default function SignOutAction({ location = 'header' }) {
     const { error } = await signOut()
     setBusy(false)
     if (error) {
-      showToast({ type: 'error', message: 'We couldn’t sign you out. Please try again.' })
-      return
+      showToast({ type: 'error', message: 'We couldn’t complete sign-out on the server, but have cleared your local session.' })
     }
     setOpen(false)
     navigate('/', { replace: true })
@@ -26,13 +25,23 @@ export default function SignOutAction({ location = 'header' }) {
 
   return (
     <>
-      {location === 'header' ? (
-        <IconButton className="fixora-app__signout" label="Sign out" onClick={() => setOpen(true)}><SignOut aria-hidden="true" size={19} /></IconButton>
+      {location === 'button' ? (
+        <IconButton
+          aria-label="Sign out"
+          className={className}
+          label="Sign out"
+          onClick={() => setOpen(true)}
+        >
+          <SignOut aria-hidden="true" size={20} />
+        </IconButton>
       ) : (
-        <ListRow destructive icon={SignOut} onClick={() => setOpen(true)}>Sign out</ListRow>
+        <ListRow className={className} destructive icon={SignOut} onClick={() => setOpen(true)}>
+          Sign out
+        </ListRow>
       )}
       <ActionSheet
         busy={busy}
+        cancelLabel="Cancel"
         confirmLabel="Sign out"
         description="You can sign back in any time."
         onCancel={() => !busy && setOpen(false)}
