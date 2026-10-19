@@ -60,6 +60,10 @@ Interactions should feel responsive and intentional. Where relevant, buttons, li
 
 Use semantic, accessible controls and preserve keyboard navigation. Provide adequate contrast, readable typography, useful alternative text for images, and forms that clearly communicate their purpose. Error and empty states should help people understand what happened and what they can do next. A visually attractive interface is not successful if it is difficult to use.
 
+### Scrollbars and desktop cursor
+
+The document scrollbar may be visually hidden while native scrolling remains available. Keep internal scrollers, such as sheets and menus, independently scrollable. The optional Fixora hammer cursor is limited to clearly interactive work, project, or professional cards on the public landing page, on fine-pointer devices only; it must not appear on static illustrations, text, buttons, links, inputs, or the authenticated app. Keep a visible hover affordance on any card that uses it, and preserve normal touch and keyboard behavior.
+
 ## Responsive experience
 
 The experience must adapt naturally to mobile, tablet, and desktop. Reconsider navigation, content order, image presentation, and interaction patterns at smaller sizes. Preserve hierarchy, readable type, useful content density, and comfortable touch interaction.
