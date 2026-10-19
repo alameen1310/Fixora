@@ -8,17 +8,20 @@
 .auth-layout__form-side { min-width: 0; padding: calc(env(safe-area-inset-top) + 0px) 0 calc(1rem + env(safe-area-inset-bottom)); }
 .auth-layout__mobile-brand {
   position: relative;
-  min-height: 216px;
+  height: clamp(220px, 32dvh, 300px);
   overflow: hidden;
   padding: calc(12px + env(safe-area-inset-top)) 20px 38px;
   color: #fff;
   background: linear-gradient(145deg, #2457d6 0%, #1946b8 70%, #173d9f 100%);
 }
+.auth-layout__mobile-photo { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: right center; }
+.auth-layout__mobile-brand::before { z-index: 1; background: linear-gradient(90deg, #2457d6 0%, #1946b8 45%, rgb(25 70 184 / 35%) 100%); }
+.auth-layout__mobile-brand::after { z-index: 1; }
 .auth-layout__mobile-brand::before, .auth-layout__mobile-brand::after { position: absolute; width: 180px; height: 180px; border: 1px solid rgb(255 255 255 / 14%); border-radius: 50%; content: ''; pointer-events: none; }
 .auth-layout__mobile-brand::before { top: -100px; right: -30px; animation: auth-drift 14s ease-in-out infinite alternate; }
 .auth-layout__mobile-brand::after { right: -90px; bottom: -140px; width: 250px; height: 250px; animation: auth-drift 18s ease-in-out infinite alternate-reverse; }
 @keyframes auth-drift { to { transform: translate(-12px, 9px); } }
-.auth-layout__mobile-brand > p { position: relative; z-index: 1; max-width: 24rem; margin: 20px auto 0; font-size: clamp(1.15rem, 4vw, 1.4rem); font-weight: 650; letter-spacing: -0.02em; }
+.auth-layout__mobile-brand > p { position: relative; z-index: 1; max-width: none; margin: 20px 0 0; font-size: clamp(.86rem, 3vw, 1.4rem); font-weight: 650; letter-spacing: -0.02em; white-space: nowrap; }
 .auth-layout__mobile-header { position: relative; z-index: 1; }
 .auth-layout__mobile-header .ui-auth-header__back { color: #fff; }
 .auth-layout__mobile-header .ui-auth-header__back:hover { background: rgb(255 255 255 / 14%); }
@@ -31,7 +34,7 @@
 .auth-layout__content :is(input, select, textarea):focus { scroll-margin-block: 1rem; }
 
 @media (max-height: 700px) and (max-width: 1023px) {
-  .auth-layout__mobile-brand { min-height: 176px; padding-bottom: 34px; }
+  .auth-layout__mobile-brand { height: 170px; padding-bottom: 34px; }
   .auth-layout__mobile-brand > p { margin-top: 12px; }
 }
 
@@ -43,21 +46,23 @@
 @media (min-width: 1024px) {
   .auth-layout { grid-template-columns: minmax(400px, 45%) 1fr; background: #fff; }
   .auth-layout__brand-panel { position: sticky; top: 0; display: block; height: 100dvh; overflow: hidden; color: #fff; background: linear-gradient(145deg, #2457d6, #1946b8 72%, #173d9f); }
-  .auth-layout__brand-panel::before, .auth-layout__brand-panel::after { position: absolute; border: 1px solid rgb(255 255 255 / 12%); border-radius: 50%; content: ''; }
+  .auth-layout__brand-panel::before, .auth-layout__brand-panel::after, .auth-layout__brand-panel .auth-layout__brand-inner::after { position: absolute; border: 1px solid rgb(255 255 255 / 12%); border-radius: 50%; content: ''; pointer-events: none; }
   .auth-layout__brand-panel::before { top: -170px; right: -150px; width: 500px; height: 500px; animation: auth-drift 18s ease-in-out infinite alternate; }
   .auth-layout__brand-panel::after { bottom: -250px; left: -180px; width: 600px; height: 600px; animation: auth-drift 22s ease-in-out infinite alternate-reverse; }
-  .auth-layout__brand-inner { position: relative; z-index: 1; display: flex; width: min(100% - 80px, 620px); height: 100%; flex-direction: column; justify-content: space-between; margin: 0 auto; padding: 34px 0; }
+  .auth-layout__brand-inner { position: relative; z-index: 1; display: flex; width: auto; height: 100%; flex-direction: column; justify-content: flex-start; gap: clamp(24px, 4vh, 48px); margin: 0; padding: clamp(32px, 4vw, 64px); }
+  .auth-layout__brand-inner::after { z-index: -1; right: -220px; bottom: -260px; width: 520px; height: 520px; border-color: rgb(255 255 255 / 8%); animation: auth-drift 20s ease-in-out infinite alternate; }
   .auth-layout__logo { align-self: flex-start; color: #fff; }
   .auth-layout__logo .fixora-logo__mark, .auth-layout__logo .fixora-logo__mark path:nth-child(2) { stroke: #fff; }
-  .auth-layout__message { margin: auto 0 24px; }
+  .auth-layout__message { width: min(100%, 600px); flex: 0 0 auto; }
   .auth-layout__eyebrow { margin: 0 0 12px; color: rgb(255 255 255 / 76%); font-size: var(--type-footnote); font-weight: 650; }
-  .auth-layout__message h1 { max-width: 12ch; margin: 0; font-size: clamp(2.5rem, 4vw, 4rem); line-height: 1.03; letter-spacing: -0.055em; }
+  .auth-layout__message h1 { max-width: 12ch; margin: 0; font-size: clamp(40px, 3.6vw, 68px); line-height: 1.03; letter-spacing: -0.055em; }
   .auth-layout__message ul { display: grid; gap: 14px; margin: 24px 0 0; padding: 0; list-style: none; }
   .auth-layout__message li { display: flex; align-items: center; gap: 12px; color: rgb(255 255 255 / 92%); font-size: var(--type-footnote); }
   .auth-layout__message li svg { flex: 0 0 auto; }
-  .auth-layout__photo { position: relative; width: min(100%, 480px); height: clamp(155px, 24vh, 250px); overflow: hidden; margin: 0; border-radius: 24px; background: rgb(255 255 255 / 12%); }
-  .auth-layout__photo img { width: 100%; height: 100%; object-fit: cover; }
-  .auth-layout__photo figcaption { position: absolute; right: 12px; bottom: 12px; padding: 6px 10px; border-radius: 999px; color: #fff; background: rgb(18 34 76 / 72%); font-size: 11px; }
+  .auth-layout__photo { position: relative; width: 100%; min-height: 260px; flex: 1 1 0; overflow: hidden; margin: 0; border-radius: 28px; background: rgb(255 255 255 / 12%); }
+  .auth-layout__photo img { width: 100%; height: 100%; object-fit: cover; object-position: center 35%; }
+  .auth-layout__photo::after { position: absolute; inset: 35% 0 0; background: linear-gradient(transparent, rgb(10 24 57 / 35%)); content: ''; }
+  .auth-layout__photo figcaption { position: absolute; z-index: 1; left: 12px; bottom: 12px; padding: 6px 10px; border-radius: 999px; color: #fff; background: rgb(18 34 76 / 72%); font-size: 11px; }
   .auth-layout__form-side { display: grid; min-height: 100dvh; place-items: center; padding: 32px; }
   .auth-layout__mobile-brand { display: none; }
   .auth-layout__content { width: min(100%, 440px); margin: 0 auto; }

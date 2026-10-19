@@ -23,13 +23,16 @@ export default function AuthLayout({ children }) {
             </ul>
           </div>
           <figure className="auth-layout__photo">
-            <img alt="Plumber working on residential bathroom pipes" src={heroPhoto} />
+            <img alt="Plumber working on residential bathroom pipes" decoding="async" fetchPriority="high" height="1200" src={heroPhoto} width="1600" />
             <figcaption>Photography is illustrative.</figcaption>
           </figure>
         </div>
       </aside>
       <div className="auth-layout__form-side">
-        <div className="auth-layout__mobile-brand"><AuthHeader className="auth-layout__mobile-header" /><p>The right professional for every home fix.</p></div>
+        <div className="auth-layout__mobile-brand">
+          <img alt="" aria-hidden="true" className="auth-layout__mobile-photo" decoding="async" fetchPriority="high" height="1200" src={heroPhoto} width="1600" />
+          <AuthHeader className="auth-layout__mobile-header" /><p>The right professional for every home fix.</p>
+        </div>
         <div className="auth-layout__content">
           <AuthHeader className="auth-layout__header" />
           {children}
