@@ -37,15 +37,17 @@ export function AuthProvider({ children }) {
 
       // Keep this callback synchronous: Supabase auth processing must not wait on profile I/O.
       authRevision.current += 1
+      const previousUserId = sessionRef.current?.user?.id ?? null
+      const nextUserId = nextSession?.user?.id ?? null
       sessionRef.current = nextSession ?? null
       setSession(nextSession ?? null)
       setSessionReady(true)
       setSessionError('')
-      if (nextSession?.user?.id) {
+      if (previousUserId !== nextUserId && nextUserId) {
         setProfile(null)
         setProfileError('')
         setProfileLoading(true)
-      } else {
+      } else if (previousUserId !== nextUserId) {
         profileRequest.current += 1
         setProfile(null)
         setProfileError('')
@@ -97,9 +99,15 @@ export function AuthProvider({ children }) {
 
     const requestId = ++profileRequest.current
     const controller = new AbortController()
-    const timer = window.setTimeout(() => controller.abort(), PROFILE_TIMEOUT_MS)
+    const timer = window.setTimeout(() => {
+      controller.abort()
+      if (!alive || requestId !== profileRequest.current || !isCurrentSession(sessionRef.current, currentSession)) return
+      setProfile(null)
+      setProfileError(profileMessage(new DOMException('Profile request timed out.', 'AbortError')))
+      setProfileLoading(false)
+    }, PROFILE_TIMEOUT_MS)
     let alive = true
-    setProfile(null)
+    // Keep an already-rendered profile until the replacement request resolves.
     setProfileLoading(true)
     setProfileError('')
 
@@ -172,7 +180,13 @@ export function AuthProvider({ children }) {
 
     const requestId = ++profileRequest.current
     const controller = new AbortController()
-    const timer = window.setTimeout(() => controller.abort(), PROFILE_TIMEOUT_MS)
+    const timer = window.setTimeout(() => {
+      controller.abort()
+      if (requestId !== profileRequest.current || !isCurrentSession(sessionRef.current, currentSession)) return
+      setProfile(null)
+      setProfileError(profileMessage(new DOMException('Profile request timed out.', 'AbortError')))
+      setProfileLoading(false)
+    }, PROFILE_TIMEOUT_MS)
     setProfileLoading(true)
     setProfileError('')
     try {

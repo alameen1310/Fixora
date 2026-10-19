@@ -16,7 +16,7 @@ function SigningOut() {
 
 export default function ProtectedRoute({ children, onboarding = false }) {
   const location = useLocation()
-  const { authConfigured, user, profile, loading, sessionError, retrySession, profileLoading, profileError, refreshProfile } = useAuth()
+  const { authConfigured, user, profile, loading, sessionError, retrySession, profileLoading, profileError, refreshProfile, signOut } = useAuth()
   try {
     if (window.sessionStorage.getItem('fixora.signingOut') === '1') return <SigningOut />
   } catch { /* Continue through the normal session state when storage is blocked. */ }
@@ -38,13 +38,16 @@ export default function ProtectedRoute({ children, onboarding = false }) {
     const returnTo = `${location.pathname}${location.search}`
     return <Navigate replace state={{ returnTo }} to="/auth/login" />
   }
-  if (profileLoading) return <AuthMessage><p role="status">Loading your Fixora profile…</p></AuthMessage>
+  if (profileLoading) return <AuthMessage><Logo /><p role="status">Loading your Fixora profile…</p></AuthMessage>
   if (profileError || !profile) {
+    const timedOut = /took too long/i.test(profileError)
     return (
       <AuthMessage>
-        <h1>We couldn’t load your profile</h1>
-        <p>Please try again. Your account details are still protected.</p>
+        <Logo />
+        <h1>{timedOut ? 'Taking longer than expected' : 'We couldn’t load your profile'}</h1>
+        <p>{timedOut ? 'Check your connection, then retry. Your account details are still protected.' : 'Please try again. Your account details are still protected.'}</p>
         <button className="account-action" onClick={refreshProfile} type="button">Try again</button>
+        <button className="account-action" onClick={signOut} type="button">Sign out</button>
       </AuthMessage>
     )
   }
