@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, CheckCircle, WarningCircle } from '@phosphor-icons/react'
+import { ArrowRight, CheckCircle, Plus, WarningCircle } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { Card, Skeleton } from '../components/UiPrimitives.jsx'
 import { PostsFeed } from '../components/PostsFeed.jsx'
+import MarketplaceDoodle from '../components/MarketplaceDoodle.jsx'
 import { supabase } from '../lib/supabase.js'
 import { fetchLatestMyPosts } from '../lib/postQueries.js'
 import './AuthenticatedPages.css'
@@ -64,11 +65,15 @@ export default function AccountHomePage() {
     <div className="app-home-layout">
     <main className={`app-page app-home app-home__main${animateEntrance ? ' app-home--enter' : ''}`}>
       <header className="home-hero">
+        <MarketplaceDoodle className="home-hero__doodle" />
         <div className="home-hero__copy">
           <h1 className="text-large-title">Good to see you, {firstName}.</h1>
           <p className="home-hero__subtitle">{isProvider ? 'Your Fixora home.' : 'Local help starts with a clear request.'}</p>
         </div>
-        {!isProvider && <Link className="home-my-posts-link" to="/app/my-posts">My Posts <ArrowRight aria-hidden="true" size={16} /></Link>}
+        {!isProvider ? <div className="home-hero__actions">
+          <Link className="home-hero__post-link" to="/app/posts/new"><Plus aria-hidden="true" size={18} weight="bold" />Post a problem</Link>
+          <Link className="home-my-posts-link" to="/app/my-posts">My Posts <ArrowRight aria-hidden="true" size={16} /></Link>
+        </div> : <Link className="home-hero__provider-link" to="/app/discover">Explore Fixora <ArrowRight aria-hidden="true" size={16} /></Link>}
       </header>
 
       {isProvider && (
@@ -116,7 +121,12 @@ export default function AccountHomePage() {
           )) : <p className="home-rail-empty">Your published posts will appear here.</p>}
         </section>
       )}
-      <Link className="home-rail-discover" to="/app/discover"><strong>Find professionals</strong><span>Browse local services and profiles.</span><ArrowRight aria-hidden="true" size={18} /></Link>
+      {isProvider && <section className="home-rail-card home-rail-card--provider">
+        <div className="app-section__heading"><h2>Professional profile</h2><span className={`home-rail-status${isPublished ? ' is-published' : ''}`}>{providerLoading ? 'Checking' : isPublished ? 'Published' : 'In progress'}</span></div>
+        <p>{providerLoading ? 'Loading your profile status.' : isPublished ? 'Customers can find your services and service areas.' : 'Finish your profile to appear in professional searches.'}</p>
+        <Link to={isOnboardingComplete ? '/app/profile' : '/onboarding/provider'}>{isOnboardingComplete ? 'View profile' : 'Continue setup'} <ArrowRight aria-hidden="true" size={16} /></Link>
+      </section>}
+      <Link className="home-rail-discover" to="/app/discover"><strong>{isProvider ? 'Browse customer requests' : 'Find professionals'}</strong><span>{isProvider ? 'Explore open household requests.' : 'Browse local services and profiles.'}</span><ArrowRight aria-hidden="true" size={18} /></Link>
     </aside>
     </div>
   )
