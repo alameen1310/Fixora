@@ -3,13 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#F6F7F9" />
+    <meta name="theme-color" content="#F2F4F8" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Fixora" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="%BASE_URL%icons/fixora-192.png" />
-    <link rel="apple-touch-icon" href="%BASE_URL%icons/fixora-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="%BASE_URL%icons/fixora-180.png" />
     <meta
       name="description"
       content="Fixora connects household needs with skilled service professionals."
@@ -17,7 +18,14 @@
     <title>Fixora</title>
   </head>
   <body>
-    <div id="root"></div>
+    <style>
+      html, body { min-height: 100%; margin: 0; background: #f2f4f8; }
+      #root { min-height: 100dvh; }
+      .fixora-splash { min-height: 100dvh; display: grid; place-content: center; justify-items: center; gap: 10px; color: #17191d; font: 700 24px system-ui, sans-serif; letter-spacing: -1.5px; }
+      .fixora-splash svg { width: 42px; height: 42px; stroke: #2457d6; stroke-width: 2.35; stroke-linecap: round; stroke-linejoin: round; }
+      .fixora-splash svg path:nth-child(2) { stroke: #17191d; stroke-width: 1.8; }
+    </style>
+    <div id="root"><div class="fixora-splash" role="status" aria-label="Loading Fixora"><svg aria-hidden="true" viewBox="0 0 40 40" fill="none"><path d="M6.5 18.25 20 7l13.5 11.25V33H6.5V18.25Z"/><path d="M15.5 33V22.5h9V33M6.5 18.25 20 7l13.5 11.25"/><path d="m27.5 11.5 4.25-3.25v7"/></svg><span>fixora</span></div></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

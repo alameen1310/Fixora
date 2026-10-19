@@ -144,6 +144,22 @@
   font-size: 0.9rem;
 }
 
+.pwa-offline-notice {
+  position: fixed;
+  z-index: 1000;
+  top: calc(0.65rem + env(safe-area-inset-top));
+  left: 50%;
+  width: max-content;
+  max-width: calc(100vw - 2rem);
+  padding: 0.65rem 0.9rem;
+  transform: translateX(-50%);
+  border-radius: 12px;
+  color: #fff;
+  background: #313846;
+  box-shadow: var(--shadow-raised);
+  font-size: var(--type-footnote);
+}
+
 .pwa-update-notice button {
   display: inline-flex;
   min-height: 42px;

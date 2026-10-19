@@ -56,6 +56,17 @@ export default function PwaControls() {
   const [installed, setInstalled] = useState(() => isRunningInstalled())
   const [updateWorker, setUpdateWorker] = useState(null)
   const [installing, setInstalling] = useState(false)
+  const [online, setOnline] = useState(() => navigator.onLine)
+
+  useEffect(() => {
+    const updateOnline = () => setOnline(navigator.onLine)
+    window.addEventListener('online', updateOnline)
+    window.addEventListener('offline', updateOnline)
+    return () => {
+      window.removeEventListener('online', updateOnline)
+      window.removeEventListener('offline', updateOnline)
+    }
+  }, [])
 
   useEffect(() => {
     const iosGuide = getIOSInstallGuide()
@@ -232,13 +243,14 @@ export default function PwaControls() {
 
       {updateWorker && (
         <aside aria-label="Application update available" className="pwa-update-notice" role="status">
-          <span>A Fixora update is ready.</span>
+          <span>New version available</span>
           <button onClick={applyUpdate} type="button">
             <ArrowClockwise aria-hidden="true" size={18} weight="bold" />
-            Update
+            Refresh
           </button>
         </aside>
       )}
+      {!online && <aside className="pwa-offline-notice" role="status">You’re offline. Check your connection and retry when it’s back.</aside>}
     </>
   )
 }
