@@ -41,7 +41,7 @@
 @media (min-width: 1024px) { .post-form-actions { right: max(32px, calc((100vw - 264px - 1040px) / 2)); left: calc(264px + max(32px, (100vw - 264px - 1040px) / 2)); padding-inline: 32px; } }
 @media (prefers-reduced-motion: reduce) { .post-form-content, .post-form-progress span { animation: none; transition: none; } }
 
-.post-form-page { width: min(100%, 1200px) !important; max-width: 1200px; }
+.post-form-page { width: min(100%, 1200px) !important; max-width: 1200px !important; }
 .post-form-heading h1 { font-size: clamp(2rem, 3.2vw, 2.75rem); }
 .post-form-progress { height: 5px; }
 .post-form-content { min-width: 0; padding: clamp(18px, 2.3vw, 30px); border-radius: 24px; box-shadow: 0 12px 32px rgb(32 56 116 / 8%); }
