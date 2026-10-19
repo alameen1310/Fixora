@@ -1,19 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, CalendarBlank, MapPin, Wrench } from '@phosphor-icons/react'
 import { Link, useParams } from 'react-router-dom'
-import { Avatar, Badge, Button, Skeleton } from '../components/UiPrimitives.jsx'
+import { ActionSheet, Avatar, Badge, Button, Skeleton } from '../components/UiPrimitives.jsx'
 import { fetchProblemPost, formatPostBudget, formatRelativeTime, invalidateSignedPostImage, signPostImages } from '../lib/postQueries.js'
 import { useAuth } from '../context/AuthContext.jsx'
+import { supabase } from '../lib/supabase.js'
+import { useToast } from '../components/ToastProvider.jsx'
 import '../components/Posts.css'
 
 export default function PostDetailPage() {
   const { postId } = useParams()
   const { user } = useAuth()
+  const { showToast } = useToast()
   const [post, setPost] = useState(null)
   const [imageUrls, setImageUrls] = useState({})
   const [activePhoto, setActivePhoto] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [removeOpen, setRemoveOpen] = useState(false)
+  const [actionBusy, setActionBusy] = useState(false)
   const retriedImages = useRef(new Set())
 
   const load = useCallback(async () => {
@@ -66,6 +71,15 @@ export default function PostDetailPage() {
     }
   }
 
+  async function changeStatus(status) {
+    setActionBusy(true)
+    const { error: updateError } = await supabase.from('problem_posts').update({ status }).eq('id', post.id).eq('author_id', user.id)
+    setActionBusy(false)
+    if (updateError) { console.error('[post-write]', { step: 'update', postId: post.id, code: updateError.code, message: updateError.message }); showToast({ type: 'error', message: 'Could not update this post. Try again.' }); return }
+    showToast({ type: 'success', message: status === 'removed' ? 'Post removed.' : status === 'closed' ? 'Post closed.' : 'Post reopened.' })
+    setPost((current) => ({ ...current, status }))
+  }
+
   return (
     <main className="app-page post-detail">
       <Link className="app-back-link post-detail__back" to="/app"><ArrowLeft aria-hidden="true" size={19} />Back to posts</Link>
@@ -104,7 +118,13 @@ export default function PostDetailPage() {
           <div><span>Posted by</span><strong>{post.authorName || 'Fixora member'}</strong></div>
           <time>{formatRelativeTime(post.created_at)}</time>
         </section>
+        {post.author_id === user?.id && post.status !== 'removed' && <div className="post-detail__owner-actions">
+          <Button as={Link} to={`/app/posts/${post.id}/edit`} variant="secondary">Edit</Button>
+          {post.status !== 'removed' && <Button disabled={actionBusy} onClick={() => void changeStatus(post.status === 'closed' ? 'open' : 'closed')} variant="secondary">{post.status === 'closed' ? 'Reopen' : 'Close'}</Button>}
+          {post.status !== 'removed' && <Button disabled={actionBusy} onClick={() => setRemoveOpen(true)} variant="secondary">Remove</Button>}
+        </div>}
       </article>
+      <ActionSheet busy={actionBusy} confirmLabel="Remove post" description="This removes the post from Fixora. Its photos remain stored." onCancel={() => setRemoveOpen(false)} onConfirm={() => { setRemoveOpen(false); void changeStatus('removed') }} open={removeOpen} title="Remove this post?" />
     </main>
   )
 }

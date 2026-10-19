@@ -272,6 +272,7 @@
 .fixora-app__mobile-link.is-active svg { background: var(--color-pale-blue); }
 .fixora-app__mobile-link:active { transform: scale(.96); }
 .fixora-app__mobile-nav.has-post-action { grid-template-columns: repeat(2, minmax(0, 1fr)) 72px repeat(2, minmax(0, 1fr)); }
+.fixora-app__mobile-nav.has-post-action { overflow: visible; isolation: isolate; }
 .fixora-app__mobile-post { position: relative; z-index: 2; display: grid; width: 56px; height: 56px; min-width: 44px; min-height: 44px; place-items: center; justify-self: center; transform: translateY(-8px); border: 5px solid rgb(255 255 255 / 88%); border-radius: 50%; color: #fff; background: linear-gradient(145deg, #3971ee, #1946b8); box-shadow: 0 8px 18px rgb(25 70 184 / 30%), 0 0 0 1px rgb(36 87 214 / 12%); transition: transform 160ms var(--ease-standard), box-shadow 160ms var(--ease-standard); }
 .fixora-app__mobile-post:active { transform: translateY(-8px) scale(.94); }
 .fixora-app__mobile-post:focus-visible { outline: 3px solid rgb(36 87 214 / 55%); outline-offset: 3px; }

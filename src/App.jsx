@@ -22,6 +22,8 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'))
 const ProfessionalProfilePage = lazy(() => import('./pages/ProfessionalProfilePage.jsx'))
 const MyPostsPage = lazy(() => import('./pages/MyPostsPage.jsx'))
 const PostDetailPage = lazy(() => import('./pages/PostDetailPage.jsx'))
+const CreatePostPage = lazy(() => import('./pages/CreatePostPage.jsx'))
+const EditPostPage = lazy(() => import('./pages/EditPostPage.jsx'))
 
 export default function App() {
   return (
@@ -50,6 +52,8 @@ export default function App() {
               <Route element={<ProfilePage />} path="profile" />
               <Route element={<ProfessionalProfilePage />} path="professionals/:professionalId" />
               <Route element={<PostRoleGuard customersOnly><MyPostsPage /></PostRoleGuard>} path="my-posts" />
+              <Route element={<PostRoleGuard customersOnly><CreatePostPage /></PostRoleGuard>} path="posts/new" />
+              <Route element={<PostRoleGuard customersOnly><EditPostPage /></PostRoleGuard>} path="posts/:postId/edit" />
               <Route element={<PostDetailPage />} path="posts/:postId" />
             </Route>
             <Route element={<Navigate replace to="/" />} path="*" />

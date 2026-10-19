@@ -208,7 +208,7 @@ export function PostsFeed({ userId, showOwnLatest = false }) {
           icon={ClipboardText}
           message="Open requests from customers will show up here."
           title="No open posts yet"
-          action={<div className="posts-empty-actions"><Button onClick={() => void loadFirstPage()} variant="secondary">Retry</Button><Button as={Link} to="/app/discover" variant="secondary">Discover professionals</Button></div>}
+          action={<div className="posts-empty-actions">{showOwnLatest && <Button as={Link} to="/app/posts/new">Post a problem</Button>}<Button onClick={() => void loadFirstPage()} variant="secondary">Retry</Button><Button as={Link} to="/app/discover" variant="secondary">Discover professionals</Button></div>}
         />
       )}
       {noOtherPosts && ownLatest && (
