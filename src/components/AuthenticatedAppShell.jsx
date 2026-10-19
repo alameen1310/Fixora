@@ -1,8 +1,9 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { ClockCounterClockwise, Compass, House, UserCircle } from '@phosphor-icons/react'
+import { ClockCounterClockwise, Compass, House, Plus, UserCircle } from '@phosphor-icons/react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { Avatar, Logo } from './UiPrimitives.jsx'
+import { FEATURES } from '../config/features.js'
 import './AuthenticatedAppShell.css'
 
 const destinations = [
@@ -19,6 +20,7 @@ export default function AuthenticatedAppShell() {
   const pageTitle = destinations.find(({ to }) => location.pathname === to)?.label || 'Professional'
   const isTabRoute = destinations.some(({ to }) => location.pathname === to)
   const [showCompactTitle, setShowCompactTitle] = useState(false)
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
   const scrollPositions = useRef({})
   const activePath = useRef(location.pathname)
   const firstName = profile?.full_name?.trim().split(/\s+/)[0] || 'Account'
@@ -36,6 +38,16 @@ export default function AuthenticatedAppShell() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [isHome, location.pathname])
 
+  useEffect(() => {
+    const updateKeyboard = () => setKeyboardOpen(Boolean(document.activeElement?.matches('input, textarea, select')))
+    document.addEventListener('focusin', updateKeyboard)
+    document.addEventListener('focusout', updateKeyboard)
+    return () => {
+      document.removeEventListener('focusin', updateKeyboard)
+      document.removeEventListener('focusout', updateKeyboard)
+    }
+  }, [])
+
   useLayoutEffect(() => {
     scrollPositions.current[activePath.current] = window.scrollY
     activePath.current = location.pathname
@@ -46,15 +58,25 @@ export default function AuthenticatedAppShell() {
     <div className="fixora-app">
       <a className="fixora-app__skip" href="#app-content">Skip to content</a>
 
-      <header className="fixora-app__topbar">
-        {isHome ? <Logo className="fixora-app__brand" to="/app" /> : <span aria-hidden="true" className="fixora-app__brand-placeholder" />}
-        <span aria-hidden="true" className={`fixora-app__compact-title${showCompactTitle ? ' is-visible' : ''}`}>{pageTitle}</span>
-
-        <nav aria-label="Main navigation" className="fixora-app__desktop-nav">
-          {destinations.map(({ label, to, end }) => (
-            <NavLink end={end} key={label} to={to}>{label}</NavLink>
+      <aside aria-label="Application navigation" className="fixora-app__sidebar">
+        <Logo className="fixora-app__sidebar-brand" to="/app" />
+        <nav aria-label="Main navigation" className="fixora-app__side-nav">
+          {destinations.map(({ label, to, icon: Icon, end }) => (
+            <NavLink aria-label={label} end={end} key={label} title={label} to={to}>
+              {({ isActive }) => <><Icon aria-hidden="true" size={22} weight={isActive ? 'fill' : 'regular'} /><span>{label}</span></>}
+            </NavLink>
           ))}
         </nav>
+        {FEATURES.posts && profile?.account_type === 'customer' && <div className="fixora-app__post-slot"><button className="fixora-app__post-button" type="button"><Plus aria-hidden="true" size={20} />Post a problem</button></div>}
+        <Link aria-label="View your profile" className="fixora-app__sidebar-account" to="/app/profile">
+          <Avatar name={profile?.full_name || 'Account'} size={40} />
+          <span>{firstName}</span>
+        </Link>
+      </aside>
+
+      <header className="fixora-app__topbar">
+        <Logo className="fixora-app__brand" to="/app" />
+        <span aria-hidden="true" className={`fixora-app__compact-title${showCompactTitle ? ' is-visible' : ''}`}>{pageTitle}</span>
 
         <div className="fixora-app__account">
           <Link
@@ -72,7 +94,7 @@ export default function AuthenticatedAppShell() {
         <Outlet />
       </div>
 
-      <nav aria-label="Mobile navigation" className="fixora-app__mobile-nav">
+      <nav aria-label="Mobile navigation" className={`fixora-app__mobile-nav${keyboardOpen || location.pathname.startsWith('/app/professionals/') ? ' is-hidden' : ''}`}>
         {destinations.map(({ label, to, icon: Icon, end }) => (
           <NavLink
             className={({ isActive }) => `fixora-app__mobile-link${isActive ? ' is-active' : ''}`}

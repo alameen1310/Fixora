@@ -69,12 +69,13 @@ export default function DiscoverPage() {
   }
 
   return (
-    <main className="app-page">
+    <main className="app-page app-page--discover">
       <header className="app-page__heading">
         <h1 className="text-large-title">Discover professionals</h1>
         <p>Explore published profiles and service areas across Nigeria.</p>
       </header>
 
+      <div className="discover-controls">
       <div className="discover-search-wrap">
         <label className="app-search-field" htmlFor="discover-search">
           <MagnifyingGlass aria-hidden="true" size={20} />
@@ -121,6 +122,7 @@ export default function DiscoverPage() {
             {category.name}
           </Chip>
         ))}
+      </div>
       </div>
 
       <section aria-labelledby="discover-pros-title" className="app-section">

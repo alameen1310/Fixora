@@ -246,3 +246,83 @@
   }
   .fixora-app__compact-title { transition: none; }
 }
+
+/* Responsive app shell */
+.fixora-app { --tabbar-space: calc(100px + env(safe-area-inset-bottom)); }
+.fixora-app__sidebar { display: none; }
+.fixora-app__mobile-nav {
+  right: 16px;
+  bottom: calc(env(safe-area-inset-bottom) + 12px);
+  left: 16px;
+  min-height: 64px;
+  padding: 4px 8px;
+  border: 1px solid rgb(23 25 29 / 8%);
+  border-radius: 32px;
+  background: rgb(255 255 255 / 82%);
+  box-shadow: 0 10px 30px rgb(20 40 120 / 14%);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  transition: transform 200ms var(--ease-standard), opacity 200ms var(--ease-standard);
+}
+.fixora-app__mobile-nav.is-hidden { transform: translateY(calc(100% + 20px)); opacity: 0; pointer-events: none; }
+.fixora-app__mobile-link { min-height: 48px; position: relative; z-index: 1; gap: 2px; font-size: 11px; }
+.fixora-app__mobile-link svg { padding: 2px; box-sizing: content-box; border-radius: 12px; }
+.fixora-app__mobile-link.is-active svg { background: var(--color-pale-blue); }
+.fixora-app__mobile-link:active { transform: scale(.96); }
+.fixora-app__viewport { padding-bottom: var(--tabbar-space); }
+@supports not (backdrop-filter: blur(1px)) {
+  .fixora-app__mobile-nav { background: rgb(255 255 255 / 96%); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .fixora-app__mobile-nav { background: rgb(255 255 255 / 96%); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+
+@media (max-width: 767px) {
+  .fixora-app__topbar { display: flex; }
+  .fixora-app__sidebar { display: none; }
+  .fixora-app__compact-title { display: none; }
+  .fixora-app__viewport { padding-bottom: var(--tabbar-space); }
+}
+
+@media (min-width: 768px) {
+  .fixora-app__topbar, .fixora-app__mobile-nav { display: none; }
+  .fixora-app__sidebar {
+    position: fixed;
+    z-index: 25;
+    inset: 0 auto 0 0;
+    display: flex;
+    width: 76px;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 10px 16px;
+    border-right: 1px solid var(--color-separator);
+    background: #fff;
+  }
+  .fixora-app__sidebar-brand { overflow: hidden; width: 44px; font-size: 0; }
+  .fixora-app__sidebar-brand .fixora-logo__mark { flex: 0 0 36px; }
+  .fixora-app__side-nav { display: grid; width: 100%; gap: 8px; margin-top: 32px; }
+  .fixora-app__side-nav a { display: grid; width: 52px; height: 48px; margin-inline: auto; place-items: center; border-radius: 14px; color: var(--color-text-secondary); text-decoration: none; transition: background-color 180ms ease, color 180ms ease; }
+  .fixora-app__side-nav a span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .fixora-app__side-nav a:hover, .fixora-app__side-nav a.active { color: var(--color-primary); background: var(--color-pale-blue); }
+  .fixora-app__side-nav a:focus-visible { outline-offset: 2px; }
+  .fixora-app__sidebar-account { display: grid; width: 52px; min-height: 52px; margin-top: auto; place-items: center; border-radius: 16px; color: var(--color-text-primary); text-decoration: none; }
+  .fixora-app__sidebar-account span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .fixora-app__viewport { min-height: 100dvh; margin-left: 76px; padding: 32px; }
+}
+
+@media (min-width: 1024px) {
+  .fixora-app__sidebar { width: 264px; align-items: stretch; padding: 28px 18px 18px; }
+  .fixora-app__sidebar-brand { width: fit-content; overflow: visible; font-size: 1.58rem; }
+  .fixora-app__side-nav { margin-top: 40px; }
+  .fixora-app__side-nav a { display: flex; width: 100%; height: 48px; justify-content: flex-start; gap: 14px; padding: 0 14px; border-radius: 13px; font-size: var(--type-body); font-weight: 650; }
+  .fixora-app__side-nav a span, .fixora-app__sidebar-account span { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+  .fixora-app__post-slot { margin-top: 18px; }
+  .fixora-app__post-button { display: flex; width: 100%; min-height: 50px; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 14px; color: #fff; background: linear-gradient(145deg, #3266e6, #1946b8); font: inherit; font-weight: 700; }
+  .fixora-app__sidebar-account { display: flex; width: 100%; justify-content: flex-start; gap: 12px; padding: 6px; font-weight: 650; }
+  .fixora-app__viewport { margin-left: 264px; padding: 32px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fixora-app__mobile-nav { transition: none; }
+  .fixora-app__side-nav a { transition: none; }
+}

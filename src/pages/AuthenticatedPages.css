@@ -5,6 +5,8 @@
   margin: 0 auto;
   padding: 1.5rem 0 3rem;
 }
+.app-page:not(.app-page--discover) { max-width: 680px; }
+.app-page--discover { max-width: 1200px; }
 
 .app-eyebrow {
   display: block;
@@ -275,6 +277,7 @@
 .discover-search-wrap {
   margin-bottom: 0.85rem;
 }
+.discover-controls { position: sticky; z-index: 12; top: 0; padding: 0 0 2px; background: var(--color-background-grouped); }
 
 .app-search-field {
   position: relative;
@@ -337,6 +340,16 @@
   mask-image: linear-gradient(90deg, transparent 0, #000 1rem, #000 calc(100% - 1rem), transparent 100%);
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 768px) {
+  .app-page { width: min(100%, 1200px); padding-top: 0; }
+  .app-page:not(.app-page--discover) { width: min(100%, 680px); }
+  .app-page--discover { width: min(100%, 1200px); }
+  .discover-controls { top: 0; padding-top: 0.4rem; }
+}
+@media (max-width: 767px) {
+  .discover-controls { top: calc(56px + env(safe-area-inset-top)); }
 }
 
 .discover-category-chips::-webkit-scrollbar {
