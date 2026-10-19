@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, X } from '@phosphor-icons/react'
-import { Button, Chip, InputField, SegmentedControl, SelectField } from '../components/UiPrimitives.jsx'
+import { Button, Chip, InputField, SegmentedControl, SelectField, Skeleton } from '../components/UiPrimitives.jsx'
+import MarketplaceDoodle from '../components/MarketplaceDoodle.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../components/ToastProvider.jsx'
 import { preparePostPhoto } from '../lib/postImages.js'
@@ -169,18 +170,31 @@ function PostFormPage({ editing = false }) {
     finally { setSaving(false) }
   }
 
-  if (loading) return <main className="app-page"><p role="status">Loading your post…</p></main>
+  if (loading) return <main aria-busy="true" className="app-page post-form-page post-form-page--loading"><p className="post-form-loading__status" role="status">Loading your post…</p><Skeleton className="post-form-loading__title" /><Skeleton className="post-form-loading__card" /></main>
   return (
     <main className="app-page post-form-page">
       <Link className="app-back-link post-detail__back" to={editing ? `/app/posts/${postId}` : '/app'}><ArrowLeft aria-hidden="true" size={19} />Back</Link>
       <header className="post-form-heading"><p>Step {step} of 4</p><h1>{editing ? 'Edit your post' : ['Add photos and title', 'Describe the work', 'Set your budget', 'Review your post'][step - 1]}</h1><div aria-label={`Step ${step} of 4`} className="post-form-progress"><span style={{ transform: `scaleX(${step / 4})` }} /></div></header>
       {error && <p className="post-form-error" role="alert">{error}</p>}
+      <div className="post-form-workspace">
       <section className={`post-form-content post-form-content--step-${step}`}>
         {step === 1 && <><InputField id="post-title" label="Title" maxLength={120} onChange={(event) => set('title', event.target.value)} placeholder="What needs fixing?" value={values.title} />{photosEditable && <label className="post-photo-picker">Add photos (optional)<input accept="image/*" multiple onChange={(event) => { void selectPhotos(event.target.files); event.target.value = '' }} type="file" /></label>}<div className="post-photo-list">{existing.map((image) => <div key={image.storage_path}>{existingUrls[image.storage_path] && <img alt="Existing post photo" src={existingUrls[image.storage_path]} />}<span>Photo {image.sort_order + 1}</span>{photosEditable && <button aria-label={`Remove photo ${image.sort_order + 1}`} disabled={saving} onClick={() => void removeExistingPhoto(image).catch(() => setError('Could not remove this photo. Try again.'))} type="button"><X size={18} /></button>}</div>)}{photos.map((photo, index) => <div key={photo.url}><img alt={`Selected photo ${index + 1}`} src={photo.url} /><span>{photo.name}</span><button aria-label={`Remove photo ${index + 1}`} onClick={() => void removePhoto(index)} type="button"><X size={18} /></button></div>)}</div>{!editing && <small>Photos are not saved in drafts. Avoid faces, documents, or valuables.</small>}</>}
         {step === 2 && <><SelectField id="post-category" label="Service category" onChange={(event) => set('category_id', event.target.value)} value={values.category_id}><option value="">Choose a category</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</SelectField><label className="ui-field" htmlFor="post-description"><span className="ui-field__label">Description</span><textarea id="post-description" maxLength={2500} onChange={(event) => set('description', event.target.value)} rows={7} value={values.description} /><small className="ui-field__hint">{values.description.length}/2,500</small></label></>}
         {step === 3 && <><SegmentedControl label="Budget type" onChange={(value) => set('budget_type', value)} options={budgetOptions} value={values.budget_type} />{values.budget_type !== 'open_to_quotes' && <div className="post-form-budget"><InputField id="post-min" inputMode="numeric" label={values.budget_type === 'range' ? 'Minimum (₦)' : 'Amount (₦)'} onChange={(event) => set('min', event.target.value.replace(/\D/g, ''))} value={values.min} /><output>{values.min ? new Intl.NumberFormat('en-NG').format(Number(values.min)) : ''}</output>{values.budget_type === 'range' && <InputField id="post-max" inputMode="numeric" label="Maximum (₦)" onChange={(event) => set('max', event.target.value.replace(/\D/g, ''))} value={values.max} />}</div>}<label className="post-form-switch"><input checked={values.negotiable} onChange={(event) => set('negotiable', event.target.checked)} type="checkbox" />Budget is negotiable</label><InputField id="post-region" label="State or region" onChange={(event) => set('region', event.target.value)} placeholder="e.g. Lagos State" value={values.region} /><InputField id="post-city" label="City or area" onChange={(event) => set('city', event.target.value)} placeholder="e.g. Ikeja" value={values.city} /><fieldset className="post-form-options"><legend>When do you need the work?</legend>{timings.map(([value, label]) => <Chip key={value} onClick={() => set('timing', value)} selected={values.timing === value}>{label}</Chip>)}</fieldset>{values.timing === 'specific_date' && <InputField id="post-date" label="Date" onChange={(event) => set('target_date', event.target.value)} type="date" value={values.target_date} />}<fieldset className="post-form-options"><legend>Type of work</legend>{jobTypes.map(([value, label]) => <Chip key={value} onClick={() => set('job_type', value)} selected={values.job_type === value}>{label}</Chip>)}</fieldset></>}
         {step === 4 && <div className="post-form-review"><strong>{values.title || 'Your post title'}</strong><p>{selectedCategory?.name || 'Choose a category'} · {values.city}{values.region ? `, ${values.region}` : ''}</p><p>{values.description}</p><p>{values.budget_type === 'open_to_quotes' ? 'Open to quotes' : `₦${values.min}${values.budget_type === 'range' ? ` – ₦${values.max}` : ''}`}</p><small>Your post photos are visible to signed-in Fixora users. Do not upload sensitive images.</small></div>}
       </section>
+      <aside aria-label="Request guidance" className="post-form-aside">
+        <MarketplaceDoodle />
+        <span className="app-eyebrow">As you work</span>
+        <h2>Help professionals understand the job.</h2>
+        <p>Share the work needed and the area where it should happen. Keep your street address and sensitive details private.</p>
+        <div className="post-form-aside__summary">
+          <span>Request title</span><strong>{values.title.trim() || 'Add a short title'}</strong>
+          <span>Service</span><strong>{selectedCategory?.name || 'Choose a category'}</strong>
+          <span>Area</span><strong>{[values.city, values.region].filter(Boolean).join(', ') || 'Add a city or area'}</strong>
+        </div>
+      </aside>
+      </div>
       <footer className="post-form-actions">{step > 1 && <Button disabled={saving} onClick={() => setStep((current) => current - 1)} variant="secondary">Back</Button>}{step < 4 ? <Button onClick={() => { const problem = step === 1 && (!values.title.trim() || values.title.length > 120) ? 'Add a title between 1 and 120 characters.' : step === 2 && (!values.category_id || !values.description.trim()) ? 'Choose a category and describe the work.' : ''; if (problem) setError(problem); else { setError(''); setStep((current) => current + 1) } }}>Next</Button> : <Button loading={saving} onClick={() => void publish()}>{editing ? 'Save changes' : 'Publish post'}</Button>}</footer>
     </main>
   )

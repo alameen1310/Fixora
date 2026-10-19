@@ -22,5 +22,22 @@
 .applicants-empty h2 { margin: 0; font-size: 1.3rem; }
 .applicants-empty p { margin: 6px 0 0; color: var(--color-text-secondary); }
 .marketplace-doodle { display: block; width: 160px; max-width: 100%; color: #809bd9; }
-@media (min-width: 900px) { .applicants-layout { grid-template-columns: minmax(0, 1fr) 280px; gap: 24px; } }
+@media (min-width: 1200px) { .applicants-layout { grid-template-columns: minmax(0, 1fr) 280px; gap: 24px; } }
 @media (max-width: 560px) { .applicants-empty { min-height: 220px; flex-direction: column; text-align: center; } .applicants-empty .marketplace-doodle { width: 150px; } .applicant-card__head { align-items: flex-start; flex-wrap: wrap; } .applicant-card__head > .ui-badge { margin-left: 64px; } }
+
+.applicants-heading p { white-space: normal; overflow-wrap: anywhere; }
+.applicant-card, .applicants-summary { border-radius: 22px; box-shadow: 0 10px 28px rgb(25 70 184 / 7%), 0 2px 5px rgb(23 25 29 / 3%); }
+.applicant-card { gap: 16px; padding: clamp(16px, 2vw, 24px); }
+.applicant-card__identity h2 { font-size: clamp(1.08rem, 1.2vw, 1.25rem); }
+.applicant-card__description, .applicant-card__services { font-size: .94rem; line-height: 1.55; }
+.applicant-card__actions .ui-button { min-height: 48px; }
+.applicants-summary { padding: 22px; }
+@media (max-width: 767px) {
+  .applicants-page { width: calc(100% - 2rem) !important; }
+  .applicant-card { padding: 16px; }
+  .applicant-card__actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+}
+@media (max-width: 360px) {
+  .applicant-card__head { gap: 9px; }
+  .applicant-card__head > .ui-badge { margin-left: 58px; }
+}

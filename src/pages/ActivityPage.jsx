@@ -52,7 +52,7 @@ export default function ActivityPage() {
       </header>
       {loading ? <div className="activity-list" aria-label="Loading activity" role="status">{[0, 1, 2].map((item) => <Skeleton className="activity-skeleton" key={item} />)}</div>
         : error ? <section className="posts-feed__error" role="alert"><h2>Activity didn’t load</h2><p>Check your connection and try again.</p><Button onClick={() => void load()} variant="secondary">Retry</Button></section>
-          : items.length === 0 ? <section className="activity-empty"><MarketplaceDoodle className="activity-empty__doodle" /><EmptyState icon={Bell} message="When a professional applies or a customer makes a decision, updates will appear here." title="No activity yet" /></section>
+          : items.length === 0 ? <section className="activity-empty"><MarketplaceDoodle className="activity-empty__doodle" /><EmptyState action={<Button as={Link} to="/app/discover" variant="secondary">{isProvider ? 'Browse requests' : 'Discover professionals'} <ArrowRight aria-hidden="true" size={16} /></Button>} icon={Bell} message="When a professional applies or a customer makes a decision, updates will appear here." title="No activity yet" /></section>
             : <div className="activity-layout">
               <section aria-label="Recent activity" className="activity-list">
                 {items.map((item) => {

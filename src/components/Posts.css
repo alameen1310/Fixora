@@ -91,18 +91,40 @@
 @media (min-width: 1280px) {
   .posts-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
-@media (min-width: 1024px) {
+@media (min-width: 1200px) {
   .post-detail__layout { grid-template-columns: minmax(0, 1.12fr) minmax(380px, .88fr); gap: 24px; }
   .post-detail__content { position: sticky; top: 92px; }
   .post-gallery { margin: 0; }
   .post-gallery__slide { aspect-ratio: 1.12 / 1; }
   .app-page--posts .posts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@media (min-width: 1500px) { .app-page--posts .posts-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1600px) { .app-page--posts .posts-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 768px) {
-  .app-page.post-form-page { width: min(100%, 980px) !important; }
+  .app-page.post-form-page { width: min(100%, 1200px) !important; }
   .app-page.app-page--posts { width: min(100%, 1480px) !important; }
+}
+@media (min-width: 1024px) {
+  .app-page--posts .posts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1600px) {
+  .app-page--posts .posts-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) {
   .post-card, .post-card__cover > img { transition: none; }
+}
+
+.post-detail__content { gap: clamp(14px, 1.7vw, 20px); padding: clamp(20px, 3vw, 34px); border-radius: 24px; box-shadow: 0 12px 32px rgb(32 56 116 / 8%); }
+.post-detail__content h1 { font-size: clamp(1.8rem, 3.1vw, 2.6rem); }
+.post-detail__description { color: #535b69; font-size: clamp(1rem, 1.1vw, 1.08rem); line-height: 1.7; }
+.post-detail__meta { font-size: .96rem; }
+.post-detail__no-gallery { min-height: 0; aspect-ratio: 4 / 3; }
+.post-detail__owner-actions .ui-button, .post-application-panel .ui-button { min-height: 48px; }
+.post-detail__section { border-color: rgb(23 25 29 / 9%); }
+@media (max-width: 767px) {
+  .app-page.post-detail { width: calc(100% - 2rem) !important; }
+  .post-gallery { margin-bottom: 14px; border-radius: 18px; }
+  .post-gallery__slide { aspect-ratio: 4 / 3; }
+  .post-detail__content { gap: 14px; padding: 20px 17px; border-radius: 20px; }
+  .post-detail__owner-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .post-detail__owner-actions .ui-button { min-width: 0; padding-inline: 10px; }
 }
