@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { ArrowUpRight as ArrowUpRightIcon, ArrowDown } from '@phosphor-icons/react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useGSAP } from '@gsap/react'
@@ -51,7 +52,7 @@ function StoryRevealText() {
 }
 
 function ArrowUpRight() {
-  return <span aria-hidden="true" className="arrow-up-right">↗</span>
+  return <ArrowUpRightIcon aria-hidden="true" className="arrow-up-right" size={18} weight="regular" />
 }
 
 export default function LandingPage() {
@@ -149,12 +150,11 @@ export default function LandingPage() {
                 <Link className="button button--primary" to="/signup/customer">
                   Find a professional <ArrowUpRight />
                 </Link>
-                <Link className="button button--text" to="/signup/provider">
+                <Link className="button button--tonal" to="/signup/provider">
                   Offer your services <ArrowUpRight />
                 </Link>
               </div>
               <div className="hero-note" data-hero-enter>
-                <span aria-hidden="true" className="hero-note__line" />
                 <span>Real needs. Demonstrated skill. A clearer way to choose.</span>
               </div>
             </div>
@@ -177,7 +177,7 @@ export default function LandingPage() {
           </div>
           <div className="hero-bottomline">
             <span>Fixora connects household needs with skilled professionals.</span>
-            <a href="#how-it-works">See how it works <span aria-hidden="true">↓</span></a>
+            <a href="#how-it-works">See how it works <ArrowDown aria-hidden="true" size={16} /></a>
           </div>
         </section>
 

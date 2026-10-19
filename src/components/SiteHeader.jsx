@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ArrowUpRight } from '@phosphor-icons/react'
 import './SiteHeader.css'
 
 const links = [
@@ -68,12 +69,12 @@ export default function SiteHeader() {
             ))}
           </div>
           <div className="primary-navigation__actions">
-            <Link className="nav-action nav-action--quiet" onClick={closeMenu} to="/signup/customer">
+            <Link className="nav-action nav-action--primary" onClick={closeMenu} to="/signup/customer">
               Find a professional
             </Link>
-            <Link className="nav-action nav-action--primary" onClick={closeMenu} to="/signup/provider">
+            <Link className="nav-action nav-action--secondary" onClick={closeMenu} to="/signup/provider">
               Offer your services
-              <span aria-hidden="true">↗</span>
+              <ArrowUpRight aria-hidden="true" size={16} />
             </Link>
           </div>
         </nav>

@@ -132,14 +132,15 @@
   box-shadow: 0 15px 28px rgb(36 87 214 / 25%);
 }
 
-.button--text {
-  color: var(--color-text-primary);
-  background: transparent;
-}
-
-.button--text:hover {
+.button--tonal {
   color: var(--color-primary-dark);
   background: var(--color-pale-blue);
+  box-shadow: 0 8px 18px rgb(36 87 214 / 8%);
+}
+
+.button--tonal:hover {
+  color: var(--color-primary-dark);
+  background: #e3ebff;
 }
 
 .arrow-up-right {
@@ -803,6 +804,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .button, .arrow-up-right { transition: none; }
+  .button:hover { transform: none; }
   .service-marquee__window {
     overflow: visible;
     mask-image: none;
