@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { MagnifyingGlass, XCircle } from '@phosphor-icons/react'
 import PublishedProfessionals from '../components/PublishedProfessionals.jsx'
@@ -15,7 +15,14 @@ export default function DiscoverPage() {
   const [selectedCategory, setSelectedCategory] = useState(initialCategory)
   const [query, setQuery] = useState(initialQuery)
   const [resultCount, setResultCount] = useState(null)
+  const [resultsLoading, setResultsLoading] = useState(true)
+  const [resultsError, setResultsError] = useState(false)
   const searchInputRef = useRef(null)
+  const handleResultCountChange = useCallback((count, loading, error) => {
+    setResultCount(count)
+    setResultsLoading(loading)
+    setResultsError(Boolean(error))
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -119,7 +126,7 @@ export default function DiscoverPage() {
       <section aria-labelledby="discover-pros-title" className="app-section">
         <div className="app-section__heading">
           <h2 id="discover-pros-title">Available professionals</h2>
-          {resultCount !== null && (
+          {!resultsLoading && !resultsError && resultCount !== null && (
             <span className="discover-results-count">
               {resultCount} {resultCount === 1 ? 'professional' : 'professionals'}
             </span>
@@ -128,11 +135,11 @@ export default function DiscoverPage() {
 
         <PublishedProfessionals
           categorySlug={selectedCategory}
-          onCountChange={(count) => setResultCount(count)}
+          onCountChange={handleResultCountChange}
           query={query}
         />
 
-        {(selectedCategory || query) && resultCount === 0 && (
+        {!resultsLoading && !resultsError && (selectedCategory || query) && resultCount === 0 && (
           <div className="discover-empty-actions">
             <button className="ui-button ui-button--secondary" onClick={clearAllFilters} type="button">
               Clear filters
