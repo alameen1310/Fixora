@@ -3,3 +3,11 @@ dist/
 .env*
 !.env.example
 supabase/.temp/
+
+# Keep local agent guidance and product planning out of public Git history.
+/AGENTS.md
+/ABOUT.md
+/DESIGN.md
+/.agents/
+/skills-lock.json
+/docs/proposals/
