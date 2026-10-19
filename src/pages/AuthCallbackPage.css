@@ -7,6 +7,7 @@
   position: relative;
   display: flex;
   min-height: 100svh;
+  min-height: 100dvh;
   flex-direction: column;
   overflow: hidden;
   padding: max(1.35rem, env(safe-area-inset-top)) clamp(1.25rem, 5vw, 5.5rem) max(1.15rem, env(safe-area-inset-bottom));
@@ -88,7 +89,7 @@
 }
 
 @media (max-width: 700px) {
-  .auth-callback { min-height: 100svh; padding: max(1rem, env(safe-area-inset-top)) 1.15rem max(0.85rem, env(safe-area-inset-bottom)); }
+  .auth-callback { min-height: 100svh; min-height: 100dvh; padding: max(1rem, env(safe-area-inset-top)) 1.15rem max(0.85rem, env(safe-area-inset-bottom)); }
   .auth-callback__secure { font-size: 0; }
   .auth-callback__secure svg { font-size: 1.25rem; }
   .auth-callback__layout { width: min(100%, 510px); grid-template-columns: minmax(0, 1fr); align-content: center; gap: 1.3rem; padding: clamp(1.7rem, 5vh, 3rem) 0; }
@@ -121,6 +122,20 @@
   .auth-callback__actions { flex-direction: column; }
   .auth-callback__retry,
   .auth-callback__back { width: 100%; }
+}
+
+.auth-callback--clean .auth-callback__ambient,
+.auth-callback--clean .auth-callback__story,
+.auth-callback--clean .auth-callback__footer { display: none; }
+.auth-callback--clean .auth-callback__layout {
+  grid-template-columns: minmax(0, 480px);
+  justify-content: center;
+  padding-block: 1.5rem;
+}
+.auth-callback--clean .auth-callback__status {
+  max-width: none;
+  justify-self: stretch;
+  align-self: center;
 }
 
 @media (prefers-reduced-motion: reduce) {

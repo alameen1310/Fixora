@@ -3,9 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { ArrowLeft } from '@phosphor-icons/react'
 import SignupForm from './SignupForm.jsx'
-import { Logo, SegmentedControl } from './UiPrimitives.jsx'
+import { AuthHeader, SegmentedControl } from './UiPrimitives.jsx'
 import kitchenWork from '../assets/kitchen-renovation.jpg'
 import finishedKitchen from '../assets/finished-kitchen.jpg'
 import plumberAtWork from '../assets/plumber-at-work.png'
@@ -80,14 +79,7 @@ export default function SignupExperience({ audience }) {
 
   return (
     <div className="signup-page" ref={pageRef}>
-      <header className="signup-header">
-        <Link aria-label="Back to Fixora home page" className="signup-header__back" to="/">
-          <ArrowLeft aria-hidden="true" size={20} weight="bold" />
-          <span>Home</span>
-        </Link>
-        <Logo className="signup-brand" to="/" />
-        <div aria-hidden="true" className="signup-header__spacer" />
-      </header>
+      <AuthHeader className="signup-header" />
 
       <main className="signup-layout">
         <section aria-labelledby="signup-title" className="signup-form-column">

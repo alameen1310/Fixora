@@ -19,7 +19,9 @@
 
 /* Auth Header with Left-Aligned Back Button */
 .auth-header {
-  display: flex;
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   min-height: 48px;
   align-items: center;
   justify-content: space-between;
@@ -30,8 +32,9 @@
   display: inline-flex;
   min-height: 44px;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.4rem 0.65rem 0.4rem 0.4rem;
+  width: 44px;
+  justify-content: center;
+  padding: 0;
   border-radius: var(--radius-sm);
   color: var(--color-primary-dark);
   font-size: var(--type-footnote);
@@ -39,6 +42,7 @@
   text-decoration: none;
   transition: background-color var(--motion-fast) var(--ease-standard);
 }
+.auth-header__back span { display: none; }
 
 .auth-header__back:hover {
   background: rgb(36 87 214 / 8%);
@@ -59,7 +63,9 @@
   border-radius: var(--radius-xl);
   background: var(--color-surface);
   box-shadow: var(--shadow-raised);
+  animation: auth-enter 220ms var(--ease-standard) both;
 }
+@keyframes auth-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 .auth-heading {
   margin-bottom: 1.4rem;
@@ -310,3 +316,5 @@
     border-radius: var(--radius-lg);
   }
 }
+
+@media (prefers-reduced-motion: reduce) { .auth-card { animation: none; } }

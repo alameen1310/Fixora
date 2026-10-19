@@ -14,13 +14,15 @@ export default function SignOutAction({ className = '', location = 'profile' }) 
 
   async function confirmSignOut() {
     setBusy(true)
+    try { window.sessionStorage.setItem('fixora.signingOut', '1') } catch { /* Best effort status persistence. */ }
     const { error } = await signOut()
     setBusy(false)
     if (error) {
       showToast({ type: 'error', message: 'We couldn’t complete sign-out on the server, but have cleared your local session.' })
     }
     setOpen(false)
-    navigate('/', { replace: true })
+    try { window.sessionStorage.removeItem('fixora.signingOut') } catch { /* Best effort cleanup. */ }
+    navigate('/auth/login', { replace: true })
   }
 
   return (

@@ -173,6 +173,30 @@
   stroke-width: 1.8;
 }
 
+.ui-auth-header {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  min-height: 52px;
+  align-items: center;
+  justify-items: center;
+}
+.ui-auth-header__back {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  grid-column: 1;
+  place-items: center;
+  justify-self: start;
+  border-radius: var(--radius-sm);
+  color: var(--color-primary-dark);
+  text-decoration: none;
+  transition: background-color var(--motion-fast) var(--ease-standard);
+}
+.ui-auth-header__back:hover { background: rgb(36 87 214 / 8%); }
+.ui-auth-header__brand { grid-column: 2; font-size: 1.35rem; }
+.ui-auth-header__spacer { width: 44px; grid-column: 3; }
+
 /* ListGroup & ListRow (iOS Inset Grouped) */
 .ui-list-group {
   overflow: hidden;
@@ -550,7 +574,7 @@
   border-radius: var(--radius-xl);
   background: rgb(255 255 255 / 96%);
   box-shadow: var(--shadow-floating);
-  animation: ui-slide-up 240ms var(--ease-sheet);
+  animation: ui-slide-up 320ms var(--ease-sheet);
 }
 
 .ui-action-sheet h2 {

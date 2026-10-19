@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { CaretRight, CircleNotch, LockKey, X } from '@phosphor-icons/react'
+import { ArrowLeft, CaretRight, CircleNotch, LockKey } from '@phosphor-icons/react'
 import './UiPrimitives.css'
 
 export function Button({ as: Element = 'button', children, className = '', loading = false, type, variant = 'primary', wide = false, ...props }) {
@@ -61,6 +61,18 @@ export function Logo({ className = '', to = '/' }) {
       </svg>
       <span>fixora</span>
     </Link>
+  )
+}
+
+export function AuthHeader({ className = '' }) {
+  return (
+    <header className={`ui-auth-header${className ? ` ${className}` : ''}`}>
+      <Link aria-label="Back to Fixora home" className="ui-auth-header__back" to="/">
+        <ArrowLeft aria-hidden="true" size={20} weight="bold" />
+      </Link>
+      <Logo className="ui-auth-header__brand" />
+      <span aria-hidden="true" className="ui-auth-header__spacer" />
+    </header>
   )
 }
 
@@ -161,7 +173,7 @@ export function Chip({ children, selected = false, ...props }) {
 
 export function Avatar({ name = '', size = 44 }) {
   const words = name.trim().split(/\s+/).filter(Boolean)
-  const initials = words.slice(0, 2).map((word) => word[0]).join('').toUpperCase() || 'F'
+  const initials = (words.length === 1 ? words[0].slice(0, 2) : words.slice(0, 2).map((word) => word[0]).join('')).toUpperCase() || 'F'
   const colorIndex = [...name].reduce((total, character) => total + character.charCodeAt(0), 0) % 4
   const sizeStyle = size !== 44 ? { width: `${size}px`, height: `${size}px`, minWidth: `${size}px`, fontSize: `${Math.round(size * 0.4)}px` } : undefined
   return (
@@ -216,11 +228,8 @@ export function ActionSheet({ busy = false, cancelLabel = 'Cancel', confirmLabel
 
   if (!open) return null
   return (
-    <div aria-modal="true" className="ui-sheet-backdrop" role="dialog">
+    <div aria-modal="true" className="ui-sheet-backdrop" onClick={(event) => event.target === event.currentTarget && !busy && onCancel?.()} role="dialog">
       <section aria-labelledby="ui-sheet-title" className="ui-action-sheet">
-        <button aria-label="Close" className="ui-action-sheet__close" disabled={busy} onClick={onCancel} type="button">
-          <X aria-hidden="true" size={18} />
-        </button>
         <h2 id="ui-sheet-title">{title}</h2>
         {description && <p>{description}</p>}
         <div className="ui-action-sheet__actions">

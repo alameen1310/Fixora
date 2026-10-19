@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import { Logo } from './UiPrimitives.jsx'
 
 function AuthMessage({ children }) {
   return (
@@ -9,9 +10,16 @@ function AuthMessage({ children }) {
   )
 }
 
+function SigningOut() {
+  return <main className="account-state" role="status"><Logo /><p>Signing out…</p></main>
+}
+
 export default function ProtectedRoute({ children, onboarding = false }) {
   const location = useLocation()
   const { authConfigured, user, profile, loading, sessionError, retrySession, profileLoading, profileError, refreshProfile } = useAuth()
+  try {
+    if (window.sessionStorage.getItem('fixora.signingOut') === '1') return <SigningOut />
+  } catch { /* Continue through the normal session state when storage is blocked. */ }
 
   if (!authConfigured) {
     return <AuthMessage><h1>Connect Fixora to Supabase</h1><p>Add the required Vite environment variables to enable accounts.</p></AuthMessage>

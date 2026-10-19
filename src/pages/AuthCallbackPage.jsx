@@ -146,7 +146,7 @@ function CallbackExperience() {
   const isError = Boolean(failure)
   const activePhase = isError ? 'error' : phase
   const messages = {
-    verify: { title: 'Verifying your sign-in', detail: 'We’re checking the secure link and restoring your Fixora session.' },
+    verify: { title: 'Signing you in…', detail: 'We’re restoring your Fixora session securely.' },
     prepare: { title: 'Preparing your account', detail: 'Your profile and next setup step are being brought together.' },
     continue: { title: 'Taking you to Fixora', detail: 'Your session is ready. Opening the right place for you now.' },
     error: { title: 'Let’s get you back on track', detail: failure },
@@ -154,7 +154,7 @@ function CallbackExperience() {
   const current = messages[activePhase]
 
   return (
-    <main className="auth-callback" aria-labelledby="callback-title">
+    <main className={`auth-callback${!isError ? ' auth-callback--clean' : ''}`} aria-labelledby="callback-title">
       <div aria-hidden="true" className="auth-callback__ambient">
         <span className="auth-callback__orb auth-callback__orb--one" />
         <span className="auth-callback__orb auth-callback__orb--two" />
@@ -168,7 +168,7 @@ function CallbackExperience() {
       <div className="auth-callback__layout">
         <section className="auth-callback__story">
           <p className="auth-callback__eyebrow">A better path to the right help</p>
-          <h1 id="callback-title">Good work starts with <span>trust.</span></h1>
+          <h1>Good work starts with <span>trust.</span></h1>
           <p className="auth-callback__intro">Fixora brings people and skilled home-service professionals together through real work, useful details, and a clear next step.</p>
           <motion.div
             aria-hidden="true"
@@ -211,7 +211,7 @@ function CallbackExperience() {
               animate={{ opacity: 1, y: 0, filter: 'blur(0px)', transition: swapTransition }}
               exit={{ opacity: 0, y: reduceMotion ? 0 : -6, filter: reduceMotion ? 'blur(0px)' : `blur(${blur.panel})`, transition: swapTransition }}
             >
-              <h2>{current.title}</h2>
+              <h2 id="callback-title">{current.title}</h2>
               <p>{current.detail}</p>
             </motion.div>
           </AnimatePresence>

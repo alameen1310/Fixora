@@ -28,7 +28,7 @@ function PasswordField({ error, hint, id, label, onBlur, onChange, onToggle, val
           name={id}
           onBlur={onBlur}
           onChange={onChange}
-          placeholder="At least 8 characters"
+          placeholder="Enter password"
           required
           type={visible ? 'text' : 'password'}
           value={value}

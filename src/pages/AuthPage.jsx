@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Eye, EyeSlash, GoogleLogo } from '@phosphor-icons/react'
+import { ArrowRight, CircleNotch, Eye, EyeSlash, GoogleLogo } from '@phosphor-icons/react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../components/ToastProvider.jsx'
 import { authConfigured, supabase } from '../lib/supabase.js'
-import { Button, Logo } from '../components/UiPrimitives.jsx'
+import { AuthHeader, Button } from '../components/UiPrimitives.jsx'
 import './AuthPage.css'
 
 const modes = {
@@ -38,7 +38,8 @@ export default function AuthPage({ mode = 'login' }) {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [visible, setVisible] = useState(false)
   const [confirmVisible, setConfirmVisible] = useState(false)
-  const [busy, setBusy] = useState(false)
+  const [busyAction, setBusyAction] = useState('')
+  const busy = Boolean(busyAction)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const location = useLocation()
@@ -75,7 +76,7 @@ export default function AuthPage({ mode = 'login' }) {
       }
     }
 
-    setBusy(true)
+    setBusyAction('email')
     try {
       if (mode === 'login') {
         const { error: authError } = await supabase.auth.signInWithPassword({
@@ -117,7 +118,7 @@ export default function AuthPage({ mode = 'login' }) {
       setError(formatted)
       showToast({ type: 'error', message: formatted })
     } finally {
-      setBusy(false)
+      setBusyAction('')
     }
   }
 
@@ -129,7 +130,7 @@ export default function AuthPage({ mode = 'login' }) {
       showToast({ type: 'error', message: msg })
       return
     }
-    setBusy(true)
+    setBusyAction('google')
     try {
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -140,7 +141,7 @@ export default function AuthPage({ mode = 'login' }) {
       const formatted = formatAuthError(authError)
       setError(formatted)
       showToast({ type: 'error', message: formatted })
-      setBusy(false)
+      setBusyAction('')
     }
   }
 
@@ -149,14 +150,7 @@ export default function AuthPage({ mode = 'login' }) {
   return (
     <main className="auth-page">
       <div className="auth-container">
-        <header className="auth-header">
-          <Link aria-label="Back to Fixora home" className="auth-header__back" to="/">
-            <ArrowLeft aria-hidden="true" size={20} weight="bold" />
-            <span>Home</span>
-          </Link>
-          <Logo className="auth-header__brand" to="/" />
-          <div aria-hidden="true" className="auth-header__spacer" />
-        </header>
+        <AuthHeader className="auth-header" />
 
         <section aria-labelledby="auth-title" className="auth-card">
           <div className="auth-heading">
@@ -172,7 +166,8 @@ export default function AuthPage({ mode = 'login' }) {
               type="button"
             >
               <GoogleLogo aria-hidden="true" size={20} weight="bold" />
-              <span>Continue with Google</span>
+              {busyAction === 'google' && <CircleNotch aria-hidden="true" className="ui-button__spinner" size={18} />}
+              <span>{busyAction === 'google' ? 'Connecting…' : 'Continue with Google'}</span>
             </button>
           )}
 
@@ -188,6 +183,7 @@ export default function AuthPage({ mode = 'login' }) {
                 <label htmlFor="auth-email">Email address</label>
                 <input
                   autoCapitalize="none"
+                  disabled={busy}
                   autoComplete="email"
                   id="auth-email"
                   inputMode="email"
@@ -208,6 +204,7 @@ export default function AuthPage({ mode = 'login' }) {
                 <div className="auth-password-control">
                   <input
                     autoComplete={mode === 'reset' ? 'new-password' : 'current-password'}
+                    disabled={busy}
                     id="auth-password"
                     minLength={mode === 'reset' ? 8 : undefined}
                     onChange={(event) => setPassword(event.target.value)}
@@ -220,6 +217,7 @@ export default function AuthPage({ mode = 'login' }) {
                     aria-label={visible ? 'Hide password' : 'Show password'}
                     className="auth-password-toggle"
                     onClick={() => setVisible((current) => !current)}
+                    disabled={busy}
                     type="button"
                   >
                     {visible ? <EyeSlash aria-hidden="true" size={19} /> : <Eye aria-hidden="true" size={19} />}
@@ -245,6 +243,7 @@ export default function AuthPage({ mode = 'login' }) {
                     aria-label={confirmVisible ? 'Hide password' : 'Show password'}
                     className="auth-password-toggle"
                     onClick={() => setConfirmVisible((current) => !current)}
+                    disabled={busy}
                     type="button"
                   >
                     {confirmVisible ? <EyeSlash aria-hidden="true" size={19} /> : <Eye aria-hidden="true" size={19} />}
@@ -269,18 +268,18 @@ export default function AuthPage({ mode = 'login' }) {
             <Button
               className="auth-submit-btn"
               disabled={busy || !authConfigured || (mode === 'reset' && !user)}
-              loading={busy}
+              loading={busyAction === 'email'}
               type="submit"
               variant="primary"
               wide
             >
-              {busy ? 'Please wait…' : config.action}
+              {busyAction === 'email' ? 'Please wait…' : config.action}
               <ArrowRight aria-hidden="true" size={18} weight="bold" />
             </Button>
           </form>
 
           {mode === 'login' && (
-            <div className="auth-secondary-actions">
+            <div className="auth-secondary-actions" inert={busy}>
               <Button as={Link} to="/auth/forgot-password" variant="ghost" wide>
                 Forgot password?
               </Button>
@@ -291,7 +290,7 @@ export default function AuthPage({ mode = 'login' }) {
           )}
 
           {(mode === 'forgot' || mode === 'reset') && (
-            <div className="auth-secondary-actions">
+            <div className="auth-secondary-actions" inert={busy}>
               <Button as={Link} to="/auth/login" variant="secondary" wide>
                 Return to sign in
               </Button>
