@@ -302,6 +302,7 @@ export default function OnboardingPage({ audience }) {
   async function handleSignOut() {
     try {
       await signOut()
+      navigate('/', { replace: true })
     } catch {
       showToast({ type: 'error', message: 'We couldn’t sign you out. Please try again.' })
     }

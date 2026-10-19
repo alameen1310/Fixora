@@ -45,7 +45,10 @@ export default function AccountTypePage() {
         <button
           type="button"
           className="account-type-signout"
-          onClick={() => signOut()}
+          onClick={async () => {
+            await signOut()
+            navigate('/', { replace: true })
+          }}
           disabled={busy}
         >
           Sign out
@@ -90,7 +93,7 @@ export default function AccountTypePage() {
               </div>
               <div className="account-type-btn-content">
                 <strong className="account-type-btn-title">I offer a service</strong>
-                <span className="account-type-btn-desc">Create your professional profile, showcase your expertise, and connect with clients.</span>
+                <span className="account-type-btn-desc">Create your professional profile, showcase your expertise, and list your services.</span>
               </div>
               <div className="account-type-btn-action" aria-hidden="true">
                 {pendingType === 'provider' ? <LoadingIndicator /> : <CaretRight size={20} weight="bold" />}

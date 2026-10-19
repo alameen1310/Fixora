@@ -213,9 +213,19 @@ export function AuthProvider({ children }) {
     if (supabase) {
       try {
         const { error } = await supabase.auth.signOut()
-        if (error) remoteError = error
+        if (error) {
+          remoteError = error
+          const { error: localError } = await supabase.auth.signOut({ scope: 'local' })
+          if (!localError) remoteError = null
+        }
       } catch (err) {
         remoteError = err
+        try {
+          const { error: localError } = await supabase.auth.signOut({ scope: 'local' })
+          if (!localError) remoteError = null
+        } catch (localErr) {
+          remoteError = localErr
+        }
       }
     }
 
