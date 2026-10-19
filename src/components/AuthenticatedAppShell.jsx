@@ -17,17 +17,24 @@ export default function AuthenticatedAppShell() {
   const { profile } = useAuth()
   const location = useLocation()
   const isHome = location.pathname === '/app'
-  const pageTitle = destinations.find(({ to }) => location.pathname === to)?.label || 'Professional'
+  const pageTitle = destinations.find(({ to }) => location.pathname === to)?.label
+    || (location.pathname === '/app/my-posts' ? 'My Posts' : location.pathname.startsWith('/app/posts/') ? 'Post' : 'Professional')
   const isTabRoute = destinations.some(({ to }) => location.pathname === to)
+  const isCustomer = profile?.account_type === 'customer'
+  const showPostAction = FEATURES.posts && isCustomer
   const [showCompactTitle, setShowCompactTitle] = useState(false)
   const [keyboardOpen, setKeyboardOpen] = useState(false)
+  const hideTabBar = keyboardOpen || location.pathname.startsWith('/app/professionals/')
+    || location.pathname === '/app/posts/new' || /^\/app\/posts\/[^/]+\/edit$/.test(location.pathname)
   const scrollPositions = useRef({})
   const activePath = useRef(location.pathname)
   const firstName = profile?.full_name?.trim().split(/\s+/)[0] || 'Account'
 
   function handleTabClick(targetPath) {
     if (location.pathname === targetPath) {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' })
+      if (targetPath === '/app') window.dispatchEvent(new CustomEvent('fixora:home-refresh'))
     }
   }
 
@@ -67,7 +74,7 @@ export default function AuthenticatedAppShell() {
             </NavLink>
           ))}
         </nav>
-        {FEATURES.posts && profile?.account_type === 'customer' && <div className="fixora-app__post-slot"><button className="fixora-app__post-button" type="button"><Plus aria-hidden="true" size={20} />Post a problem</button></div>}
+        {showPostAction && <div className="fixora-app__post-slot"><Link className="fixora-app__post-button" to="/app/posts/new"><Plus aria-hidden="true" size={20} />Post a problem</Link></div>}
         <Link aria-label="View your profile" className="fixora-app__sidebar-account" to="/app/profile">
           <Avatar name={profile?.full_name || 'Account'} size={40} />
           <span>{firstName}</span>
@@ -94,7 +101,7 @@ export default function AuthenticatedAppShell() {
         <Outlet />
       </div>
 
-      <nav aria-label="Mobile navigation" className={`fixora-app__mobile-nav${keyboardOpen || location.pathname.startsWith('/app/professionals/') ? ' is-hidden' : ''}`}>
+      <nav aria-label="Mobile navigation" className={`fixora-app__mobile-nav${hideTabBar ? ' is-hidden' : ''}${showPostAction ? ' has-post-action' : ''}`}>
         {destinations.map(({ label, to, icon: Icon, end }) => (
           <NavLink
             className={({ isActive }) => `fixora-app__mobile-link${isActive ? ' is-active' : ''}`}
@@ -110,7 +117,11 @@ export default function AuthenticatedAppShell() {
               </>
             )}
           </NavLink>
-        ))}
+        )).flatMap((link, index) => index === 2 && showPostAction ? [(
+          <Link aria-label="Post a problem" className="fixora-app__mobile-post" key="post" to="/app/posts/new">
+            <Plus aria-hidden="true" size={25} weight="bold" />
+          </Link>
+        ), link] : [link])}
       </nav>
     </div>
   )

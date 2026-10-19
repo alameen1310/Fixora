@@ -248,14 +248,16 @@
 }
 
 /* Responsive app shell */
-.fixora-app { --tabbar-space: calc(100px + env(safe-area-inset-bottom)); }
+.fixora-app { --tabbar-space: calc(108px + env(safe-area-inset-bottom)); }
 .fixora-app__sidebar { display: none; }
 .fixora-app__mobile-nav {
   right: 16px;
   bottom: calc(env(safe-area-inset-bottom) + 12px);
   left: 16px;
   min-height: 64px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   padding: 4px 8px;
+  border-top: 0;
   border: 1px solid rgb(23 25 29 / 8%);
   border-radius: 32px;
   background: rgb(255 255 255 / 82%);
@@ -269,6 +271,10 @@
 .fixora-app__mobile-link svg { padding: 2px; box-sizing: content-box; border-radius: 12px; }
 .fixora-app__mobile-link.is-active svg { background: var(--color-pale-blue); }
 .fixora-app__mobile-link:active { transform: scale(.96); }
+.fixora-app__mobile-nav.has-post-action { grid-template-columns: repeat(2, minmax(0, 1fr)) 72px repeat(2, minmax(0, 1fr)); }
+.fixora-app__mobile-post { position: relative; z-index: 2; display: grid; width: 56px; height: 56px; min-width: 44px; min-height: 44px; place-items: center; justify-self: center; transform: translateY(-8px); border: 5px solid rgb(255 255 255 / 88%); border-radius: 50%; color: #fff; background: linear-gradient(145deg, #3971ee, #1946b8); box-shadow: 0 8px 18px rgb(25 70 184 / 30%), 0 0 0 1px rgb(36 87 214 / 12%); transition: transform 160ms var(--ease-standard), box-shadow 160ms var(--ease-standard); }
+.fixora-app__mobile-post:active { transform: translateY(-8px) scale(.94); }
+.fixora-app__mobile-post:focus-visible { outline: 3px solid rgb(36 87 214 / 55%); outline-offset: 3px; }
 .fixora-app__viewport { padding-bottom: var(--tabbar-space); }
 @supports not (backdrop-filter: blur(1px)) {
   .fixora-app__mobile-nav { background: rgb(255 255 255 / 96%); }
@@ -317,7 +323,10 @@
   .fixora-app__side-nav a { display: flex; width: 100%; height: 48px; justify-content: flex-start; gap: 14px; padding: 0 14px; border-radius: 13px; font-size: var(--type-body); font-weight: 650; }
   .fixora-app__side-nav a span, .fixora-app__sidebar-account span { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
   .fixora-app__post-slot { margin-top: 18px; }
-  .fixora-app__post-button { display: flex; width: 100%; min-height: 50px; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 14px; color: #fff; background: linear-gradient(145deg, #3266e6, #1946b8); font: inherit; font-weight: 700; }
+.fixora-app__post-button { display: flex; width: 100%; min-height: 50px; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 14px; color: #fff; background: linear-gradient(145deg, #3266e6, #1946b8); font: inherit; font-weight: 700; text-decoration: none; transition: transform 160ms var(--ease-standard), box-shadow 160ms var(--ease-standard); }
+.fixora-app__post-button:hover { box-shadow: 0 8px 18px rgb(25 70 184 / 24%); }
+.fixora-app__post-button:active { transform: scale(.98); }
+.fixora-app__post-button:focus-visible { outline: 3px solid rgb(36 87 214 / 55%); outline-offset: 3px; }
   .fixora-app__sidebar-account { display: flex; width: 100%; justify-content: flex-start; gap: 12px; padding: 6px; font-weight: 650; }
   .fixora-app__viewport { margin-left: 264px; padding: 32px; }
 }
@@ -325,4 +334,6 @@
 @media (prefers-reduced-motion: reduce) {
   .fixora-app__mobile-nav { transition: none; }
   .fixora-app__side-nav a { transition: none; }
+  .fixora-app__mobile-post { transition: none; }
+  .fixora-app__post-button { transition: none; }
 }
