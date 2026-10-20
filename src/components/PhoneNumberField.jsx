@@ -1,4 +1,5 @@
 import { getCountries, getCountryCallingCode, parsePhoneNumberFromString } from 'libphonenumber-js/min'
+import { CaretDown } from '@phosphor-icons/react'
 import './PhoneNumberField.css'
 
 const displayNames = new Intl.DisplayNames(['en'], { type: 'region' })
@@ -47,6 +48,7 @@ export default function PhoneNumberField({
             ))}
           </select>
           <span aria-hidden="true" className="auth-phone-country__preview">{selectedCountry.code} (+{selectedCountry.callingCode})</span>
+          <CaretDown aria-hidden="true" className="auth-phone-country__caret" size={14} weight="bold" />
         </span>
         <input
           aria-describedby={describedBy}
