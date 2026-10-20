@@ -404,6 +404,12 @@
 .marketplace-rail__categories { display: grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top: 12px; }
 .marketplace-rail__categories a { display: flex; min-height: 54px; align-items: center; gap:8px; padding:7px; border-radius:10px; color: var(--color-text-primary); background:#f5f7fc; font-size:12px; font-weight:600; text-decoration: none; }
 .marketplace-rail__category-icon { display:grid; width:28px; height:28px; flex:0 0 28px; place-items:center; border-radius:8px; color:var(--color-primary); background:#e8efff; }
+.marketplace-rail__category-icon--electrical { color:#8b5b08; background:#fff3dc; }
+.marketplace-rail__category-icon--installations { color:#7551a6; background:#f0eafa; }
+.marketplace-rail__category-icon--maintenance { color:#287455; background:#e6f4ed; }
+.marketplace-rail__category-icon--plumbing { color:#176b82; background:#e3f4f7; }
+.marketplace-rail__category-icon--renovation { color:#a34c61; background:#faeaf0; }
+.marketplace-rail__category-icon--repairs { color:#2457d6; background:#eaf0ff; }
 .marketplace-rail__categories a:hover { color: var(--color-primary); }
 .marketplace-rail__discover { display: grid; gap: 5px; padding-right: 44px; color: inherit; text-decoration: none; }
 .marketplace-rail__discover strong { font-size: 15px; }
