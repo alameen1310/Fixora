@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowBendUpLeft, ArrowLeft, Camera, ChatCircleDots, Check, DotsThree, PaperPlaneRight, Smiley, UserCircle, WarningCircle, Wrench, X } from '@phosphor-icons/react'
+import { ArrowBendUpLeft, ArrowLeft, Camera, ChatCircleDots, Check, DotsThree, PaperPlaneRight, Smiley, TrashSimple, UserCircle, WarningCircle, Wrench, X } from '@phosphor-icons/react'
 import { Link, NavLink, Outlet, useLocation, useNavigate, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
 import { Avatar, Button, Skeleton } from '../components/UiPrimitives.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -44,7 +44,7 @@ function MessageList({ conversations, loading, error, onRetry, userId, isProvide
           : visible.length === 0 ? <div className="messages-list__empty"><ChatCircleDots aria-hidden="true" size={30} /><p>{conversations.length ? 'No messages match your search.' : 'Messages appear once you hire or get hired.'}</p>{!conversations.length && <Link to={isProvider ? '/app/discover' : '/app/my-posts'}>{isProvider ? 'Find work' : 'My Posts'}</Link>}</div>
             : <nav aria-label="Your conversations" className="messages-list__items">{visible.map((conversation) => (
               <NavLink className={({ isActive }) => 'messages-list__item' + (isActive ? ' is-active' : '')} key={conversation.conversation_id} to={'/app/messages/' + conversation.conversation_id}>
-                <span className="messages-list__avatar"><Avatar name={conversation.other_display_name} size={48} />{onlineUsers?.has(conversation.other_user_id) && <i aria-label="Active now" />}</span>
+                <span className="messages-list__avatar"><Avatar name={conversation.other_display_name} size={48} src={conversation.other_avatar_url} />{onlineUsers?.has(conversation.other_user_id) && <i aria-label="Active now" />}</span>
                 <span className="messages-list__copy"><span className="messages-list__item-top"><strong className={conversation.unread_count ? 'is-unread' : ''}>{conversation.other_display_name}</strong><time>{formatRelativeTime(conversation.last_message_at)}</time></span><span className="messages-list__preview">{conversation.last_sender_id === userId ? 'You: ' : ''}{conversation.last_message_preview}</span><span className="messages-list__post-chip">{conversation.post_title}</span></span>
                 {conversation.unread_count > 0 && <span aria-label={conversation.unread_count + ' unread messages'} className="messages-list__unread">{conversation.unread_count > 99 ? '99+' : conversation.unread_count}</span>}
               </NavLink>
@@ -66,13 +66,13 @@ function MessageGroup({ group, mine, userId, otherName, replies, reactions, onRe
     {group.items.map((message) => {
       const grouped = Object.values((reactions ?? []).filter((reaction) => reaction.message_id === message.id).reduce((result, reaction) => { result[reaction.emoji] ??= { emoji: reaction.emoji, users: [] }; result[reaction.emoji].users.push(reaction.user_id); return result }, {}))
       const reply = replies.get(message.reply_to_id)
-      return <div className={'message-bubble-wrap' + (message.showMenu ? ' is-menu-open' : '') + (message.flash ? ' is-flashing' : '')} id={`message-${message.id}`} key={message.id} onContextMenu={(event) => { event.preventDefault(); onMore(message) }} onTouchStart={(event) => { touchStartX.current = event.changedTouches[0]?.clientX; touchTimer.current = setTimeout(() => onMore(message), 520) }} onTouchEnd={(event) => { clearTimeout(touchTimer.current); const delta = event.changedTouches[0]?.clientX - touchStartX.current; const target = event.currentTarget; if (delta >= 56) { target.classList.add('is-swipe-reply'); onReply(message); setTimeout(() => target.classList.remove('is-swipe-reply'), 220) } }}>
+      return <div className={'message-bubble-wrap' + (message.showMenu ? ' is-menu-open' : '') + (message.showReactions ? ' is-reaction-open' : '') + (message.flash ? ' is-flashing' : '')} id={`message-${message.id}`} key={message.id} onContextMenu={(event) => { event.preventDefault(); onMore(message) }} onTouchStart={(event) => { touchStartX.current = event.changedTouches[0]?.clientX; touchTimer.current = setTimeout(() => onMore(message), 520) }} onTouchEnd={(event) => { clearTimeout(touchTimer.current); const delta = event.changedTouches[0]?.clientX - touchStartX.current; const target = event.currentTarget; if (delta >= 56) { target.classList.add('is-swipe-reply'); onReply(message); setTimeout(() => target.classList.remove('is-swipe-reply'), 220) } }}>
         <ArrowBendUpLeft aria-hidden="true" className="message-swipe-icon" size={18} />
-        <div className="message-bubble-toolbar"><button aria-label="React to message" onClick={() => onReact(message)} type="button"><Smiley size={17} /></button><button aria-label="Reply to message" onClick={() => onReply(message)} type="button"><ArrowBendUpLeft size={17} /></button><button aria-label="More message actions" onClick={() => onMore(message)} type="button"><DotsThree size={19} /></button></div>
-        <div className={'message-bubble' + (message.failed ? ' is-failed' : '') + (message.sending ? ' is-sending' : '')}>
-          {message.deleted_at ? <em>Message deleted</em> : <>{reply && <button className="message-inline-reply" onClick={() => onQuote(reply.id)} type="button"><strong>{reply.sender_id === userId ? 'You' : otherName}</strong><span>{reply.deleted_at ? 'Message deleted' : reply.body || (reply.image_path ? 'Photo' : '')}</span></button>}{message.image_path && <button className="message-image-button" onClick={() => onImage(getPostImageUrl(message.image_path))} type="button"><img alt="Photo shared in chat" src={getPostImageUrl(message.image_path)} /></button>}{message.body && <span>{message.body}</span>}</>}
+        <div className="message-bubble-toolbar"><button aria-label="React to message" aria-expanded={Boolean(message.showReactions)} onClick={() => onReact(message)} type="button"><Smiley size={17} /></button><button aria-label="Reply to message" onClick={() => onReply(message)} type="button"><ArrowBendUpLeft size={17} /></button><button aria-label="More message actions" aria-expanded={Boolean(message.showMenu)} onClick={(event) => onMore(message, event)} type="button"><DotsThree size={19} /></button></div>
+        <div className={'message-bubble' + (message.deleted_at ? ' message-bubble--deleted' : '') + (message.failed ? ' is-failed' : '') + (message.sending ? ' is-sending' : '')}>
+          {message.deleted_at ? <span className="message-deleted"><TrashSimple aria-hidden="true" size={14} /><em>Message deleted</em></span> : <>{reply && <button className="message-inline-reply" onClick={() => onQuote(reply.id)} type="button"><strong>{reply.sender_id === userId ? 'You' : otherName}</strong><span>{reply.deleted_at ? 'Message deleted' : reply.body || (reply.image_path ? 'Photo' : '')}</span></button>}{message.image_path && <button className="message-image-button" onClick={() => onImage(getPostImageUrl(message.image_path))} type="button"><img alt="Photo shared in chat" src={getPostImageUrl(message.image_path)} /></button>}{message.body && <span>{message.body}</span>}</>}
           {message.sending && <span className="message-bubble__state">Sending…</span>}{message.failed && <span className="message-bubble__state">Not sent. Retry</span>}
-          <div className="message-bubble-menu"><div className="message-bubble-menu__reactions">{REACTIONS.map((emoji) => <button aria-label={`React with ${emoji}`} key={emoji} onClick={() => onReact(message, emoji)} type="button">{emoji}</button>)}</div><button onClick={() => onReply(message)} type="button">Reply</button><button onClick={() => onCopy(message)} type="button">Copy</button>{mine && !message.deleted_at && <button onClick={() => onUnsend(message)} type="button">Delete</button>}</div>
+          <div className="message-bubble-menu" role="group" aria-label="Message actions"><div className="message-bubble-menu__reactions">{REACTIONS.map((emoji) => <button aria-label={`React with ${emoji}`} key={emoji} onClick={() => onReact(message, emoji)} type="button">{emoji}</button>)}</div><button onClick={() => onReply(message)} type="button">Reply</button><button onClick={() => onCopy(message)} type="button">Copy</button>{mine && !message.deleted_at && <button onClick={() => onUnsend(message)} type="button">Delete</button>}</div>
           {message.showReactions && <div className="message-reaction-picker">{REACTIONS.map((emoji) => <button aria-label={`React with ${emoji}`} key={emoji} onClick={() => onReact(message, emoji)} type="button">{emoji}</button>)}</div>}
         </div>
         {grouped.length > 0 && <div className="message-reactions">{grouped.map(({ emoji, users }) => <button aria-pressed={users.includes(userId)} key={emoji} onClick={() => onReact(message, emoji)} type="button">{emoji} {users.length}</button>)}</div>}
@@ -109,6 +109,7 @@ function ConversationThread() {
   const pendingUnread = useRef(null)
   const messageNodes = useRef(new Map())
   const messagesRef = useRef([])
+  const menuTrigger = useRef(null)
   const isProvider = profile?.account_type === 'provider'
   const conversation = conversations.find((item) => item.conversation_id === conversationId)
   const hasConversation = Boolean(conversation)
@@ -116,6 +117,32 @@ function ConversationThread() {
   const replyMap = useMemo(() => new Map(messages.map((message) => [message.id, message])), [messages])
   const draftKey = `fixora.chatDraft.${conversationId}`
   useEffect(() => { messagesRef.current = messages }, [messages])
+  useEffect(() => {
+    const closeMenus = () => setMessages((current) => current.some((message) => message.showMenu || message.showReactions)
+      ? current.map((message) => ({ ...message, showMenu: false, showReactions: false }))
+      : current)
+    const onPointerDown = (event) => {
+      if (event.target instanceof Element && event.target.closest('.message-bubble-menu, .message-reaction-picker')) return
+      closeMenus()
+    }
+    const onKeyDown = (event) => {
+      if (event.key !== 'Escape') return
+      const hadOpenMenu = document.querySelector('.message-bubble-wrap.is-menu-open, .message-reaction-picker')
+      if (!hadOpenMenu) return
+      event.stopPropagation()
+      closeMenus()
+      menuTrigger.current?.focus()
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => { document.removeEventListener('pointerdown', onPointerDown); document.removeEventListener('keydown', onKeyDown) }
+  }, [conversationId])
+  useEffect(() => {
+    setMessages((current) => current.map((message) => ({ ...message, showMenu: false, showReactions: false })))
+    setReplyTo(null)
+    setEmojiOpen(false)
+    menuTrigger.current = null
+  }, [conversationId])
 
   const load = useCallback(async () => {
     if (conversationsLoading || !hasConversation) return
@@ -222,21 +249,23 @@ function ConversationThread() {
     setMessages((current) => [...earlier, ...current])
     requestAnimationFrame(() => { if (scrollNode.current) scrollNode.current.scrollTop += scrollNode.current.scrollHeight - oldHeight })
   }
-  function onReply(message) { setReplyTo(message); document.querySelector('.messages-composer textarea')?.focus() }
-  function onMore(message) { setMessages((current) => current.map((item) => ({ ...item, showMenu: item.id === message.id ? !item.showMenu : false }))) }
+  function onReply(message) { setReplyTo(message); setEmojiOpen(false); setMessages((current) => current.map((item) => ({ ...item, showMenu: false, showReactions: false }))); document.querySelector('.messages-composer textarea')?.focus() }
+  function onMore(message, event) { menuTrigger.current = event?.currentTarget ?? null; setMessages((current) => current.map((item) => ({ ...item, showMenu: item.id === message.id ? !item.showMenu : false, showReactions: false }))) }
   async function onReact(message, emoji) {
-    if (!emoji) { setMessages((current) => current.map((item) => ({ ...item, showReactions: item.id === message.id ? !item.showReactions : false }))); return }
+    if (!emoji) { setMessages((current) => current.map((item) => ({ ...item, showMenu: false, showReactions: item.id === message.id ? !item.showReactions : false }))); return }
+    setMessages((current) => current.map((item) => ({ ...item, showMenu: false, showReactions: false })))
     try {
       const saved = await setMessageReaction(message.id, user.id, emoji)
       setReactions((current) => [...current.filter((row) => !(row.message_id === message.id && row.user_id === user.id)), ...(saved ? [saved] : [])])
-      setMessages((current) => current.map((item) => item.id === message.id ? { ...item, showReactions: false } : item))
+      setMessages((current) => current.map((item) => ({ ...item, showMenu: false, showReactions: false })))
     } catch (reactionError) { console.error('[chat-reaction]', { code: reactionError.code, message: reactionError.message }) }
   }
   async function onUnsend(message) {
-    try { await unsendConversationMessage(message.id); setMessages((current) => current.map((item) => item.id === message.id ? { ...item, deleted_at: new Date().toISOString() } : item)) }
+    setMessages((current) => current.map((item) => ({ ...item, showMenu: false, showReactions: false })))
+    try { await unsendConversationMessage(message.id); setMessages((current) => current.map((item) => item.id === message.id ? { ...item, deleted_at: new Date().toISOString(), showMenu: false, showReactions: false } : { ...item, showMenu: false, showReactions: false })) }
     catch (unsendError) { console.error('[chat-unsend]', { code: unsendError.code, message: unsendError.message }) }
   }
-  async function onCopy(message) { const value = message.body || (message.image_path ? 'Photo' : 'Message deleted'); try { await navigator.clipboard.writeText(value) } catch { /* clipboard access is browser controlled */ } setMessages((current) => current.map((item) => ({ ...item, showMenu: false }))) }
+  async function onCopy(message) { const value = message.deleted_at ? 'Message deleted' : message.body || (message.image_path ? 'Photo' : ''); setMessages((current) => current.map((item) => ({ ...item, showMenu: false, showReactions: false }))); try { await navigator.clipboard.writeText(value) } catch { /* clipboard access is browser controlled */ } }
   function onQuote(messageId) { const node = messageNodes.current.get(messageId); node?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }); node?.classList.add('is-flashing'); setTimeout(() => node?.classList.remove('is-flashing'), 950) }
   async function choosePhoto(file) {
     if (!file) return
@@ -282,7 +311,7 @@ function ConversationThread() {
 
   const quickReplies = isProvider ? ['Hello, I’m ready to start', 'What time works for you?', 'Thanks for choosing me'] : ['Hi, when can you start?', 'Can you share your quote?', 'Thanks for applying']
   return <section aria-label={'Conversation with ' + conversation.other_display_name} className="messages-thread">
-    <header className="messages-thread__header"><Link aria-label="Back to messages" className="messages-thread__back" to="/app/messages"><ArrowLeft aria-hidden="true" size={21} /></Link><span className={'messages-thread__avatar' + (online ? ' is-online' : '')}><Avatar name={conversation.other_display_name} size={42} /></span><div><strong>{conversation.other_display_name}</strong><span>{typing ? 'Typing…' : online ? 'Active now' : conversation.post_title}</span></div><div className="messages-thread__actions"><Button as={Link} to={postHref} variant="secondary">View job</Button>{!isProvider && <Button aria-label="View professional profile" as={Link} to={`/app/professionals/${conversation.other_user_id}`} variant="ghost"><UserCircle aria-hidden="true" size={19} /></Button>}</div></header>
+    <header className="messages-thread__header"><Link aria-label="Back to messages" className="messages-thread__back" to="/app/messages"><ArrowLeft aria-hidden="true" size={21} /></Link><span className={'messages-thread__avatar' + (online ? ' is-online' : '')}><Avatar name={conversation.other_display_name} size={42} src={conversation.other_avatar_url} /></span><div><strong>{conversation.other_display_name}</strong><span>{typing ? 'Typing…' : online ? 'Active now' : conversation.post_title}</span></div><div className="messages-thread__actions"><Button as={Link} to={postHref} variant="secondary">View job</Button>{!isProvider && <Button aria-label="View professional profile" as={Link} to={`/app/professionals/${conversation.other_user_id}`} variant="ghost"><UserCircle aria-hidden="true" size={19} /></Button>}</div></header>
     <div className="messages-job-context"><span className="messages-job-context__image">{conversation.cover_path ? <img alt="" src={getPostImageUrl(conversation.cover_path)} /> : <Wrench aria-hidden="true" size={20} />}</span><div><strong>{conversation.post_title}</strong><span>{conversation.post_status === 'completed' ? 'Completed' : conversation.post_status === 'closed' ? 'In progress' : 'Request'}</span></div>{!isProvider && conversation.post_status === 'closed' && <Button as={Link} to={`${postHref}/complete`} variant="secondary">Mark as completed</Button>}</div>
     {error ? <div className="messages-thread__error" role="alert"><p>Messages couldn’t load.</p><Button onClick={() => void load()} variant="secondary">Retry</Button></div> : <>
       <div aria-live="polite" className="messages-thread__scroll" onScroll={onScroll} ref={scrollNode}>
@@ -389,7 +418,7 @@ function MessageInfoPane({ conversation, isProvider }) {
     return () => { active = false }
   }, [conversation.conversation_id])
   return <aside className="messages-info-pane">
-    <div className="messages-info-pane__person"><Avatar name={conversation.other_display_name} size={64} /><strong>{conversation.other_display_name}</strong>{!isProvider && <Link to={`/app/professionals/${conversation.other_user_id}`}>View profile</Link>}</div>
+    <div className="messages-info-pane__person"><Avatar name={conversation.other_display_name} size={64} src={conversation.other_avatar_url} /><strong>{conversation.other_display_name}</strong>{!isProvider && <Link to={`/app/professionals/${conversation.other_user_id}`}>View profile</Link>}</div>
       <section><h2>Job</h2><Link className="messages-info-pane__job" to={`/app/posts/${conversation.post_id}`}>{conversation.cover_path && <img alt="" src={getPostImageUrl(conversation.cover_path)} />}<strong>{conversation.post_title}</strong><span>{conversation.post_status === 'completed' ? 'Completed' : conversation.post_status === 'closed' ? 'In progress' : 'Request'}</span></Link>{!isProvider && conversation.post_status === 'closed' && <Button as={Link} to={`/app/posts/${conversation.post_id}/complete`} variant="primary">Mark as completed</Button>}</section>
     <section><h2>Shared photos</h2>{photos.length ? <div className="messages-info-pane__photos">{photos.map((photo) => <Link aria-label="Open conversation" key={photo.id} to={`/app/messages/${conversation.conversation_id}`}><img alt="Shared in conversation" src={getPostImageUrl(photo.image_path)} /></Link>)}</div> : <p className="messages-info-pane__empty">Photos shared in chat will appear here.</p>}</section>
   </aside>

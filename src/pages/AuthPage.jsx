@@ -27,9 +27,15 @@ const modes = {
 }
 
 function safeReturnTo(value) {
-  return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//')
-    ? value
-    : null
+  if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return null
+  try {
+    const destination = new URL(value, window.location.origin)
+    if (destination.origin !== window.location.origin) return null
+    if (destination.pathname !== '/app' && !destination.pathname.startsWith('/app/')) return null
+    return `${destination.pathname}${destination.search}${destination.hash}`
+  } catch {
+    return null
+  }
 }
 
 export default function AuthPage({ mode = 'login' }) {
@@ -85,6 +91,7 @@ export default function AuthPage({ mode = 'login' }) {
           password,
         })
         if (authError) throw authError
+        try { window.sessionStorage.removeItem('fixora.requireExplicitSignIn') } catch { /* Best effort cleanup. */ }
         const { error: syncError } = await retrySession()
         if (syncError) throw new Error('Signed in, but Fixora is restoring your session. Please try again.')
         navigate('/auth/callback', {
@@ -133,6 +140,7 @@ export default function AuthPage({ mode = 'login' }) {
     }
     setBusyAction('google')
     try {
+      try { window.sessionStorage.removeItem('fixora.requireExplicitSignIn') } catch { /* Best effort cleanup. */ }
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: `${window.location.origin}/auth/callback` },

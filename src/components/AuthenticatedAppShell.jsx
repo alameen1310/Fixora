@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { Avatar, Logo } from './UiPrimitives.jsx'
 import PageContainer from './PageContainer.jsx'
 import { FEATURES } from '../config/features.js'
+import { getProfilePhotoUrl } from '../lib/profilePhotos.js'
 import useUnreadMessageCount from './useUnreadMessageCount.js'
 import './AuthenticatedAppShell.css'
 
@@ -105,7 +106,7 @@ export default function AuthenticatedAppShell() {
         </nav>
         {showPostAction ? <div className="fixora-app__post-slot"><Link className="fixora-app__post-button" to="/app/posts/new"><Plus aria-hidden="true" size={20} />Post a problem</Link></div> : isProvider && <div className="fixora-app__post-slot"><Link className="fixora-app__post-button" to="/app/discover"><Briefcase aria-hidden="true" size={20} />Find work</Link></div>}
         <Link aria-label="View your profile" className="fixora-app__sidebar-account" to="/app/profile">
-          <Avatar name={profile?.full_name || 'Account'} size={40} />
+          <Avatar name={profile?.full_name || 'Account'} size={40} src={getProfilePhotoUrl(profile?.avatar_path)} />
           <span>{firstName}</span>
         </Link>
       </aside>
@@ -119,7 +120,7 @@ export default function AuthenticatedAppShell() {
             to="/app/profile"
           >
             <span className="fixora-app__account-name">{firstName}</span>
-            <Avatar name={profile?.full_name || 'Account'} size={36} />
+            <Avatar name={profile?.full_name || 'Account'} size={36} src={getProfilePhotoUrl(profile?.avatar_path)} />
           </Link>
         </div>
       </header>

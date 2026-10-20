@@ -6,6 +6,7 @@ import { Avatar, Badge, Button, Skeleton } from './UiPrimitives.jsx'
 import { fetchProviderApplications } from '../lib/applicationQueries.js'
 import { formatPostBudget, formatRelativeTime } from '../lib/postQueries.js'
 import { getPostImageUrl } from '../lib/postImages.js'
+import { fetchProfilePhotoMap } from '../lib/profilePhotos.js'
 import { supabase } from '../lib/supabase.js'
 import './ProviderHome.css'
 
@@ -32,7 +33,7 @@ export default function ProviderHome() {
       setLoading(true); setError(false)
       try {
         const [providerResult, pendingResult, activeResult, completedResult, ratingResult, applications] = await Promise.all([
-          supabase.from('provider_profiles').select('profile_id, display_name, provider_type, service_description, is_published, provider_service_categories(category_id, category:service_categories(name, slug)), provider_service_areas(country_code, region, city)').eq('profile_id', user.id).maybeSingle(),
+          supabase.from('provider_profiles').select('profile_id, display_name, provider_type, service_description, is_published, is_nationwide, provider_service_categories(category_id, category:service_categories(name, slug)), provider_service_areas(country_code, region, city, state_code)').eq('profile_id', user.id).maybeSingle(),
           supabase.from('problem_post_applications').select('id', { count: 'exact', head: true }).eq('professional_id', user.id).eq('status', 'pending'),
           supabase.from('problem_posts').select(columns, { count: 'exact' }).eq('hired_professional_id', user.id).eq('status', 'closed').order('hired_at', { ascending: false }).limit(8),
           supabase.from('problem_posts').select('id, final_price_naira, completed_at', { count: 'exact' }).eq('hired_professional_id', user.id).eq('status', 'completed'),
@@ -44,20 +45,24 @@ export default function ProviderHome() {
         const categories = provider?.provider_service_categories ?? []
         const areas = provider?.provider_service_areas ?? []
         let matched = []
-        if (categories.length && areas.length) {
+        if (categories.length && (areas.length || provider?.is_nationwide)) {
           const { data: openPosts, error: openError } = await supabase.from('problem_posts').select(columns).eq('status', 'open').not('published_at', 'is', null).neq('author_id', user.id).in('category_id', categories.map(({ category_id }) => category_id)).order('created_at', { ascending: false }).limit(60)
           if (openError) throw openError
           const regions = new Set(areas.filter((area) => area.country_code === 'NG').map(({ region }) => normalize(region)))
-          matched = (openPosts ?? []).filter((post) => regions.has(normalize(post.region))).slice(0, 4)
+          matched = (openPosts ?? []).filter((post) => provider?.is_nationwide || regions.has(normalize(post.region))).slice(0, 4)
         }
         const appByPost = new Map(applications.map((application) => [application.post_id, application]))
         const activeJobs = (activeResult.data ?? []).map((post) => ({ ...post, application: appByPost.get(post.id) }))
         const postIds = activeJobs.map(({ id }) => id)
         let authorNames = {}
+        let authorPhotos = {}
         if (postIds.length) {
           const { data: rows, error: namesError } = await supabase.rpc('get_problem_post_author_cards', { requested_post_ids: postIds })
           if (namesError) throw namesError
           authorNames = Object.fromEntries((rows ?? []).map(({ post_id, display_name }) => [post_id, display_name]))
+          const photoMap = await fetchProfilePhotoMap([user.id, ...(rows ?? []).map((row) => row.author_id)])
+          authorPhotos = Object.fromEntries((rows ?? []).map(({ post_id, author_id }) => [post_id, photoMap[author_id] ?? null]))
+          authorPhotos.self = photoMap[user.id] ?? null
         }
         const applicationActivity = applications.filter((application) => application.status !== 'withdrawn').map((application) => ({
           id: application.id, created_at: application.updated_at || application.created_at,
@@ -68,7 +73,7 @@ export default function ProviderHome() {
         const reviewActivity = (reviews ?? []).map((review) => ({ id: `review-${review.id}`, created_at: review.created_at, text: `Received a ${review.rating}-star review` }))
         if (!active) return
         const earned = (completedResult.data ?? []).reduce((sum, post) => sum + Number(post.final_price_naira || 0), 0)
-        setData({ provider, matched, applications, activeJobs, activeCount: activeResult.count ?? 0, authorNames, pendingCount: pendingResult.count ?? 0, completedCount: completedResult.count ?? 0, earned, rating: ratingResult.data, latestReview: reviews?.[0] ?? null, activity: [...applicationActivity, ...reviewActivity].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 6) })
+        setData({ provider, matched, applications, activeJobs, activeCount: activeResult.count ?? 0, authorNames, authorPhotos, pendingCount: pendingResult.count ?? 0, completedCount: completedResult.count ?? 0, earned, rating: ratingResult.data, latestReview: reviews?.[0] ?? null, activity: [...applicationActivity, ...reviewActivity].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 6) })
       } catch (loadError) {
         console.error('[provider-home]', { code: loadError?.code, message: loadError?.message })
         if (active) setError(true)
@@ -80,9 +85,9 @@ export default function ProviderHome() {
 
   const provider = data?.provider
   const services = (provider?.provider_service_categories ?? []).map(({ category }) => category?.name).filter(Boolean)
-  const profileReady = Boolean(provider?.is_published && provider.provider_service_categories?.length && provider.provider_service_areas?.length)
+  const profileReady = Boolean(provider?.is_published && provider.provider_service_categories?.length && (provider.is_nationwide || provider.provider_service_areas?.length))
   const hasRailContent = Boolean(data?.activity.length || data?.latestReview || provider?.is_published || !provider)
-  const setupMessage = !provider ? 'Create your professional profile to appear in public search.' : !provider.provider_service_categories?.length ? 'Add the services you offer so requests can match your profile.' : !provider.provider_service_areas?.length ? 'Add the states where you work to match nearby requests.' : 'Publish your profile to appear in public search.'
+  const setupMessage = !provider ? 'Create your professional profile to appear in public search.' : !provider.provider_service_categories?.length ? 'Add the services you offer so requests can match your profile.' : !provider.is_nationwide && !provider.provider_service_areas?.length ? 'Add the states where you work to match nearby requests.' : 'Publish your profile to appear in public search.'
 
   if (loading) return <main className="provider-home app-page"><header className="provider-home__header"><Skeleton style={{ width: 280, height: 38 }} /></header><div className="provider-home__stats"><Skeleton /><Skeleton /><Skeleton /><Skeleton /></div><Skeleton style={{ height: 300 }} /></main>
   if (error) return <main className="provider-home app-page"><header className="provider-home__header"><h1>Home</h1></header><section className="provider-home__error" role="alert"><p>Your dashboard couldn’t load.</p><Button onClick={() => setRetry((value) => value + 1)} variant="secondary">Try again</Button></section></main>
@@ -107,12 +112,12 @@ export default function ProviderHome() {
           return <Link className="provider-request-row" key={post.id} to={`/app/posts/${post.id}`}><div className="provider-request-row__image">{cover ? <img alt="" src={getPostImageUrl(cover)} /> : <Wrench aria-hidden="true" size={22} />}</div><div className="provider-request-row__body"><div className="provider-request-row__title"><strong>{post.title}</strong><Badge tone="info">{post.service_categories?.name || 'Service'}</Badge></div><div className="provider-request-row__meta"><span>{formatPostBudget(post)}</span><span>{[post.city, post.region].filter(Boolean).join(', ')}</span><time>{formatRelativeTime(post.created_at)}</time>{application && <Badge tone="info">Applied</Badge>}</div></div><span className="provider-request-row__match">Matches your services</span></Link>
         })}</div> : <div className="provider-home__empty"><p>No matching requests right now.</p><Link to="/app/discover">Browse all requests</Link></div>}
       </section>
-      {data?.activeJobs.length > 0 && <section className="provider-home__section"><div className="provider-home__section-head"><h2>Active jobs</h2><Link to="/app/activity?segment=selected">View all <ArrowRight aria-hidden="true" size={15} /></Link></div><div className="provider-job-list">{data.activeJobs.map((post) => <article className="provider-job-row" key={post.id}><Avatar name={data.authorNames[post.id] || 'Customer'} size={42} /><div className="provider-job-row__copy"><strong>{data.authorNames[post.id] || 'Customer'}</strong><Link to={`/app/posts/${post.id}`}>{post.title}</Link></div><Badge tone="success">In progress</Badge><Button as={Link} to={`/app/messages?postId=${post.id}`} variant="secondary">Message</Button><Button as={Link} to={`/app/posts/${post.id}`} variant="ghost">View</Button></article>)}</div></section>}
+      {data?.activeJobs.length > 0 && <section className="provider-home__section"><div className="provider-home__section-head"><h2>Active jobs</h2><Link to="/app/activity?segment=selected">View all <ArrowRight aria-hidden="true" size={15} /></Link></div><div className="provider-job-list">{data.activeJobs.map((post) => <article className="provider-job-row" key={post.id}><Avatar name={data.authorNames[post.id] || 'Customer'} size={42} src={data.authorPhotos[post.id]} /><div className="provider-job-row__copy"><strong>{data.authorNames[post.id] || 'Customer'}</strong><Link to={`/app/posts/${post.id}`}>{post.title}</Link></div><Badge tone="success">In progress</Badge><Button as={Link} to={`/app/messages?postId=${post.id}`} variant="secondary">Message</Button><Button as={Link} to={`/app/posts/${post.id}`} variant="ghost">View</Button></article>)}</div></section>}
     </main>
     {hasRailContent && <aside className="provider-home__rail">
       {data?.activity.length > 0 && <section className="provider-rail-block"><h2>Recent activity</h2>{data.activity.map((item) => <div className="provider-activity-line" key={item.id}><span>{item.text}</span><time>{formatRelativeTime(item.created_at)}</time></div>)}</section>}
       {data?.latestReview && <section className="provider-rail-block provider-latest-review"><h2>Latest review</h2><div className="provider-latest-review__stars"><Star aria-hidden="true" size={15} weight="fill" /> {data.latestReview.rating}/5</div>{data.latestReview.comment && <p>{data.latestReview.comment}</p>}<span>{data.latestReview.customer_display_name}</span></section>}
-      {provider?.is_published && <section className="provider-public-mini"><span className="provider-public-mini__label">Your public profile</span><div><Avatar name={provider.display_name} size={44} /><div><strong>{provider.display_name}</strong><span>{services.slice(0, 2).join(' · ') || 'Services not listed'}</span></div></div><Link to={`/app/professionals/${user.id}`}>View as customer <ArrowRight aria-hidden="true" size={15} /></Link></section>}
+      {provider?.is_published && <section className="provider-public-mini"><span className="provider-public-mini__label">Your public profile</span><div><Avatar name={provider.display_name} size={44} src={data?.authorPhotos.self} /><div><strong>{provider.display_name}</strong><span>{provider.is_nationwide ? 'Nationwide · Nigeria' : services.slice(0, 2).join(' · ') || 'Services not listed'}</span></div></div><Link to={`/app/professionals/${user.id}`}>View as customer <ArrowRight aria-hidden="true" size={15} /></Link></section>}
       {!provider && <section className="provider-rail-block"><h2>Get started</h2><p>Set up your professional profile to find requests that match your services.</p><Button as={Link} to="/onboarding/provider" variant="primary"><Briefcase aria-hidden="true" size={16} />Complete profile</Button></section>}
     </aside>}
   </div>

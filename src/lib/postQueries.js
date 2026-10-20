@@ -1,8 +1,9 @@
 import { supabase } from './supabase.js'
+import { fetchProfilePhotoMap } from './profilePhotos.js'
 
 export const POST_PAGE_SIZE = 10
-export const POST_COLUMNS = 'id, author_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, job_type, status, created_at, published_at, hired_professional_id, hired_at, completed_at, final_price_naira, service_categories(name, slug), problem_post_images(storage_path, sort_order, kind)'
-export const POST_DETAIL_COLUMNS = 'id, author_id, category_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, job_type, status, created_at, published_at, closed_at, hired_professional_id, hired_at, completed_at, final_price_naira, service_categories(name, slug), problem_post_images(storage_path, sort_order, kind)'
+export const POST_COLUMNS = 'id, author_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, schedule_mode, scheduled_start_at, scheduled_end_at, job_type, status, created_at, published_at, hired_professional_id, hired_at, completed_at, final_price_naira, service_categories(name, slug), problem_post_images(storage_path, sort_order, kind)'
+export const POST_DETAIL_COLUMNS = 'id, author_id, category_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, schedule_mode, scheduled_start_at, scheduled_end_at, job_type, status, created_at, published_at, closed_at, hired_professional_id, hired_at, completed_at, final_price_naira, service_categories(name, slug), problem_post_images(storage_path, sort_order, kind)'
 
 
 function applyCursor(query, cursor) {
@@ -71,9 +72,10 @@ export async function fetchCompletedPosts({ cursor, limit = POST_PAGE_SIZE } = {
   ])
   if (providerResult.error) throw providerResult.error
   if (ratingResult.error) throw ratingResult.error
+  const profilePhotos = await fetchProfilePhotoMap(providerIds)
   const providers = Object.fromEntries((providerResult.data ?? []).map((provider) => [provider.profile_id, provider]))
   const ratings = Object.fromEntries((ratingResult.data ?? []).map((summary) => [summary.provider_id, summary]))
-  return posts.map((post) => ({ ...post, images: post.problem_post_images ?? [], provider: providers[post.hired_professional_id] ?? null, rating: ratings[post.hired_professional_id] ?? null }))
+  return posts.map((post) => ({ ...post, images: post.problem_post_images ?? [], provider: providers[post.hired_professional_id] ? { ...providers[post.hired_professional_id], avatarUrl: profilePhotos[post.hired_professional_id] ?? null } : null, rating: ratings[post.hired_professional_id] ?? null }))
 }
 
 export function completedPostCursor(post) {
@@ -119,20 +121,27 @@ export async function fetchProblemPost(postId) {
     requested_post_ids: [postId],
   })
   if (authorError) throw authorError
+  const author = authorRows?.find((row) => row.post_id === postId)
+  const authorPhotos = await fetchProfilePhotoMap([author?.author_id])
   return {
     ...data,
     images: [...(data.problem_post_images ?? [])].sort((first, second) => (first.kind === second.kind ? first.sort_order - second.sort_order : first.kind === 'before' ? -1 : 1)),
-    authorName: authorRows?.find((row) => row.post_id === postId)?.display_name ?? null,
+    authorName: author?.display_name ?? null,
+    authorPhotoUrl: authorPhotos[author?.author_id] ?? null,
   }
 }
 
 export async function fetchAuthorNames(posts) {
   const ids = [...new Set((posts ?? []).map(({ id }) => id).filter(Boolean))]
-  if (!ids.length) return {}
+  if (!ids.length) return { names: {}, photos: {} }
   if (!supabase) throw new Error('Post services are unavailable.')
   const { data, error } = await supabase.rpc('get_problem_post_author_cards', { requested_post_ids: ids })
   if (error) throw error
-  return Object.fromEntries((data ?? []).map(({ post_id, display_name }) => [post_id, display_name]))
+  const profilePhotos = await fetchProfilePhotoMap((data ?? []).map(({ author_id }) => author_id))
+  return {
+    names: Object.fromEntries((data ?? []).map(({ post_id, display_name }) => [post_id, display_name])),
+    photos: Object.fromEntries((data ?? []).map(({ post_id, author_id }) => [post_id, profilePhotos[author_id] ?? null])),
+  }
 }
 
 export function postCursor(post) {

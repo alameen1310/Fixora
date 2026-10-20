@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { authConfigured, supabase } from '../lib/supabase.js'
 
 const AuthContext = createContext(null)
-const profileColumns = 'id, full_name, phone_number, phone_verified_at, account_type, onboarding_completed_at'
+const profileColumns = 'id, full_name, phone_number, phone_verified_at, account_type, onboarding_completed_at, avatar_path'
 const SESSION_TIMEOUT_MS = 12000
 const PROFILE_TIMEOUT_MS = 12000
 
@@ -26,6 +26,7 @@ export function AuthProvider({ children }) {
   const sessionRef = useRef(null)
   const authRevision = useRef(0)
   const profileRequest = useRef(0)
+  const signingOutRef = useRef(false)
 
   useEffect(() => {
     if (!supabase) return undefined
@@ -34,6 +35,19 @@ export function AuthProvider({ children }) {
     const readRevision = authRevision.current
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!alive) return
+
+      // After a deliberate sign-out, an INITIAL_SESSION callback must not
+      // restore the cached session before the user explicitly signs in again.
+      let requireExplicitSignIn = false
+      try { requireExplicitSignIn = window.sessionStorage.getItem('fixora.requireExplicitSignIn') === '1' } catch { /* Storage may be unavailable. */ }
+      if (requireExplicitSignIn && _event !== 'SIGNED_IN') return
+      if (_event === 'SIGNED_IN') {
+        try { window.sessionStorage.removeItem('fixora.requireExplicitSignIn') } catch { /* Best effort cleanup. */ }
+      }
+
+      // A refresh or a second tab can deliver a late SIGNED_IN event while a
+      // sign-out is in progress. Never let it put the protected UI back on screen.
+      if (signingOutRef.current && nextSession) return
 
       // Keep this callback synchronous: Supabase auth processing must not wait on profile I/O.
       authRevision.current += 1
@@ -61,7 +75,13 @@ export function AuthProvider({ children }) {
       setSessionReady(true)
     }, SESSION_TIMEOUT_MS)
 
-    supabase.auth.getSession()
+    let requireExplicitSignIn = false
+    try { requireExplicitSignIn = window.sessionStorage.getItem('fixora.requireExplicitSignIn') === '1' } catch { /* Storage may be unavailable. */ }
+    if (requireExplicitSignIn) {
+      window.clearTimeout(timer)
+      setSessionReady(true)
+      void supabase.auth.signOut({ scope: 'local' })
+    } else supabase.auth.getSession()
       .then(({ data, error }) => {
         if (!alive || authRevision.current !== readRevision) return
         window.clearTimeout(timer)
@@ -223,26 +243,8 @@ export function AuthProvider({ children }) {
   }, [])
 
   const signOut = useCallback(async () => {
-    let remoteError = null
-    if (supabase) {
-      try {
-        const { error } = await supabase.auth.signOut()
-        if (error) {
-          remoteError = error
-          const { error: localError } = await supabase.auth.signOut({ scope: 'local' })
-          if (!localError) remoteError = null
-        }
-      } catch (err) {
-        remoteError = err
-        try {
-          const { error: localError } = await supabase.auth.signOut({ scope: 'local' })
-          if (!localError) remoteError = null
-        } catch (localErr) {
-          remoteError = localErr
-        }
-      }
-    }
-
+    signingOutRef.current = true
+    try { window.sessionStorage.setItem('fixora.requireExplicitSignIn', '1') } catch { /* Best effort guard against stale restoration. */ }
     authRevision.current += 1
     profileRequest.current += 1
     sessionRef.current = null
@@ -253,6 +255,18 @@ export function AuthProvider({ children }) {
     setProfileError('')
     setProfileLoading(false)
 
+    let signOutError = null
+    if (supabase) {
+      try {
+        // Clear this device first so a slow network cannot leave the app looking
+        // authenticated. Sign-out is local to this browser; other devices stay signed in.
+        const { error } = await supabase.auth.signOut({ scope: 'local' })
+        signOutError = error ?? null
+      } catch (error) {
+        signOutError = error
+      }
+    }
+
     try {
       window.sessionStorage.removeItem('fixora.signupType')
       window.sessionStorage.removeItem('fixora.providerType')
@@ -260,10 +274,8 @@ export function AuthProvider({ children }) {
       // Ignore storage restrictions
     }
 
-    if (remoteError && !/session|jwt|token|not found|missing|network|fetch|offline/i.test(remoteError?.message ?? '')) {
-      return { error: remoteError }
-    }
-    return { error: null }
+    signingOutRef.current = false
+    return { error: signOutError }
   }, [])
 
   const value = useMemo(() => ({

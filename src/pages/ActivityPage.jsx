@@ -80,7 +80,7 @@ export default function ActivityPage() {
                   const statusLabel = selected ? post.status === 'completed' ? 'Completed' : 'In progress' : declined ? 'Declined' : 'Applied'
                   return <article className={`provider-activity-row${declined ? ' is-declined' : ''}`} key={item.id}>
                     <Link className="provider-activity-row__request" to={`/app/posts/${post.id}`}><span className="provider-activity-row__image">{post.coverPath ? <img alt="" src={getPostImageUrl(post.coverPath)} /> : <ClockCounterClockwise aria-hidden="true" size={20} />}</span><span><small>{post.service_categories?.name || 'Service request'}</small><strong>{post.title}</strong></span></Link>
-                    <span className="provider-activity-row__customer">{item.customerName}</span>
+                    <span className="provider-activity-row__customer"><Avatar name={item.customerName} size={32} src={item.customerPhotoUrl} />{item.customerName}</span>
                     <span className="provider-activity-row__budget"><strong>{formatPostBudget(post)}</strong>{item.message && <small>My quote: {item.message}</small>}</span>
                     <Badge tone={selected ? 'success' : declined ? 'neutral' : 'info'}>{statusLabel}</Badge>
                     <time>{formatRelativeTime(item.activity?.created_at || item.updated_at || item.created_at)}</time>
@@ -96,7 +96,21 @@ export default function ActivityPage() {
         : items.length === 0 ? <section className="activity-empty"><EmptyState action={<Button as={Link} to="/app/discover" variant="secondary">Discover professionals <ArrowRight aria-hidden="true" size={16} /></Button>} icon={Bell} message="When a professional applies or a customer makes a decision, updates will appear here." title="No activity yet" /></section>
           : <div className="activity-layout"><section aria-label="Recent activity" className="activity-list">{groups.map(([group, groupedItems]) => !groupedItems.length ? null : <div className="activity-group" key={group}><h2>{group}</h2><div className="activity-group__surface">{groupedItems.map((item) => {
             const target = item.kind === 'application_received' && item.problem_posts?.id ? `/app/posts/${item.post_id}/applicants` : `/app/posts/${item.post_id}`
-            return <article className={`activity-item${item.read_at ? '' : ' is-unread'}`} key={item.id}><span className="activity-item__icon">{item.kind === 'application_received' ? <ClockCounterClockwise aria-hidden="true" size={19} /> : <CheckCircle aria-hidden="true" size={19} />}</span>{item.kind === 'application_received' && <Avatar name={item.actorName || 'Professional'} size={40} />}<div className="activity-item__body"><p>{activityMessage(item)}</p><time>{new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.created_at))}</time></div><div className="activity-item__actions">{FEATURES.chat && ['post_hired', 'post_completed'].includes(item.kind) && <Link aria-label="Message the hired professional" className="activity-message-action" to={`/app/messages?postId=${item.post_id}`}><span>Message</span></Link>}{!item.read_at && <button aria-label="Mark as read" className="activity-read-button" onClick={() => void markRead(item)} title="Mark as read" type="button"><span /></button>}<Link aria-label="Open related request" to={target}><ArrowRight aria-hidden="true" size={19} /></Link></div></article>
+            return <article className={`activity-item${item.read_at ? '' : ' is-unread'}`} key={item.id}>
+              <span className="activity-item__icon">{item.kind === 'application_received' ? <ClockCounterClockwise aria-hidden="true" size={19} /> : <CheckCircle aria-hidden="true" size={19} />}</span>
+              {item.kind === 'application_received' && <Avatar name={item.actorName || 'Professional'} size={44} src={item.actorPhotoUrl} />}
+              <div className="activity-item__body">
+                {item.kind === 'application_received' && <div className="activity-item__identity"><strong>{item.actorName || 'A professional'}</strong>{item.actorType && <span>{item.actorType === 'business' ? 'Service business' : 'Independent professional'}</span>}</div>}
+                <p>{activityMessage(item)}</p>
+                {item.kind === 'application_received' && <div className="activity-item__details">{item.problem_posts?.service_categories?.name && <span>{item.problem_posts.service_categories.name}</span>}{item.problem_posts?.region && <span>{[item.problem_posts.city, item.problem_posts.region].filter(Boolean).join(', ')}</span>}{item.problem_post_applications?.message && <span className="activity-item__quote">Application note: {item.problem_post_applications.message}</span>}</div>}
+                <time>{new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.created_at))}</time>
+              </div>
+              <div className="activity-item__actions">
+                {FEATURES.chat && ['post_hired', 'post_completed'].includes(item.kind) && <Link aria-label="Message the hired professional" className="activity-message-action" to={`/app/messages?postId=${item.post_id}`}><span>Message</span></Link>}
+                {!item.read_at && <button aria-label="Mark as read" className="activity-read-button" onClick={() => void markRead(item)} title="Mark as read" type="button"><span /></button>}
+                <Link aria-label={item.kind === 'application_received' ? 'Review applicants' : 'Open related request'} className="activity-item__open" to={target}>{item.kind === 'application_received' ? 'Review' : 'View'}<ArrowRight aria-hidden="true" size={17} /></Link>
+              </div>
+            </article>
           })}</div></div>)}</section><MarketplaceRail userId={user.id} /></div>}
   </main>
 }

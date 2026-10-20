@@ -39,6 +39,28 @@
 @media (prefers-reduced-motion: reduce) {
   .activity-item, .activity-read-button { transition: none; }
 }
+.activity-item__identity { display:flex; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:3px; }
+.activity-item__identity strong { color:var(--color-text-primary); font-size:15px; }
+.activity-item__identity span { color:var(--color-text-secondary); font-size:12px; }
+.activity-item__details { display:flex; min-width:0; flex-wrap:wrap; gap:6px 12px; margin-top:7px; color:var(--color-text-secondary); font-size:12px; }
+.activity-item__details > span:not(.activity-item__quote)::before { content:'·'; margin-right:7px; color:#94a0b5; }
+.activity-item__quote { flex-basis:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.activity-item__actions > a.activity-item__open { display:inline-flex; min-width:82px; height:40px; align-items:center; justify-content:center; gap:5px; padding:0 11px; border:1px solid #d9e2f5; border-radius:10px; color:var(--color-primary); font-size:12px; font-weight:700; text-decoration:none; white-space:nowrap; }
+.activity-item__actions > a.activity-item__open:hover { background:#edf2ff; }
+@media (max-width: 767px) {
+  .app-page--activity .marketplace-rail__card:nth-child(2) { display: none; }
+  .app-page--activity .marketplace-rail { gap: 12px; }
+  .activity-item__identity { align-items: flex-start; flex-direction: column; gap: 2px; }
+  .activity-item__quote { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+}
+@media (max-width:620px) {
+  .activity-item { display:grid; grid-template-columns:36px 40px minmax(0,1fr); align-items:start; gap:10px; padding:14px !important; }
+  .activity-item__icon { width:36px; height:36px; }
+  .activity-item__body { grid-column:2/-1; }
+  .activity-item__actions { grid-column:2/-1; flex-direction:row !important; justify-content:flex-end; }
+  .activity-item__actions > a.activity-item__open { margin-left:auto; }
+  .app-page--activity .marketplace-rail__card:nth-child(2) { display:none; }
+}
 .activity-group { display:grid; gap:12px; }
 .activity-group h2 { margin:0 0 2px; color:var(--color-text-secondary); font-size:13px; font-weight:600; }
 .provider-activity-tabs { display:flex; width:fit-content; max-width:100%; gap:4px; padding:4px; margin:0 0 20px; border:1px solid var(--color-border); border-radius:14px; background:#f4f6fb; }

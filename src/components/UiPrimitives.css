@@ -414,6 +414,7 @@
 
 /* Avatar */
 .ui-avatar {
+  position: relative;
   display: inline-grid;
   width: 44px;
   min-width: 44px;
@@ -428,6 +429,7 @@
   -webkit-user-select: none;
   user-select: none;
 }
+.ui-avatar img { position:absolute; inset:0; width:100%; height:100%; border-radius:inherit; object-fit:cover; }
 
 .ui-avatar--1 {
   color: #1f5e41;

@@ -24,7 +24,15 @@ function callbackErrorMessage(params) {
 }
 
 function safeReturnTo(value) {
-  return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? value : null
+  if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return null
+  try {
+    const destination = new URL(value, window.location.origin)
+    if (destination.origin !== window.location.origin) return null
+    if (destination.pathname !== '/app' && !destination.pathname.startsWith('/app/')) return null
+    return `${destination.pathname}${destination.search}${destination.hash}`
+  } catch {
+    return null
+  }
 }
 
 function getDestination(profile, returnTo) {
