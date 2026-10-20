@@ -360,6 +360,9 @@
 .messages-job-context > .ui-button { min-height:40px; flex:0 0 auto; padding-inline:12px; font-size:12px; }
 .messages-thread__scroll { isolation:isolate; overflow-x:hidden; padding:20px 24px !important; }
 .messages-thread__scroll::before { position:absolute; z-index:-1; inset:0; background-image:var(--chat-wallpaper); background-repeat:repeat; background-size:220px auto; opacity:.06; pointer-events:none; content:''; }
+.messages-thread__scroll > .messages-day-group,
+.messages-thread__scroll > .messages-thread__skeletons { width:min(100%,1040px); margin-inline:auto; }
+.messages-day-group > div { width:100%; }
 .message-group { max-width:min(64%,620px) !important; }
 .messages-composer { position:relative; z-index:1; display:grid !important; width:min(100%,1088px); grid-template-columns:auto minmax(0,1fr) 48px; align-items:end; gap:8px; margin:0 auto; padding:10px 24px 14px !important; border-top:0 !important; background:transparent !important; }
 .messages-composer::before { position:absolute; z-index:-1; inset:0 12px 10px; border:1px solid var(--color-separator); border-radius:18px; background:#fff; box-shadow:0 5px 20px rgb(16 32 96 / 8%); content:''; }
