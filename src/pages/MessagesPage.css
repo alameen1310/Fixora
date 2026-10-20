@@ -442,6 +442,7 @@
 .messages-welcome__art > span { position: absolute; display: grid; place-items: center; border: 1px solid #fff; border-radius: 20px; box-shadow: 0 9px 22px rgb(31 65 133 / 9%); }
 .messages-welcome__art > span:first-child { right: 2px; bottom: 2px; width: 54px; height: 54px; color: #5674b7; background: #fff; transform: rotate(7deg); }
 .messages-welcome__art > span:last-child { top: 0; left: 2px; width: 70px; height: 70px; color: #fff; background: var(--color-primary); }
+.messages-welcome__art > span:last-child svg { color: #fff; }
 .messages-welcome__copy { display: grid; justify-items: center; gap: 10px; text-align: center; }
 .messages-welcome__copy > span { color: var(--color-primary); font-size: 11px; font-weight: 750; letter-spacing: .09em; }
 .messages-welcome__copy h2 { max-width: 390px; margin: 0; color: var(--color-text-primary); font-size: clamp(22px, 2vw, 28px); font-weight: 700; letter-spacing: -.04em; line-height: 1.15; }

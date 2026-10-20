@@ -54,6 +54,8 @@ export default function usePullToRefresh(refresh) {
     return () => { root.removeEventListener('touchstart', onStart); root.removeEventListener('touchmove', onMove); root.removeEventListener('touchend', onEnd); root.removeEventListener('touchcancel', onEnd) }
   }, [refreshing, trigger])
 
-  const indicator = <div aria-live="polite" className={`pull-refresh-indicator${refreshing ? ' is-refreshing' : ''}`} style={{ '--pull-distance': `${distance}px` }}><span aria-hidden="true" className="pull-refresh-indicator__spinner" />{refreshing ? <span>Refreshing</span> : distance > 20 ? <span>Release to refresh</span> : <span>Pull to refresh</span>}</div>
+  const indicator = distance > 0 || refreshing
+    ? <div aria-live="polite" className={`pull-refresh-indicator${refreshing ? ' is-refreshing' : ''}`} style={{ '--pull-distance': `${distance}px` }}><span aria-hidden="true" className="pull-refresh-indicator__spinner" />{refreshing ? <span>Refreshing</span> : distance > 20 ? <span>Release to refresh</span> : <span>Pull to refresh</span>}</div>
+    : null
   return { containerRef, indicator }
 }
