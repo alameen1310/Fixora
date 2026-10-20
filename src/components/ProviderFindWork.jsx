@@ -25,7 +25,7 @@ export default function ProviderFindWork() {
   const [rows, setRows] = useState([])
   const [applications, setApplications] = useState(new Set())
   const [search, setSearch] = useState('')
-  const [category, setCategory] = useState('')
+  const [selectedCategories, setSelectedCategories] = useState([])
   const [matchesOnly, setMatchesOnly] = useState(true)
   const [minBudget, setMinBudget] = useState('')
   const [maxBudget, setMaxBudget] = useState('')
@@ -79,7 +79,7 @@ export default function ProviderFindWork() {
     }
     try {
       let query = supabase.from('problem_posts').select(columns).eq('status', 'open').not('published_at', 'is', null).neq('author_id', user.id)
-      if (category) query = query.eq('category_id', category)
+      if (selectedCategories.length) query = query.in('category_id', selectedCategories)
       if (matchesOnly && categoryIds.length) query = query.in('category_id', categoryIds)
       if (within !== 'any') {
         const age = within === '24h' ? 24 : 168
@@ -119,7 +119,7 @@ export default function ProviderFindWork() {
     } catch {
       setError(true)
     } finally { setLoading(false); setLoadingMore(false) }
-  }, [user.id, category, matchesOnly, categoryIds, providerRegions, within, minBudget, maxBudget, sort, search])
+  }, [user.id, selectedCategories, matchesOnly, categoryIds, providerRegions, within, minBudget, maxBudget, sort, search])
 
   useEffect(() => { if (profileLoaded) void load() }, [profileLoaded, load])
   useEffect(() => {
@@ -129,10 +129,14 @@ export default function ProviderFindWork() {
   }, [load])
   const displayRows = rows
 
-  function clearFilters() { setSearch(''); setCategory(''); setMinBudget(''); setMaxBudget(''); setWithin('any'); setMatchesOnly(true); setSort('newest') }
+  function toggleCategory(categoryId) {
+    setSelectedCategories((current) => current.includes(categoryId) ? current.filter((id) => id !== categoryId) : [...current, categoryId])
+  }
 
-  const activeFilterCount = Number(Boolean(category)) + Number(Boolean(minBudget)) + Number(Boolean(maxBudget)) + Number(within !== 'any') + Number(sort !== 'newest')
-  const filterControls = <><h2>Filters</h2><div><strong>Service</strong><div className="provider-find-work__chips">{[...myCategories, ...categories.filter((item) => !categoryIds.includes(item.id))].map((item) => <Chip key={item.id} onClick={() => setCategory(category === item.id ? '' : item.id)} selected={category === item.id}>{item.name}</Chip>)}</div></div><div className="provider-find-work__budget"><strong>Budget (₦)</strong><input aria-label="Minimum budget" inputMode="numeric" onChange={(event) => setMinBudget(event.target.value.replace(/\D/g, ''))} placeholder="Min" value={minBudget} /><input aria-label="Maximum budget" inputMode="numeric" onChange={(event) => setMaxBudget(event.target.value.replace(/\D/g, ''))} placeholder="Max" value={maxBudget} />{budgetValue(minBudget) !== null && budgetValue(maxBudget) !== null && budgetValue(minBudget) > budgetValue(maxBudget) && <span className="provider-find-work__budget-error">Minimum must not exceed maximum.</span>}</div><label><span>Posted within</span><select onChange={(event) => setWithin(event.target.value)} value={within}><option value="24h">24 hours</option><option value="7d">7 days</option><option value="any">Any time</option></select></label><label><span>Sort</span><select onChange={(event) => setSort(event.target.value)} value={sort}><option value="newest">Newest</option><option value="budget">Budget high to low</option></select></label><Button onClick={clearFilters} variant="secondary">Clear filters</Button></>
+  function clearFilters() { setSearch(''); setSelectedCategories([]); setMinBudget(''); setMaxBudget(''); setWithin('any'); setMatchesOnly(true); setSort('newest') }
+
+  const activeFilterCount = selectedCategories.length + Number(Boolean(minBudget)) + Number(Boolean(maxBudget)) + Number(within !== 'any') + Number(sort !== 'newest')
+  const filterControls = <><h2>Filters</h2><div><strong>Service</strong><div className="provider-find-work__chips">{[...myCategories, ...categories.filter((item) => !categoryIds.includes(item.id))].map((item) => <Chip key={item.id} onClick={() => toggleCategory(item.id)} selected={selectedCategories.includes(item.id)}>{item.name}</Chip>)}</div></div><div className="provider-find-work__budget"><strong>Budget (₦)</strong><input aria-label="Minimum budget" inputMode="numeric" onChange={(event) => setMinBudget(event.target.value.replace(/\D/g, ''))} placeholder="Min" value={minBudget} /><input aria-label="Maximum budget" inputMode="numeric" onChange={(event) => setMaxBudget(event.target.value.replace(/\D/g, ''))} placeholder="Max" value={maxBudget} />{budgetValue(minBudget) !== null && budgetValue(maxBudget) !== null && budgetValue(minBudget) > budgetValue(maxBudget) && <span className="provider-find-work__budget-error">Minimum must not exceed maximum.</span>}</div><label><span>Posted within</span><select onChange={(event) => setWithin(event.target.value)} value={within}><option value="24h">24 hours</option><option value="7d">7 days</option><option value="any">Any time</option></select></label><label><span>Sort</span><select onChange={(event) => setSort(event.target.value)} value={sort}><option value="newest">Newest</option><option value="budget">Budget high to low</option></select></label><Button onClick={clearFilters} variant="secondary">Clear filters</Button></>
 
   return <main className="provider-find-work app-page">
     <header className="provider-find-work__header"><h1>Find work</h1><label className="provider-find-work__search"><MagnifyingGlass aria-hidden="true" size={19} /><span className="visually-hidden">Search requests</span><input onChange={(event) => setSearch(event.target.value)} placeholder="Search title, service or location" value={search} /></label><label className="provider-find-work__toggle"><input checked={matchesOnly} onChange={(event) => setMatchesOnly(event.target.checked)} type="checkbox" /><span>Matches my services</span></label></header>
