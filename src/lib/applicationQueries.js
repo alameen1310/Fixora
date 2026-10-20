@@ -28,8 +28,12 @@ export async function fetchPostApplications(postId) {
   const { data: providers, error: providerError } = await supabase.from('provider_profiles')
     .select(publishedProviderSelection).in('profile_id', ids).eq('is_published', true)
   if (providerError) throw providerError
+  const { data: ratings, error: ratingError } = await supabase.from('provider_rating_summary')
+    .select('provider_id, review_count, average_rating').in('provider_id', ids)
+  if (ratingError) throw ratingError
   const providerById = Object.fromEntries((providers ?? []).map((provider) => [provider.profile_id, provider]))
-  return rows.map((application) => ({ ...application, professional: providerById[application.professional_id] ?? null }))
+  const ratingById = Object.fromEntries((ratings ?? []).map((rating) => [rating.provider_id, rating]))
+  return rows.map((application) => ({ ...application, professional: providerById[application.professional_id] ? { ...providerById[application.professional_id], rating: ratingById[application.professional_id] ?? null } : null }))
 }
 
 export async function fetchMarketplaceActivities(userId) {
@@ -45,6 +49,42 @@ export async function fetchMarketplaceActivities(userId) {
   if (providerError) throw providerError
   const names = Object.fromEntries((providers ?? []).map((provider) => [provider.profile_id, provider.display_name]))
   return rows.map((row) => ({ ...row, actorName: row.actor_id ? names[row.actor_id] ?? null : null }))
+}
+
+export async function fetchProviderApplications(userId) {
+  const { data: applications, error } = await supabase.from('problem_post_applications')
+    .select('id, post_id, professional_id, message, status, created_at, updated_at')
+    .eq('professional_id', userId).order('created_at', { ascending: false })
+  if (error) throw error
+  const rows = applications ?? []
+  if (!rows.length) return []
+
+  const postIds = [...new Set(rows.map(({ post_id }) => post_id))]
+  const [{ data: posts, error: postsError }, { data: activities, error: activitiesError }] = await Promise.all([
+    supabase.from('problem_posts')
+      .select('id, title, category_id, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, status, hired_professional_id, hired_at, created_at, service_categories(name)')
+      .in('id', postIds),
+    supabase.from('marketplace_activities')
+      .select('id, application_id, kind, read_at, created_at')
+      .eq('recipient_id', userId).in('application_id', rows.map(({ id }) => id)),
+  ])
+  if (postsError) throw postsError
+  if (activitiesError) throw activitiesError
+  const postById = Object.fromEntries((posts ?? []).map((post) => [post.id, post]))
+  const activityByApplication = Object.fromEntries((activities ?? []).map((activity) => [activity.application_id, activity]))
+  const nameRows = []
+  for (let index = 0; index < postIds.length; index += 20) {
+    const { data: names, error: namesError } = await supabase.rpc('get_problem_post_author_cards', { requested_post_ids: postIds.slice(index, index + 20) })
+    if (namesError) throw namesError
+    nameRows.push(...(names ?? []))
+  }
+  const nameByPost = Object.fromEntries(nameRows.map((row) => [row.post_id, row.display_name]))
+  return rows.map((application) => ({
+    ...application,
+    post: postById[application.post_id] ?? null,
+    customerName: nameByPost[application.post_id] ?? 'Fixora customer',
+    activity: activityByApplication[application.id] ?? null,
+  })).filter(({ post }) => post)
 }
 
 export async function markMarketplaceActivityRead(activityId, userId) {

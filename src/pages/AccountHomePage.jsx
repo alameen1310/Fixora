@@ -7,6 +7,7 @@ import { PostsFeed } from '../components/PostsFeed.jsx'
 import MarketplaceDoodle from '../components/MarketplaceDoodle.jsx'
 import { supabase } from '../lib/supabase.js'
 import MarketplaceRail from '../components/MarketplaceRail.jsx'
+import CompletedWorkFeed from '../components/CompletedWorkFeed.jsx'
 import './AuthenticatedPages.css'
 
 export default function AccountHomePage() {
@@ -22,6 +23,7 @@ export default function AccountHomePage() {
   })
   const [providerProfile, setProviderProfile] = useState(null)
   const [providerLoading, setProviderLoading] = useState(isProvider)
+  const [feedTab, setFeedTab] = useState('requests')
 
   useEffect(() => {
     if (!isProvider || !user?.id) {
@@ -89,7 +91,11 @@ export default function AccountHomePage() {
             <Link className="app-text-link" to="/app/my-posts">My Posts <ArrowRight aria-hidden="true" size={16} /></Link>
           )}
         </div>
-        <PostsFeed showOwnLatest={!isProvider} userId={user.id} />
+        <div aria-label="Home feed" className="home-feed-tabs" role="group">
+          <button aria-pressed={feedTab === 'requests'} onClick={() => setFeedTab('requests')} type="button">Requests</button>
+          <button aria-pressed={feedTab === 'completed'} onClick={() => setFeedTab('completed')} type="button">Before & after</button>
+        </div>
+        {feedTab === 'requests' ? <PostsFeed showOwnLatest={!isProvider} userId={user.id} /> : <CompletedWorkFeed />}
       </section>
     </main>
     {!isProvider && <MarketplaceRail userId={user.id} />}

@@ -4,6 +4,7 @@ import { ArrowLeft, MapPin, Wrench } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { publishedProviderSelection } from '../lib/providerQueries.js'
 import { Avatar, Badge, Button, Chip, ListGroup, ListRow, Skeleton } from '../components/UiPrimitives.jsx'
+import ProviderWorkSummary from '../components/ProviderWorkSummary.jsx'
 import './AuthenticatedPages.css'
 
 export default function ProfessionalProfilePage() {
@@ -131,6 +132,8 @@ export default function ProfessionalProfilePage() {
               </div>
             </div>
           </div>
+
+          <ProviderWorkSummary displayName={provider.display_name} profileId={provider.profile_id} />
         </article>
       )}
     </main>

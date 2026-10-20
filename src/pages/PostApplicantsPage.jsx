@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ArrowLeft, MapPin, Wrench } from '@phosphor-icons/react'
+import { ArrowLeft, MapPin, Star, Wrench } from '@phosphor-icons/react'
 import { Link, useParams } from 'react-router-dom'
 import { ActionSheet, Avatar, Badge, Button, Skeleton } from '../components/UiPrimitives.jsx'
 import MarketplaceDoodle from '../components/MarketplaceDoodle.jsx'
@@ -92,7 +92,7 @@ export default function PostApplicantsPage() {
                 <article className="applicant-card" key={application.id}>
                   <div className="applicant-card__head">
                     <Avatar name={provider?.display_name || 'Professional'} size={52} />
-                    <div className="applicant-card__identity"><h2>{provider?.display_name || 'Professional profile unavailable'}</h2><p>{provider?.provider_type === 'business' ? 'Service business' : 'Independent professional'}</p></div>
+                    <div className="applicant-card__identity"><h2>{provider?.display_name || 'Professional profile unavailable'}</h2><p>{provider?.provider_type === 'business' ? 'Service business' : 'Independent professional'}</p>{Number(provider?.rating?.review_count) > 0 && <span className="applicant-card__rating"><Star aria-hidden="true" size={14} weight="fill" />{Number(provider.rating.average_rating).toFixed(1)} ({provider.rating.review_count})</span>}</div>
                     <Badge tone={application.status === 'hired' ? 'success' : application.status === 'pending' ? 'info' : 'neutral'}>{label}</Badge>
                   </div>
                   {services.length > 0 && <p className="applicant-card__services"><Wrench aria-hidden="true" size={16} />{services.join(' · ')}</p>}

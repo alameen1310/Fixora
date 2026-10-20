@@ -61,7 +61,7 @@ export default function PostCard({ authorName, coverUrl = '', onCoverError, post
             <Icon aria-hidden="true" size={30} weight="duotone" />
           </div>
         )}
-        {showOwnerBadge && <Badge tone={post.hired_at ? 'success' : post.status === 'closed' ? 'neutral' : 'success'}>{post.hired_at ? 'Hired' : post.status === 'closed' ? 'Closed' : 'Open'}</Badge>}
+        {showOwnerBadge && <Badge tone={post.status === 'completed' || post.hired_at ? 'success' : post.status === 'closed' ? 'neutral' : 'success'}>{post.status === 'completed' ? 'Completed' : post.hired_at ? 'Hired' : post.status === 'closed' ? 'Closed' : 'Open'}</Badge>}
       </div>
       <div className="post-card__body">
         {category?.name && <span className="post-card__category">{category.name}</span>}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { CaretRight, MapPin, Wrench } from '@phosphor-icons/react'
+import { CaretRight, MapPin, Star, Wrench } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { publishedProviderSelection } from '../lib/providerQueries.js'
@@ -29,7 +29,13 @@ export default function PublishedProfessionals({ categorySlug = '', limit = 12, 
         .order('created_at', { ascending: false })
         .limit(limit)
       if (queryError) throw queryError
-      setProfiles(data ?? [])
+      const providerIds = (data ?? []).map((provider) => provider.profile_id)
+      const { data: ratings, error: ratingsError } = providerIds.length
+        ? await supabase.from('provider_rating_summary').select('provider_id, review_count, average_rating').in('provider_id', providerIds)
+        : { data: [], error: null }
+      if (ratingsError) throw ratingsError
+      const summaryById = Object.fromEntries((ratings ?? []).map((summary) => [summary.provider_id, summary]))
+      setProfiles((data ?? []).map((provider) => ({ ...provider, rating: summaryById[provider.profile_id] ?? null })))
     } catch {
       setError(true)
     } finally {
@@ -130,6 +136,7 @@ export default function PublishedProfessionals({ categorySlug = '', limit = 12, 
                   {provider.provider_type === 'business' ? 'Service business' : 'Independent professional'}
                 </p>
                 <h3>{provider.display_name}</h3>
+                {Number(provider.rating?.review_count) > 0 && <span className="professional-card__rating"><Star aria-hidden="true" size={14} weight="fill" />{Number(provider.rating.average_rating).toFixed(1)} ({provider.rating.review_count})</span>}
               </div>
               <CaretRight aria-hidden="true" className="professional-card__chevron" size={18} />
             </div>

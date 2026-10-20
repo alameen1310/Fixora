@@ -1,8 +1,8 @@
 import { supabase } from './supabase.js'
 
 export const POST_PAGE_SIZE = 10
-export const POST_COLUMNS = 'id, author_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, job_type, status, created_at, published_at, hired_at, service_categories(name, slug), problem_post_images(storage_path, sort_order)'
-export const POST_DETAIL_COLUMNS = 'id, author_id, category_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, job_type, status, created_at, published_at, closed_at, hired_professional_id, hired_at, service_categories(name, slug), problem_post_images(storage_path, sort_order)'
+export const POST_COLUMNS = 'id, author_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, job_type, status, created_at, published_at, hired_professional_id, hired_at, completed_at, final_price_naira, service_categories(name, slug), problem_post_images(storage_path, sort_order, kind)'
+export const POST_DETAIL_COLUMNS = 'id, author_id, category_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, job_type, status, created_at, published_at, closed_at, hired_professional_id, hired_at, completed_at, final_price_naira, service_categories(name, slug), problem_post_images(storage_path, sort_order, kind)'
 
 
 function applyCursor(query, cursor) {
@@ -11,18 +11,18 @@ function applyCursor(query, cursor) {
   return query.or(`created_at.lt.${timestamp},and(created_at.eq.${timestamp},id.lt.${cursor.id})`)
 }
 
-function postQuery({ categorySlug } = {}) {
+function postQuery({ categorySlug, allImages = false } = {}) {
   if (!supabase) throw new Error('Post services are unavailable.')
-  return supabase.from('problem_posts')
+  const query = supabase.from('problem_posts')
     .select(categorySlug ? POST_COLUMNS.replace('service_categories(name, slug)', 'service_categories!inner(name, slug)') : POST_COLUMNS)
     .order('sort_order', { referencedTable: 'problem_post_images', ascending: true })
-    .limit(1, { referencedTable: 'problem_post_images' })
+  return allImages ? query : query.eq('problem_post_images.kind', 'before').limit(1, { referencedTable: 'problem_post_images' })
 }
 
 function withCover(posts) {
   return (posts ?? []).map((post) => ({
     ...post,
-    coverPath: [...(post.problem_post_images ?? [])]
+    coverPath: [...(post.problem_post_images ?? []).filter((image) => image.kind === 'before')]
       .sort((first, second) => first.sort_order - second.sort_order)[0]?.storage_path ?? null,
   }))
 }
@@ -52,6 +52,32 @@ export async function fetchOtherOpenPosts(userId, { cursor, limit = POST_PAGE_SI
     .limit(limit)
   if (error) throw error
   return withCover(data)
+}
+
+export async function fetchCompletedPosts({ cursor, limit = POST_PAGE_SIZE } = {}) {
+  let query = postQuery({ allImages: true }).eq('status', 'completed').not('published_at', 'is', null)
+  if (cursor) {
+    const timestamp = `"${cursor.completed_at}"`
+    query = query.or(`completed_at.lt.${timestamp},and(completed_at.eq.${timestamp},id.lt.${cursor.id})`)
+  }
+  const { data, error } = await query.order('completed_at', { ascending: false }).order('id', { ascending: false }).limit(limit)
+  if (error) throw error
+  const posts = withCover(data)
+  if (!posts.length) return posts
+  const providerIds = [...new Set(posts.map(({ hired_professional_id }) => hired_professional_id).filter(Boolean))]
+  const [providerResult, ratingResult] = await Promise.all([
+    supabase.from('provider_profiles').select('profile_id, display_name').in('profile_id', providerIds),
+    supabase.from('provider_rating_summary').select('provider_id, review_count, average_rating').in('provider_id', providerIds),
+  ])
+  if (providerResult.error) throw providerResult.error
+  if (ratingResult.error) throw ratingResult.error
+  const providers = Object.fromEntries((providerResult.data ?? []).map((provider) => [provider.profile_id, provider]))
+  const ratings = Object.fromEntries((ratingResult.data ?? []).map((summary) => [summary.provider_id, summary]))
+  return posts.map((post) => ({ ...post, images: post.problem_post_images ?? [], provider: providers[post.hired_professional_id] ?? null, rating: ratings[post.hired_professional_id] ?? null }))
+}
+
+export function completedPostCursor(post) {
+  return post ? { completed_at: post.completed_at, id: post.id } : null
 }
 
 export async function fetchMyPosts(userId, { cursor, limit = POST_PAGE_SIZE } = {}) {
@@ -95,7 +121,7 @@ export async function fetchProblemPost(postId) {
   if (authorError) throw authorError
   return {
     ...data,
-    images: [...(data.problem_post_images ?? [])].sort((first, second) => first.sort_order - second.sort_order),
+    images: [...(data.problem_post_images ?? [])].sort((first, second) => (first.kind === second.kind ? first.sort_order - second.sort_order : first.kind === 'before' ? -1 : 1)),
     authorName: authorRows?.find((row) => row.post_id === postId)?.display_name ?? null,
   }
 }
@@ -122,7 +148,7 @@ export function formatPostBudget(post) {
   return `${formatNaira(post.budget_min_naira)} – Fixed`
 }
 
-function formatNaira(amount) {
+export function formatNaira(amount) {
   return new Intl.NumberFormat('en-NG', {
     style: 'currency', currency: 'NGN', maximumFractionDigits: 0,
   }).format(amount)

@@ -15,7 +15,7 @@ const blank = { title: '', description: '', category_id: '', budget_type: 'open_
 const budgetOptions = [{ value: 'fixed', label: 'Fixed' }, { value: 'range', label: 'Range' }, { value: 'open_to_quotes', label: 'Open to quotes' }]
 const timings = [['urgent', 'Urgent'], ['this_week', 'This week'], ['flexible', 'Flexible'], ['specific_date', 'Pick a date']]
 const jobTypes = [['repair', 'Repair'], ['installation', 'Installation'], ['maintenance', 'Maintenance'], ['new_project', 'New project']]
-const editColumns = 'id, author_id, category_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, job_type, status, published_at, hired_professional_id, problem_post_images(storage_path, sort_order)'
+const editColumns = 'id, author_id, category_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, job_type, status, published_at, hired_professional_id, problem_post_images(storage_path, sort_order, kind)'
 
 function errorText(error, step) {
   const message = error?.message || ''
@@ -67,8 +67,9 @@ function PostFormPage({ editing = false }) {
           setError('This post is unavailable or can no longer be edited.')
         } else {
           setValues({ title: data.title, description: data.description, category_id: data.category_id, budget_type: data.budget_type, min: data.budget_min_naira?.toString() || '', max: data.budget_max_naira?.toString() || '', negotiable: data.negotiable, region: data.region, city: data.city, timing: data.timing, target_date: data.target_date || '', job_type: data.job_type })
-          setExisting((data.problem_post_images ?? []).sort((a, b) => a.sort_order - b.sort_order))
-          setExistingUrls(Object.fromEntries((data.problem_post_images ?? []).map((image) => [image.storage_path, getPostImageUrl(image.storage_path)])))
+          const beforeImages = (data.problem_post_images ?? []).filter((image) => image.kind === 'before').sort((a, b) => a.sort_order - b.sort_order)
+          setExisting(beforeImages)
+          setExistingUrls(Object.fromEntries(beforeImages.map((image) => [image.storage_path, getPostImageUrl(image.storage_path)])))
         }
         setLoading(false)
       }
@@ -213,7 +214,7 @@ function PostFormPage({ editing = false }) {
         currentPostId = data.id; setStagedId(data.id)
       }
       writeStep = 'reserve'
-      const { data: reservationRows, error: reservationError } = await supabase.from('problem_post_images').select('storage_path, sort_order').eq('post_id', currentPostId)
+      const { data: reservationRows, error: reservationError } = await supabase.from('problem_post_images').select('storage_path, sort_order, kind').eq('post_id', currentPostId).eq('kind', 'before')
       if (reservationError) { console.error('[post-write]', { step: 'reserve', postId: currentPostId, code: reservationError.code, message: reservationError.message }); throw reservationError }
       const taken = new Set((reservationRows ?? []).map((row) => row.sort_order))
       writeStep = 'upload'
@@ -288,7 +289,7 @@ async function uploadPhoto(photo, postId, userId, reservations, uploaded, setUpl
   if (sortOrder >= 5) throw Object.assign(new Error('Keep no more than five photos.'), { photoNumber })
   photoNumber = sortOrder + 1
   const path = `${userId}/${postId}/${sortOrder}.jpg`
-  const { error: reserveError } = await supabase.from('problem_post_images').insert({ post_id: postId, storage_path: path, sort_order: sortOrder })
+  const { error: reserveError } = await supabase.from('problem_post_images').insert({ post_id: postId, storage_path: path, sort_order: sortOrder, kind: 'before' })
   if (reserveError) { logPostStep('reserve', { postId, error: reserveError }); throw Object.assign(reserveError, { photoNumber }) }
   const { error: uploadError } = await supabase.storage.from('problem-post-photos').upload(path, photo.file, { contentType: 'image/jpeg', upsert: false })
   if (uploadError) {

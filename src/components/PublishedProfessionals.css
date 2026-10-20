@@ -228,3 +228,4 @@
   }
   .professional-feed { animation: none; }
 }
+.professional-card__rating { display:inline-flex; align-items:center; gap:4px; margin-top:3px; color:#956600; font-size:13px; font-weight:650; }

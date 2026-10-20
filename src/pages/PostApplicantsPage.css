@@ -41,3 +41,4 @@
   .applicant-card__head { gap: 9px; }
   .applicant-card__head > .ui-badge { margin-left: 58px; }
 }
+.applicant-card__rating { display:inline-flex; align-items:center; gap:4px; margin-top:4px; color:#956600; font-size:13px; font-weight:650; }

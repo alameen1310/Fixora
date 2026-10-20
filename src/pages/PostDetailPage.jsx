@@ -1,14 +1,20 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ArrowLeft, CalendarBlank, MapPin, Wrench } from '@phosphor-icons/react'
+import { Star } from '@phosphor-icons/react'
 import { Link, useParams } from 'react-router-dom'
 import { ActionSheet, Avatar, Badge, Button, Skeleton } from '../components/UiPrimitives.jsx'
-import { fetchProblemPost, formatPostBudget, formatRelativeTime } from '../lib/postQueries.js'
+import { fetchProblemPost, formatNaira, formatPostBudget, formatRelativeTime } from '../lib/postQueries.js'
 import { getPostImageUrl } from '../lib/postImages.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import { useToast } from '../components/ToastProvider.jsx'
 import { fetchMyApplication, fetchPostApplicationCount } from '../lib/applicationQueries.js'
+import BeforeAfterSlider from '../components/BeforeAfterSlider.jsx'
 import '../components/Posts.css'
+
+function ReviewStars({ rating }) {
+  return <span aria-label={`${rating} out of 5 stars`} className="completed-post-review__stars">{[1, 2, 3, 4, 5].map((value) => <Star aria-hidden="true" key={value} size={16} weight={rating >= value ? 'fill' : 'regular'} />)}</span>
+}
 
 export default function PostDetailPage() {
   const { postId } = useParams()
@@ -25,6 +31,7 @@ export default function PostDetailPage() {
   const [providerPublished, setProviderPublished] = useState(false)
   const [applicationCount, setApplicationCount] = useState(0)
   const [applicationMessage, setApplicationMessage] = useState('')
+  const [completion, setCompletion] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -45,8 +52,8 @@ export default function PostDetailPage() {
         if (providerError) throw providerError
         setProviderPublished(Boolean(providerDetails?.is_published))
         ownApplication = savedApplication
-        if (result.status !== 'open' && !ownApplication) { setPost(null); return }
-      } else if (!isOwner && (result.status !== 'open' || !result.published_at)) {
+        if (result.status !== 'open' && result.status !== 'completed' && !ownApplication) { setPost(null); return }
+      } else if (!isOwner && (result.status !== 'open' && result.status !== 'completed' || result.status === 'open' && !result.published_at)) {
         setPost(null)
         return
       }
@@ -54,6 +61,17 @@ export default function PostDetailPage() {
       setApplication(ownApplication)
       if (isOwner) setApplicationCount(await fetchPostApplicationCount(postId))
       setImageUrls(Object.fromEntries(result.images.map(({ storage_path }) => [storage_path, getPostImageUrl(storage_path)])))
+      if (result.status === 'completed' && result.hired_professional_id) {
+        const [providerResult, reviewResult, ratingResult] = await Promise.all([
+          supabase.from('provider_profiles').select('profile_id, display_name').eq('profile_id', result.hired_professional_id).maybeSingle(),
+          supabase.from('job_reviews').select('id, post_id, provider_id, customer_id, rating, comment, customer_display_name, created_at').eq('post_id', result.id).maybeSingle(),
+          supabase.from('provider_rating_summary').select('provider_id, review_count, average_rating').eq('provider_id', result.hired_professional_id).maybeSingle(),
+        ])
+        if (providerResult.error) throw providerResult.error
+        if (reviewResult.error) throw reviewResult.error
+        if (ratingResult.error) throw ratingResult.error
+        setCompletion({ provider: providerResult.data, review: reviewResult.data, rating: ratingResult.data })
+      } else setCompletion(null)
     } catch {
       setError(true)
     } finally {
@@ -121,7 +139,8 @@ export default function PostDetailPage() {
       <Link className="app-back-link post-detail__back" to="/app"><ArrowLeft aria-hidden="true" size={19} />Back to posts</Link>
       <div className={`post-detail__layout${post.images.length ? ' has-gallery' : ''}`}>
       {post.images.length === 0 && <section aria-label="No photos added to this request" className="post-detail__no-gallery"><div><Wrench aria-hidden="true" weight="light" /><span>{post.service_categories?.name || 'Service request'}</span></div></section>}
-      {post.images.length > 0 && (
+      {post.status === 'completed' && <section aria-label="Before and after completed work" className="post-gallery post-gallery--comparison"><BeforeAfterSlider after={post.images.filter((image) => image.kind === 'after').map((image) => ({ ...image, url: imageUrls[image.storage_path] }))} before={post.images.filter((image) => image.kind === 'before').map((image) => ({ ...image, url: imageUrls[image.storage_path] }))} title={post.title} /></section>}
+      {post.status !== 'completed' && post.images.length > 0 && (
         <section aria-label="Post photos" className="post-gallery">
           <div className="post-gallery__track" onScroll={(event) => setActivePhoto(Math.round(event.currentTarget.scrollLeft / event.currentTarget.clientWidth))}>
             {post.images.map((image, index) => imageUrls[image.storage_path] ? (
@@ -147,8 +166,9 @@ export default function PostDetailPage() {
           <span><CalendarBlank aria-hidden="true" size={18} />{timing}</span>
           <span><Wrench aria-hidden="true" size={18} />{post.job_type.replaceAll('_', ' ')}</span>
         </div>
+        {post.status === 'completed' && <section className="completed-post-paid"><span>Paid</span><strong>{formatNaira(post.final_price_naira)}</strong></section>}
         <section className="post-detail__section">
-          <h2>Details</h2>
+          <h2>{post.status === 'completed' ? 'The problem' : 'Details'}</h2>
           <p className="post-detail__description">{post.description}</p>
         </section>
         <section className="post-detail__author">
@@ -156,13 +176,15 @@ export default function PostDetailPage() {
           <div><span>Posted by</span><strong>{post.authorName || 'Fixora member'}</strong></div>
           <time>{formatRelativeTime(post.created_at)}</time>
         </section>
-        {post.author_id === user?.id && post.status !== 'removed' && <div className="post-detail__owner-actions">
+        {post.status === 'completed' && <section className="completed-post-professional"><h2>Fixed by</h2><Link className="completed-post-provider" to={`/app/professionals/${post.hired_professional_id}`}><Avatar name={completion?.provider?.display_name || 'Professional'} size={48} /><div><strong>{completion?.provider?.display_name || 'Fixora professional'}</strong>{Number(completion?.rating?.review_count) > 0 ? <span className="completed-post-rating"><Star aria-hidden="true" size={15} weight="fill" />{Number(completion.rating.average_rating).toFixed(1)} · {completion.rating.review_count} {Number(completion.rating.review_count) === 1 ? 'review' : 'reviews'}</span> : <span>New on Fixora</span>}</div></Link>{completion?.review && <div className="completed-post-review"><div className="completed-post-review__head"><strong>{completion.review.customer_display_name}</strong><time>{new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium' }).format(new Date(completion.review.created_at))}</time></div><ReviewStars rating={completion.review.rating} />{completion.review.comment && <p>{completion.review.comment}</p>}</div>}<div className="completed-post-details">{post.service_categories?.name && <span>{post.service_categories.name}</span>}{location && <span>{location}</span>}{post.completed_at && <span>Completed {new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium' }).format(new Date(post.completed_at))}</span>}</div></section>}
+        {post.author_id === user?.id && post.status !== 'removed' && post.status !== 'completed' && <div className="post-detail__owner-actions">
           <Button as={Link} to={`/app/posts/${post.id}/edit`} variant="secondary">Edit</Button>
+          {post.status === 'closed' && post.hired_professional_id && <Button as={Link} to={`/app/posts/${post.id}/complete`} variant="primary">Mark as completed</Button>}
           {!post.hired_professional_id && post.status !== 'removed' && <Button disabled={actionBusy} onClick={() => void changeStatus(post.status === 'closed' ? 'open' : 'closed')} variant="secondary">{post.status === 'closed' ? 'Reopen' : 'Close'}</Button>}
           {post.status !== 'removed' && !post.hired_professional_id && <Button disabled={actionBusy} onClick={() => setRemoveOpen(true)} variant="secondary">Remove</Button>}
           {post.published_at && <Button as={Link} to={`/app/posts/${post.id}/applicants`} variant="primary">Applicants · {applicationCount}</Button>}
         </div>}
-        {post.author_id !== user?.id && profile?.account_type === 'provider' && <section aria-label="Your application" className="post-application-panel">
+        {post.status !== 'completed' && post.author_id !== user?.id && profile?.account_type === 'provider' && <section aria-label="Your application" className="post-application-panel">
           {application ? <>
             <div className="post-application-panel__heading"><h2>Your application</h2><Badge tone={application.status === 'hired' ? 'success' : application.status === 'pending' ? 'info' : 'neutral'}>{({ pending: 'Pending', hired: 'Selected', not_selected: 'Not selected', withdrawn: 'Withdrawn' })[application.status]}</Badge></div>
             {application.message && <p>{application.message}</p>}

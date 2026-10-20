@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Briefcase, LockKey, Phone } from '@phosphor-icons/react'
+import { Briefcase } from '@phosphor-icons/react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import { publishedProviderSelection } from '../lib/providerQueries.js'
 import SignOutAction from '../components/SignOutAction.jsx'
 import { Avatar, Card, ListGroup, ListRow } from '../components/UiPrimitives.jsx'
+import ProviderWorkSummary from '../components/ProviderWorkSummary.jsx'
 import './AuthenticatedPages.css'
 
 export default function ProfilePage() {
@@ -64,12 +65,6 @@ export default function ProfilePage() {
           <ListRow icon={Briefcase} value={isProvider ? 'Professional' : 'Customer'}>
             Account type
           </ListRow>
-          <div className="profile-phone-row">
-            <Phone aria-hidden="true" className="profile-phone-row__icon" size={18} />
-            <span className="profile-phone-row__label">Phone</span>
-            <span className="profile-phone-row__value">{profile?.phone_number || 'Not added'}</span>
-            {profile?.phone_number && <span className="profile-phone-row__private"><LockKey aria-hidden="true" size={13} weight="fill" /> Private</span>}
-          </div>
         </ListGroup>
       </section>
 
@@ -108,6 +103,8 @@ export default function ProfilePage() {
           )}
         </section>
       )}
+
+      {isProvider && provider && <ProviderWorkSummary displayName={provider.display_name} profileId={provider.profile_id} />}
 
       <section className="app-profile-section">
         <h2 className="app-group-title">About Fixora</h2>
