@@ -19,9 +19,13 @@ export function logPostStep(step, { postId = null, error } = {}) {
 
 export function describePhotoError(error) {
   const message = error?.message || 'Unknown upload error'
-  const code = error?.code || error?.statusCode || error?.status
-  const detail = code ? `${message} (${code})` : message
-  return detail.length > 180 ? `${detail.slice(0, 177)}…` : detail
+  const code = String(error?.code || error?.statusCode || error?.status || '')
+  const normalized = message.toLowerCase()
+  if (['401', '403', '42501'].includes(code) || normalized.includes('permission denied')) return 'permission denied'
+  if (['413', '413.1'].includes(code) || normalized.includes('file size') || normalized.includes('too large')) return 'photo is larger than the upload limit'
+  if (['409', '23505'].includes(code)) return 'photo is already attached'
+  if (normalized.includes('fetch') || normalized.includes('network') || normalized.includes('timeout')) return 'connection interrupted'
+  return 'upload failed'
 }
 
 async function decodeFile(file) {

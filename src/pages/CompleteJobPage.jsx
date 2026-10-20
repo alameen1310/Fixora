@@ -114,7 +114,7 @@ export default function CompleteJobPage() {
         }
         if (uploadError) {
           logPostStep('complete_upload', { postId: post.id, error: uploadError })
-          throw new Error(`Show the result: photo ${order + 1} upload failed: ${describePhotoError(uploadError)}.`)
+          throw new Error(`Show the result: photo ${order + 1} couldn’t upload. Check your connection and retry.`)
         }
         photo.existing = true
         nextPhotos[index] = photo
@@ -128,16 +128,18 @@ export default function CompleteJobPage() {
       })
       if (completeError) {
         logPostStep('complete_job', { postId: post.id, error: completeError })
-        throw new Error(`Final price and review could not be saved: ${describePhotoError(completeError)}.`)
+        throw new Error("We couldn't complete this job. Check your connection and try again.")
       }
       setCelebrating(true)
       window.setTimeout(() => navigate(`/app/posts/${post.id}`, { replace: true }), 700)
       showToast({ type: 'success', message: 'Job marked as completed. Thank you for your review.' })
     } catch (problem) {
-      if (!problem.message?.startsWith('Show the result:') && !problem.message?.startsWith('Final price')) {
+      if (problem.message?.startsWith('Show the result:')) {
+        setError(`${problem.message} Your entries are saved here; retry when ready.`)
+      } else {
         logPostStep('complete_reserve', { postId: post.id, error: problem })
-        setError(`Show the result: ${describePhotoError(problem)}. Your entries are saved here; retry when ready.`)
-      } else setError(`${problem.message} Your entries are saved here; retry when ready.`)
+        setError("We couldn't complete this job. Check your connection and try again. Your entries are saved here; retry when ready.")
+      }
     } finally { setBusy(false) }
   }
 
