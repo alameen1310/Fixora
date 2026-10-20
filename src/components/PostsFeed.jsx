@@ -15,7 +15,6 @@ export function PostsFeed({ userId, showOwnLatest = false, categorySlug = '' }) 
   const [ownLatest, setOwnLatest] = useState(() => saved?.ownLatest ?? null)
   const [pendingOwnLatest, setPendingOwnLatest] = useState(() => saved?.pendingOwnLatest ?? null)
   const [authors, setAuthors] = useState(() => saved?.authors ?? {})
-  const [authorPhotos, setAuthorPhotos] = useState(() => saved?.authorPhotos ?? {})
   const [covers, setCovers] = useState(() => saved?.covers ?? {})
   const [loading, setLoading] = useState(() => !saved?.lastRefreshAt)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -38,9 +37,8 @@ export function PostsFeed({ userId, showOwnLatest = false, categorySlug = '' }) 
 
   const attachAssets = useCallback(async (items) => {
     if (!items.length) return
-    const { names, photos } = await fetchAuthorNames(items)
+    const [names] = await Promise.all([fetchAuthorNames(items)])
     setAuthors((current) => ({ ...current, ...names }))
-    setAuthorPhotos((current) => ({ ...current, ...photos }))
     setCovers((current) => ({ ...current, ...Object.fromEntries(items.filter(({ coverPath }) => coverPath).map(({ coverPath }) => [coverPath, getPostImageUrl(coverPath)])) }))
   }, [])
 
@@ -126,10 +124,10 @@ export function PostsFeed({ userId, showOwnLatest = false, categorySlug = '' }) 
 
   useEffect(() => {
     homeFeedCache.set(cacheKey, {
-      posts, ownLatest, pendingOwnLatest, authors, authorPhotos, covers, hasMore, newPosts,
+      posts, ownLatest, pendingOwnLatest, authors, covers, hasMore, newPosts,
       cursor: cursor.current, lastRefreshAt: lastRefreshAt.current,
     })
-  }, [cacheKey, posts, ownLatest, pendingOwnLatest, authors, authorPhotos, covers, hasMore, newPosts])
+  }, [cacheKey, posts, ownLatest, pendingOwnLatest, authors, covers, hasMore, newPosts])
 
   useEffect(() => {
     const onVisible = () => {
@@ -173,13 +171,13 @@ export function PostsFeed({ userId, showOwnLatest = false, categorySlug = '' }) 
       {showOwnLatest && ownLatest && (
         <section aria-label="Your latest post" className="posts-own-latest">
           <p className="posts-feed__label">Your latest post</p>
-          <PostCard authorName={authors[ownLatest.id]} authorPhotoUrl={authorPhotos[ownLatest.id]} coverUrl={covers[ownLatest.coverPath]} onCoverError={() => retryCover(ownLatest.coverPath)} post={ownLatest} priority showOwnerBadge />
+          <PostCard authorName={authors[ownLatest.id]} coverUrl={covers[ownLatest.coverPath]} onCoverError={() => retryCover(ownLatest.coverPath)} post={ownLatest} priority showOwnerBadge />
         </section>
       )}
       {!empty && visiblePosts.length > 0 && (
         <div className="posts-grid">
           {visiblePosts.map((post, index) => (
-            <PostCard authorName={authors[post.id]} authorPhotoUrl={authorPhotos[post.id]} coverUrl={covers[post.coverPath]} key={post.id} onCoverError={() => retryCover(post.coverPath)} post={post} priority={index === 0 && !ownLatest} />
+            <PostCard authorName={authors[post.id]} coverUrl={covers[post.coverPath]} key={post.id} onCoverError={() => retryCover(post.coverPath)} post={post} priority={index === 0 && !ownLatest} />
           ))}
         </div>
       )}
@@ -213,7 +211,6 @@ export function MyPostsList({ userId }) {
   const saved = myPostsCache.get(userId)
   const [posts, setPosts] = useState(() => saved?.posts ?? [])
   const [authors, setAuthors] = useState(() => saved?.authors ?? {})
-  const [authorPhotos, setAuthorPhotos] = useState(() => saved?.authorPhotos ?? {})
   const [covers, setCovers] = useState(() => saved?.covers ?? {})
   const [loading, setLoading] = useState(() => !saved)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -226,9 +223,8 @@ export function MyPostsList({ userId }) {
     else { setLoading(true); setError('') }
     try {
       const page = await fetchMyPosts(userId, { cursor: append ? cursor.current : null, limit: PAGE_SIZE })
-      const { names, photos } = await fetchAuthorNames(page)
+      const names = await fetchAuthorNames(page)
       setAuthors((current) => ({ ...current, ...names }))
-      setAuthorPhotos((current) => ({ ...current, ...photos }))
       setCovers((current) => ({ ...current, ...Object.fromEntries(page.filter(({ coverPath }) => coverPath).map(({ coverPath }) => [coverPath, getPostImageUrl(coverPath)])) }))
       setPosts((current) => append ? [...current, ...page] : page)
       cursor.current = postCursor(page.at(-1))
@@ -244,8 +240,8 @@ export function MyPostsList({ userId }) {
 
   useEffect(() => { if (!saved) void loadPage() }, [loadPage])
   useEffect(() => {
-    myPostsCache.set(userId, { posts, authors, authorPhotos, covers, hasMore, cursor: cursor.current })
-  }, [userId, posts, authors, authorPhotos, covers, hasMore])
+    myPostsCache.set(userId, { posts, authors, covers, hasMore, cursor: cursor.current })
+  }, [userId, posts, authors, covers, hasMore])
 
   if (loading) return <div aria-label="Loading your posts" className="posts-grid" role="status"><PostCardSkeleton /><PostCardSkeleton /><PostCardSkeleton /></div>
   if (error && posts.length === 0) return <section className="posts-feed__error" role="alert"><p>{error}</p><Button onClick={() => void loadPage()} variant="secondary">Retry</Button></section>
@@ -257,7 +253,7 @@ export function MyPostsList({ userId }) {
       {error && <section className="posts-feed__error" role="alert"><p>{error}</p><Button onClick={() => void loadPage(true)} variant="secondary">Retry</Button></section>}
       <div className="posts-grid">
         {posts.map((post, index) => (
-        <PostCard authorName={authors[post.id]} authorPhotoUrl={authorPhotos[post.id]} coverUrl={covers[post.coverPath]} key={post.id} post={post} priority={index === 0} showOwnerBadge />
+          <PostCard authorName={authors[post.id]} coverUrl={covers[post.coverPath]} key={post.id} post={post} priority={index === 0} showOwnerBadge />
         ))}
       </div>
       {hasMore && <div className="posts-feed__more"><Button loading={loadingMore} onClick={() => void loadPage(true)} variant="secondary">Load more</Button></div>}

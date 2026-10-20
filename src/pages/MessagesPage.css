@@ -310,36 +310,6 @@
   .messages-thread__scroll { scroll-behavior: auto; }
 }
 
-/* Compact tombstone and keep the desktop thread aligned with its job context. */
-.message-bubble--deleted { min-height:0; padding:7px 10px; border-color:#e4e8ef; border-radius:12px; color:#66728a; background:#f0f2f6; box-shadow:none; }
-.message-group.is-mine .message-bubble--deleted { border-color:#dbe0e9; color:#66728a; background:#f0f2f6; }
-.message-deleted { display:inline-flex; align-items:center; gap:6px; font-size:12px; }
-.message-deleted em { font-style:italic; }
-.messages-thread__header > div:not(.messages-thread__actions) { flex:1 1 auto; }
-.messages-thread__actions { flex:0 0 auto; }
-@media (min-width:900px) {
-  .fixora-app.is-chat-route .fixora-app__viewport { min-height:100dvh; }
-  .fixora-app.is-chat-route .page-container--chat { width:100%; height:100dvh; min-height:0; }
-  .messages-shell { height:100%; min-height:0; grid-template-columns:minmax(320px, 360px) minmax(0, 1fr); }
-  .messages-shell.has-selection { grid-template-columns:minmax(320px, 360px) minmax(0, 1fr); }
-  .messages-thread { grid-template-rows:64px 68px minmax(0,1fr) auto; }
-  .messages-thread__header { min-width:0; }
-  .messages-thread__header > div:not(.messages-thread__actions) { min-width:0; }
-  .messages-thread__actions .ui-button { min-height:40px; }
-  .messages-job-context { min-width:0; }
-}
-@media (min-width:1440px) {
-  .messages-shell.has-selection { grid-template-columns:minmax(320px, 360px) minmax(0, 1fr) 320px; }
-}
-@media (max-width:899px) {
-  .message-bubble-wrap.is-menu-open .message-bubble-menu,
-  .message-bubble-wrap.is-reaction-open .message-reaction-picker {
-    bottom: calc(env(safe-area-inset-bottom) + 86px);
-    max-height: min(42dvh, 320px);
-    overflow-y: auto;
-  }
-}
-
 @media (max-width: 899px) {
   .fixora-app.is-chat-route { overflow: hidden; overscroll-behavior: none; }
   .messages-shell:not(.is-thread-open) { height: calc(100dvh - 52px - env(safe-area-inset-top) - var(--tabbar-space)); min-height: 0; }

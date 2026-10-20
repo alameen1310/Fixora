@@ -1,14 +1,11 @@
 import { supabase } from './supabase.js'
-import { fetchProfilePhotoMap } from './profilePhotos.js'
 
 export const MESSAGE_COLUMNS = 'id, conversation_id, sender_id, body, created_at, read_at, reply_to_id, deleted_at, image_path'
 
 export async function fetchMyConversations() {
   const { data, error } = await supabase.rpc('get_my_conversations')
   if (error) throw error
-  const rows = data ?? []
-  const photos = await fetchProfilePhotoMap(rows.map((row) => row.other_user_id))
-  return rows.map((row) => ({ ...row, other_avatar_url: photos[row.other_user_id] ?? null }))
+  return data ?? []
 }
 
 export async function fetchUnreadMessageCount() {

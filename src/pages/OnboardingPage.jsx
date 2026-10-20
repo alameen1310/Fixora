@@ -7,8 +7,6 @@ import { useToast } from '../components/ToastProvider.jsx'
 import { Logo } from '../components/UiPrimitives.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
-import { NIGERIAN_STATE_OPTIONS, normalizeNigerianRegion, regionForStateCode, stateCodeForRegion } from '../lib/nigeriaStates.js'
-import ProfilePhotoField from '../components/ProfilePhotoField.jsx'
 import './OnboardingPage.css'
 
 const steps = ['Contact details', 'Professional profile', 'Services', 'Service areas', 'Review']
@@ -75,7 +73,7 @@ async function saveProviderProfile(userId, fields) {
   })
 }
 
-export default function OnboardingPage({ audience, editMode = false }) {
+export default function OnboardingPage({ audience }) {
   const isProvider = audience === 'provider'
   const navigate = useNavigate()
   const { user, profile, setProfile, signOut } = useAuth()
@@ -97,8 +95,7 @@ export default function OnboardingPage({ audience, editMode = false }) {
     providerType: user?.user_metadata?.provider_type === 'business' || getSessionValue('fixora.providerType') === 'business' ? 'business' : 'individual',
     description: '',
     categoryIds: [],
-    serviceAreas: [{ country_code: 'NG', region: '', state_code: '', city: '' }],
-    nationwide: false,
+    serviceAreas: [{ country_code: 'NG', region: '', city: '' }],
   })
 
   useEffect(() => {
@@ -115,13 +112,13 @@ export default function OnboardingPage({ audience, editMode = false }) {
           ? supabase.from('service_categories').select('id, slug, name').order('name').abortSignal(controller.signal)
           : Promise.resolve({ data: [], error: null }),
         isProvider
-          ? supabase.from('provider_profiles').select('display_name, provider_type, service_description, is_nationwide').eq('profile_id', user.id).maybeSingle().abortSignal(controller.signal)
+          ? supabase.from('provider_profiles').select('display_name, provider_type, service_description').eq('profile_id', user.id).maybeSingle().abortSignal(controller.signal)
           : Promise.resolve({ data: null, error: null }),
         isProvider
           ? supabase.from('provider_service_categories').select('category_id').eq('provider_id', user.id).abortSignal(controller.signal)
           : Promise.resolve({ data: [], error: null }),
         isProvider
-          ? supabase.from('provider_service_areas').select('country_code, region, city, state_code').eq('provider_id', user.id).order('created_at').abortSignal(controller.signal)
+          ? supabase.from('provider_service_areas').select('country_code, region, city').eq('provider_id', user.id).order('created_at').abortSignal(controller.signal)
           : Promise.resolve({ data: [], error: null }),
       ])
         if (!alive) return
@@ -143,7 +140,6 @@ export default function OnboardingPage({ audience, editMode = false }) {
           phone: profile?.phone_number ?? current.phone,
           displayName: savedProvider?.display_name ?? current.displayName,
           providerType: savedProvider?.provider_type ?? current.providerType,
-          nationwide: savedProvider?.is_nationwide ?? current.nationwide,
           description: savedProvider?.service_description ?? current.description,
           categoryIds: selectedResult.data?.length
             ? selectedResult.data.map((item) => item.category_id)
@@ -151,13 +147,11 @@ export default function OnboardingPage({ audience, editMode = false }) {
           serviceAreas: savedAreas ?? current.serviceAreas,
         }))
         if (isProvider) {
-          let resumeStep = editMode ? 2 : 1
-          if (!editMode) {
-            if (profile?.full_name && profile?.phone_number) resumeStep = 2
-            if (savedProvider) resumeStep = 3
-            if (selectedResult.data?.length) resumeStep = 4
-            if (savedAreas) resumeStep = 5
-          }
+          let resumeStep = 1
+          if (profile?.full_name && profile?.phone_number) resumeStep = 2
+          if (savedProvider) resumeStep = 3
+          if (selectedResult.data?.length) resumeStep = 4
+          if (savedAreas) resumeStep = 5
           setStep(resumeStep)
         }
       } catch {
@@ -177,12 +171,12 @@ export default function OnboardingPage({ audience, editMode = false }) {
     setValues((current) => {
       if (field !== 'providerType') return { ...current, [field]: value }
       if (value === 'business' && current.displayName.trim() === current.fullName.trim()) {
-        return { ...current, providerType: value, displayName: '', nationwide: false }
+        return { ...current, providerType: value, displayName: '' }
       }
       if (value === 'individual' && !current.displayName.trim()) {
-        return { ...current, providerType: value, displayName: current.fullName, nationwide: false }
+        return { ...current, providerType: value, displayName: current.fullName }
       }
-      return { ...current, providerType: value, nationwide: value === 'business' ? current.nationwide : false }
+      return { ...current, providerType: value }
     })
     setFieldErrors((current) => {
       const next = { ...current }
@@ -259,18 +253,17 @@ export default function OnboardingPage({ audience, editMode = false }) {
         showToast({ type: 'success', message: 'Your services are saved.' })
         setStep(4)
       } else if (currentStep === 4) {
-        const cleanAreas = values.nationwide ? [] : values.serviceAreas.map((area) => ({
+        const cleanAreas = values.serviceAreas.map((area) => ({
           country_code: area.country_code,
           region: area.region.trim(),
           city: area.city.trim(),
-          state_code: area.state_code || stateCodeForRegion(area.region),
         }))
         const areaErrors = {}
         cleanAreas.forEach((area, index) => {
           if (!area.region) areaErrors[`area-${index}-region`] = 'Enter a state or region.'
           if (!area.city) areaErrors[`area-${index}-city`] = 'Enter a city.'
         })
-        if (!values.nationwide && !cleanAreas.length) {
+        if (!cleanAreas.length) {
           setFieldErrors({ serviceAreas: 'Add at least one service area.' })
           return
         }
@@ -278,7 +271,7 @@ export default function OnboardingPage({ audience, editMode = false }) {
           setFieldErrors(areaErrors)
           return
         }
-        const { error: saveError } = await requestWithTimeout((signal) => supabase.rpc('replace_provider_service_areas', { requested_areas: cleanAreas, requested_nationwide: values.nationwide }).abortSignal(signal))
+        const { error: saveError } = await requestWithTimeout((signal) => supabase.rpc('replace_provider_service_areas', { requested_areas: cleanAreas }).abortSignal(signal))
         if (saveError) throw saveError
         showToast({ type: 'success', message: 'Your service areas are saved.' })
         setStep(5)
@@ -303,7 +296,7 @@ export default function OnboardingPage({ audience, editMode = false }) {
       onboarding_completed_at: completionTime ?? new Date().toISOString(),
     } : current)
     showToast({ type: 'success', message: 'Your Fixora setup is complete.' })
-    navigate(editMode ? '/app/profile' : '/app', { replace: true })
+    navigate('/app', { replace: true })
   }
 
   async function handleSignOut() {
@@ -374,7 +367,7 @@ export default function OnboardingPage({ audience, editMode = false }) {
             </div>
           )}
 
-          <p className="onboarding-kicker">{editMode ? 'Profile settings' : isProvider ? `Step ${currentStep} of 5` : 'Finish your Fixora account'}</p>
+          <p className="onboarding-kicker">{isProvider ? `Step ${currentStep} of 5` : 'Finish your Fixora account'}</p>
           <h1 id="onboarding-title">{isProvider ? steps[currentStep - 1] : 'Your contact details'}</h1>
           <p className="onboarding-intro">{currentStep === 1
             ? 'Your name and contact number are saved with your account. Add or update them here if needed.'
@@ -382,8 +375,8 @@ export default function OnboardingPage({ audience, editMode = false }) {
               ? 'Create the professional profile customers will discover.'
               : currentStep === 3
                 ? 'Choose the services that best reflect the work you take on.'
-                  : currentStep === 4
-                    ? 'Add the cities and regions where you are available.'
+                : currentStep === 4
+                  ? 'Add the cities and regions where you are available.'
                   : 'Review the details you have shared before finishing setup.'}</p>
 
           {loadFailed ? (
@@ -395,9 +388,7 @@ export default function OnboardingPage({ audience, editMode = false }) {
           ) : (
             <form className="onboarding-form" noValidate onSubmit={next}>
               {currentStep === 1 && (
-                <>
-                <ProfilePhotoField name={values.fullName || 'Profile photo'} showSkip />
-                {showContactSummary ? (
+                showContactSummary ? (
                   <div className="onboarding-contact-summary">
                     <dl>
                       <div><dt>Name</dt><dd>{values.fullName}</dd></div>
@@ -419,8 +410,7 @@ export default function OnboardingPage({ audience, editMode = false }) {
                     <p className="onboarding-hint">Your phone number is saved securely and privately with your account. It is never displayed publicly.</p>
                     {!isProvider && contactAlreadySaved && <button className="onboarding-text-action" onClick={() => setEditingContact(false)} type="button">Cancel editing</button>}
                   </div>
-                )}
-                </>
+                )
               )}
 
               {currentStep === 2 && (
@@ -431,12 +421,12 @@ export default function OnboardingPage({ audience, editMode = false }) {
                       <label className={`onboarding-choice-pill ${values.providerType === 'individual' ? 'is-selected' : ''}`}>
                         <input checked={values.providerType === 'individual'} name="providerType" onChange={() => update('providerType', 'individual')} type="radio" />
                         <User size={18} weight="duotone" />
-                        <span>Independent professional</span>
+                        <span>Individual</span>
                       </label>
                       <label className={`onboarding-choice-pill ${values.providerType === 'business' ? 'is-selected' : ''}`}>
                         <input checked={values.providerType === 'business'} name="providerType" onChange={() => update('providerType', 'business')} type="radio" />
                         <Briefcase size={18} weight="duotone" />
-                        <span>Service business</span>
+                        <span>Business</span>
                       </label>
                     </div>
                   </fieldset>
@@ -467,8 +457,7 @@ export default function OnboardingPage({ audience, editMode = false }) {
 
               {currentStep === 4 && (
                 <div className="onboarding-areas">
-                  {values.providerType === 'business' && <label className="onboarding-nationwide"><input checked={values.nationwide} onChange={(event) => update('nationwide', event.target.checked)} type="checkbox" /><span><strong>Nationwide</strong><small>Serve customers across all 36 states and the FCT. This replaces individual state selections.</small></span></label>}
-                  {!values.nationwide && values.serviceAreas.map((area, index) => (
+                  {values.serviceAreas.map((area, index) => (
                     <div className="onboarding-area" key={`${index}-${area.country_code}`}>
                       <div className="onboarding-area-header">
                         <span className="onboarding-area-count">Area {index + 1}</span>
@@ -484,22 +473,14 @@ export default function OnboardingPage({ audience, editMode = false }) {
                           {countryOptions.map((country) => <option key={country.code} value={country.code}>{country.label}</option>)}
                         </select>
                       </label>
-                      {area.country_code === 'NG' ? <label className={`onboarding-field${fieldErrors[`area-${index}-region`] ? ' has-error' : ''}`} htmlFor={`area-region-${index}`}>
-                        <span>State or territory</span>
-                        <select aria-describedby={fieldErrors[`area-${index}-region`] ? `area-region-${index}-error` : undefined} aria-invalid={Boolean(fieldErrors[`area-${index}-region`])} id={`area-region-${index}`} onChange={(event) => { const name = regionForStateCode(event.target.value) || event.target.value; update('serviceAreas', values.serviceAreas.map((item, itemIndex) => itemIndex === index ? { ...item, state_code: event.target.value, region: name } : item)) }} required value={area.state_code || stateCodeForRegion(area.region) || (normalizeNigerianRegion(area.region) ? '' : area.region)}>
-                          <option value="">Choose a state or territory</option>
-                          {NIGERIAN_STATE_OPTIONS.map(({ name, code }) => <option key={code} value={code}>{name}{code === 'NG-FC' ? ' (FCT)' : ''}</option>)}
-                          {area.region && !normalizeNigerianRegion(area.region) && <option value={area.region}>{area.region} (saved value)</option>}
-                        </select>
-                        {fieldErrors[`area-${index}-region`] && <small className="onboarding-field-error" id={`area-region-${index}-error`} role="alert">{fieldErrors[`area-${index}-region`]}</small>}
-                      </label> : <Field error={fieldErrors[`area-${index}-region`]} id={`area-region-${index}`} label="State or region" onChange={(value) => changeArea(index, 'region', value, values, update)} value={area.region} />}
+                      <Field error={fieldErrors[`area-${index}-region`]} id={`area-region-${index}`} label="State or region" onChange={(value) => changeArea(index, 'region', value, values, update)} value={area.region} placeholder="e.g. Lagos State" />
                       <Field error={fieldErrors[`area-${index}-city`]} id={`area-city-${index}`} label="City" onChange={(value) => changeArea(index, 'city', value, values, update)} value={area.city} placeholder="e.g. Ikeja, Lekki, or Surulere" />
                     </div>
                   ))}
-                  {!values.nationwide && <button className="onboarding-add-area" onClick={() => update('serviceAreas', [...values.serviceAreas, { country_code: 'NG', region: '', state_code: '', city: '' }])} type="button">
+                  <button className="onboarding-add-area" onClick={() => update('serviceAreas', [...values.serviceAreas, { country_code: 'NG', region: '', city: '' }])} type="button">
                     + Add another service area
-                  </button>}
-                  <p className="onboarding-hint">{values.nationwide ? 'Nationwide coverage is limited to service businesses; individual professionals choose specific locations.' : 'Choose from Nigeria’s 36 states or the FCT. City remains free text.'}</p>
+                  </button>
+                  <p className="onboarding-hint">Only the country, region, and city are shown on your public professional profile.</p>
                 </div>
               )}
 
@@ -512,7 +493,7 @@ export default function OnboardingPage({ audience, editMode = false }) {
                   </button>
                 )}
                 <button className="onboarding-primary" disabled={busy} type="submit">
-                  {busy ? <><LoadingIndicator /> {currentStep === (isProvider ? 5 : 1) ? (editMode ? 'Saving profile…' : 'Finishing setup…') : 'Saving step…'}</> : currentStep === (isProvider ? 5 : 1) ? (editMode ? 'Save changes' : 'Finish setup') : 'Save and continue'}
+                  {busy ? <><LoadingIndicator /> {currentStep === (isProvider ? 5 : 1) ? 'Finishing setup…' : 'Saving step…'}</> : currentStep === (isProvider ? 5 : 1) ? 'Finish setup' : 'Save and continue'}
                   {!busy && <ArrowRight aria-hidden="true" size={18} />}
                 </button>
               </div>
@@ -602,7 +583,7 @@ function Review({ values, categories }) {
       </div>
       <div className="onboarding-review-row">
         <span className="onboarding-review-label">Service areas</span>
-        <span className="onboarding-review-val">{values.nationwide ? 'Nationwide, including the FCT' : values.serviceAreas.map((area) => [area.city, area.region, area.country_code].filter(Boolean).join(', ')).join(' · ') || 'Not added'}</span>
+        <span className="onboarding-review-val">{values.serviceAreas.map((area) => [area.city, area.region, area.country_code].filter(Boolean).join(', ')).join(' · ') || 'Not added'}</span>
       </div>
     </div>
   )

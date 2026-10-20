@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase.js'
 import { publishedProviderSelection } from '../lib/providerQueries.js'
 import { Avatar, Badge, Button, Chip, ListGroup, ListRow, Skeleton } from '../components/UiPrimitives.jsx'
 import ProviderWorkSummary from '../components/ProviderWorkSummary.jsx'
-import { fetchProfilePhotoMap } from '../lib/profilePhotos.js'
 import './AuthenticatedPages.css'
 
 export default function ProfessionalProfilePage() {
@@ -26,8 +25,7 @@ export default function ProfessionalProfilePage() {
         .eq('is_published', true)
         .maybeSingle()
       if (queryError) throw queryError
-      const photos = await fetchProfilePhotoMap([professionalId])
-      setProvider(data ? { ...data, avatarUrl: photos[professionalId] ?? null } : null)
+      setProvider(data)
     } catch {
       setError(true)
     } finally {
@@ -40,7 +38,7 @@ export default function ProfessionalProfilePage() {
   }, [loadProfile, attempt])
 
   const services = (provider?.provider_service_categories ?? []).map((relation) => relation.category?.name).filter(Boolean)
-  const areas = provider?.is_nationwide ? ['Nationwide · Nigeria'] : (provider?.provider_service_areas ?? []).map((area) => [area.city, area.region].filter(Boolean).join(', ')).filter(Boolean)
+  const areas = (provider?.provider_service_areas ?? []).map((area) => [area.city, area.region].filter(Boolean).join(', ')).filter(Boolean)
 
   return (
     <main className="app-page app-page--profile-detail">
@@ -81,7 +79,7 @@ export default function ProfessionalProfilePage() {
       ) : (
         <article className="app-public-profile">
           <header className="app-public-profile__header">
-            <Avatar name={provider.display_name} size={64} src={provider.avatarUrl} />
+            <Avatar name={provider.display_name} size={64} />
             <div className="app-public-profile__titles">
               <Badge tone="neutral">
                 {provider.provider_type === 'business' ? 'Service business' : 'Independent professional'}

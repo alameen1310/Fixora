@@ -9,9 +9,9 @@ const benefits = [
   { icon: LockKey, text: 'Your phone number stays private' },
 ]
 
-export default function AuthLayout({ children, className = '' }) {
+export default function AuthLayout({ children }) {
   return (
-    <main className={`auth-layout${className ? ` ${className}` : ''}`}>
+    <main className="auth-layout">
       <aside aria-label="About Fixora" className="auth-layout__brand-panel">
         <div className="auth-layout__brand-inner">
           <Logo className="auth-layout__logo" />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, CaretRight, CircleNotch, LockKey } from '@phosphor-icons/react'
 import './UiPrimitives.css'
@@ -177,9 +177,7 @@ export function Chip({ children, selected = false, ...props }) {
   )
 }
 
-export function Avatar({ name = '', size = 44, src = null }) {
-  const [imageFailed, setImageFailed] = useState(false)
-  useEffect(() => { setImageFailed(false) }, [src])
+export function Avatar({ name = '', size = 44 }) {
   const words = name.trim().split(/\s+/).filter(Boolean)
   const initials = (words.length === 1 ? words[0].slice(0, 2) : words.slice(0, 2).map((word) => word[0]).join('')).toUpperCase() || 'F'
   const colorIndex = [...name].reduce((total, character) => total + character.charCodeAt(0), 0) % 4
@@ -191,7 +189,6 @@ export function Avatar({ name = '', size = 44, src = null }) {
       style={sizeStyle}
     >
       {initials}
-      {src && !imageFailed && <img alt="" onError={() => setImageFailed(true)} src={src} />}
     </span>
   )
 }

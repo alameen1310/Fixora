@@ -11,7 +11,6 @@ import { useToast } from '../components/ToastProvider.jsx'
 import { fetchMyApplication, fetchPostApplicationCount } from '../lib/applicationQueries.js'
 import BeforeAfterSlider from '../components/BeforeAfterSlider.jsx'
 import { FEATURES } from '../config/features.js'
-import { fetchProfilePhotoMap } from '../lib/profilePhotos.js'
 import '../components/Posts.css'
 
 function ReviewStars({ rating }) {
@@ -72,8 +71,7 @@ export default function PostDetailPage() {
         if (providerResult.error) throw providerResult.error
         if (reviewResult.error) throw reviewResult.error
         if (ratingResult.error) throw ratingResult.error
-        const photos = await fetchProfilePhotoMap([result.hired_professional_id])
-        setCompletion({ provider: providerResult.data ? { ...providerResult.data, avatarUrl: photos[result.hired_professional_id] ?? null } : null, review: reviewResult.data, rating: ratingResult.data })
+        setCompletion({ provider: providerResult.data, review: reviewResult.data, rating: ratingResult.data })
       } else setCompletion(null)
     } catch {
       setError(true)
@@ -92,9 +90,6 @@ export default function PostDetailPage() {
   const timing = post.timing === 'specific_date' && post.target_date
     ? new Intl.DateTimeFormat('en-NG', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${post.target_date}T00:00:00`))
     : post.timing.replaceAll('_', ' ')
-  const workSchedule = post.schedule_mode === 'confirmed' && post.scheduled_start_at && post.scheduled_end_at
-    ? `${new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Lagos' }).format(new Date(post.scheduled_start_at))} – ${new Intl.DateTimeFormat('en-NG', { timeStyle: 'short', timeZone: 'Africa/Lagos' }).format(new Date(post.scheduled_end_at))} WAT`
-    : 'Not scheduled yet'
 
   function hideMissingImage(path) { setImageUrls((current) => ({ ...current, [path]: null })) }
 
@@ -175,7 +170,6 @@ export default function PostDetailPage() {
         <div className="post-detail__meta">
           {location && <span><MapPin aria-hidden="true" size={18} />{location}</span>}
           <span><CalendarBlank aria-hidden="true" size={18} />{timing}</span>
-          <span><CalendarBlank aria-hidden="true" size={18} />Schedule: {workSchedule}</span>
           <span><Wrench aria-hidden="true" size={18} />{post.job_type.replaceAll('_', ' ')}</span>
         </div>
         {post.status === 'completed' && <section className="completed-post-paid"><span>Paid</span><strong>{formatNaira(post.final_price_naira)}</strong></section>}
@@ -184,11 +178,11 @@ export default function PostDetailPage() {
           <p className="post-detail__description">{post.description}</p>
         </section>
         <section className="post-detail__author">
-          <Avatar name={post.authorName || 'Fixora member'} size={44} src={post.authorPhotoUrl} />
+          <Avatar name={post.authorName || 'Fixora member'} size={44} />
           <div><span>Posted by</span><strong>{post.authorName || 'Fixora member'}</strong></div>
           <time>{formatRelativeTime(post.created_at)}</time>
         </section>
-        {post.status === 'completed' && <section className="completed-post-professional"><h2>Fixed by</h2><Link className="completed-post-provider" to={`/app/professionals/${post.hired_professional_id}`}><Avatar name={completion?.provider?.display_name || 'Professional'} size={48} src={completion?.provider?.avatarUrl} /><div><strong>{completion?.provider?.display_name || 'Fixora professional'}</strong>{Number(completion?.rating?.review_count) > 0 ? <span className="completed-post-rating"><Star aria-hidden="true" size={15} weight="fill" />{Number(completion.rating.average_rating).toFixed(1)} · {completion.rating.review_count} {Number(completion.rating.review_count) === 1 ? 'review' : 'reviews'}</span> : <span>New on Fixora</span>}</div></Link>{completion?.review && <div className="completed-post-review"><div className="completed-post-review__head"><strong>{completion.review.customer_display_name}</strong><time>{new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium' }).format(new Date(completion.review.created_at))}</time></div><ReviewStars rating={completion.review.rating} />{completion.review.comment && <p>{completion.review.comment}</p>}</div>}<div className="completed-post-details">{post.service_categories?.name && <span>{post.service_categories.name}</span>}{location && <span>{location}</span>}{post.completed_at && <span>Completed {new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium' }).format(new Date(post.completed_at))}</span>}</div></section>}
+        {post.status === 'completed' && <section className="completed-post-professional"><h2>Fixed by</h2><Link className="completed-post-provider" to={`/app/professionals/${post.hired_professional_id}`}><Avatar name={completion?.provider?.display_name || 'Professional'} size={48} /><div><strong>{completion?.provider?.display_name || 'Fixora professional'}</strong>{Number(completion?.rating?.review_count) > 0 ? <span className="completed-post-rating"><Star aria-hidden="true" size={15} weight="fill" />{Number(completion.rating.average_rating).toFixed(1)} · {completion.rating.review_count} {Number(completion.rating.review_count) === 1 ? 'review' : 'reviews'}</span> : <span>New on Fixora</span>}</div></Link>{completion?.review && <div className="completed-post-review"><div className="completed-post-review__head"><strong>{completion.review.customer_display_name}</strong><time>{new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium' }).format(new Date(completion.review.created_at))}</time></div><ReviewStars rating={completion.review.rating} />{completion.review.comment && <p>{completion.review.comment}</p>}</div>}<div className="completed-post-details">{post.service_categories?.name && <span>{post.service_categories.name}</span>}{location && <span>{location}</span>}{post.completed_at && <span>Completed {new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium' }).format(new Date(post.completed_at))}</span>}</div></section>}
         {post.author_id === user?.id && post.status !== 'removed' && post.status !== 'completed' && <div className="post-detail__owner-actions">
           <Button as={Link} to={`/app/posts/${post.id}/edit`} variant="secondary">Edit</Button>
           {post.status === 'closed' && post.hired_professional_id && <Button as={Link} to={`/app/posts/${post.id}/complete`} variant="primary">Mark as completed</Button>}

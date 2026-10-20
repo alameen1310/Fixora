@@ -20,7 +20,6 @@ const AccountHomePage = lazy(() => import('./pages/AccountHomePage.jsx'))
 const DiscoverPage = lazy(() => import('./pages/DiscoverPage.jsx'))
 const ActivityPage = lazy(() => import('./pages/ActivityPage.jsx'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'))
-const ProfileEditPage = lazy(() => import('./pages/ProfileEditPage.jsx'))
 const ProfessionalProfilePage = lazy(() => import('./pages/ProfessionalProfilePage.jsx'))
 const MyPostsPage = lazy(() => import('./pages/MyPostsPage.jsx'))
 const PostDetailPage = lazy(() => import('./pages/PostDetailPage.jsx'))
@@ -53,7 +52,6 @@ export default function App() {
             <Route element={<ProtectedRoute onboarding><AccountTypePage /></ProtectedRoute>} path="/onboarding/account-type" />
             <Route element={<ProtectedRoute onboarding><OnboardingPage audience="customer" /></ProtectedRoute>} path="/onboarding/customer" />
             <Route element={<ProtectedRoute onboarding><OnboardingPage audience="provider" /></ProtectedRoute>} path="/onboarding/provider" />
-            <Route element={<ProtectedRoute><ProfileEditPage /></ProtectedRoute>} path="/profile/edit" />
             <Route element={<ProtectedRoute><AuthenticatedRouteBoundary><AuthenticatedAppShell /></AuthenticatedRouteBoundary></ProtectedRoute>} path="/app">
               <Route element={<AccountHomePage />} index />
               <Route element={<DiscoverPage />} path="discover" />

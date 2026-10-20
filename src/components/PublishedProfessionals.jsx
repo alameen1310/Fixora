@@ -3,11 +3,10 @@ import { CaretRight, MapPin, Star, Wrench } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { publishedProviderSelection } from '../lib/providerQueries.js'
-import { fetchProfilePhotoMap } from '../lib/profilePhotos.js'
 import { Avatar, Button, Skeleton } from './UiPrimitives.jsx'
 import './PublishedProfessionals.css'
 
-export default function PublishedProfessionals({ categorySlug = '', limit = 100, onCountChange, query = '', stateCode = '' }) {
+export default function PublishedProfessionals({ categorySlug = '', limit = 12, onCountChange, query = '' }) {
   const [profiles, setProfiles] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -35,9 +34,8 @@ export default function PublishedProfessionals({ categorySlug = '', limit = 100,
         ? await supabase.from('provider_rating_summary').select('provider_id, review_count, average_rating').in('provider_id', providerIds)
         : { data: [], error: null }
       if (ratingsError) throw ratingsError
-      const photoById = await fetchProfilePhotoMap(providerIds)
       const summaryById = Object.fromEntries((ratings ?? []).map((summary) => [summary.provider_id, summary]))
-      setProfiles((data ?? []).map((provider) => ({ ...provider, avatarUrl: photoById[provider.profile_id] ?? null, rating: summaryById[provider.profile_id] ?? null })))
+      setProfiles((data ?? []).map((provider) => ({ ...provider, rating: summaryById[provider.profile_id] ?? null })))
     } catch {
       setError(true)
     } finally {
@@ -51,7 +49,6 @@ export default function PublishedProfessionals({ categorySlug = '', limit = 100,
 
   const normalizedQuery = query.trim().toLocaleLowerCase()
   const filteredProfiles = profiles.filter((provider) => {
-    if (stateCode && !provider.is_nationwide && !(provider.provider_service_areas ?? []).some((area) => area.state_code === stateCode)) return false
     const categories = (provider.provider_service_categories ?? []).map((relation) => relation.category)
     const matchesCategory = !categorySlug || categories.some((category) => category?.slug === categorySlug)
     if (!matchesCategory) return false
@@ -133,7 +130,7 @@ export default function PublishedProfessionals({ categorySlug = '', limit = 100,
             to={`/app/professionals/${provider.profile_id}`}
           >
             <div className="professional-card__identity">
-            <Avatar name={provider.display_name} size={48} src={provider.avatarUrl} />
+              <Avatar name={provider.display_name} size={48} />
               <div className="professional-card__titles">
                 <p className="professional-card__eyebrow">
                   {provider.provider_type === 'business' ? 'Service business' : 'Independent professional'}
@@ -153,7 +150,7 @@ export default function PublishedProfessionals({ categorySlug = '', limit = 100,
                 </div>
               )}
               <p className="professional-card__description">{provider.service_description?.trim() || 'Service details not provided.'}</p>
-              {provider.is_nationwide ? <div className="professional-card__areas"><MapPin aria-hidden="true" size={15} /><span>Nationwide · Nigeria</span></div> : areas.length > 0 && (
+              {areas.length > 0 && (
                 <div className="professional-card__areas">
                   <MapPin aria-hidden="true" size={15} />
                   <span>{areas.slice(0, 2).join(' · ')}</span>

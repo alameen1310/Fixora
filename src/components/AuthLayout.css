@@ -38,12 +38,6 @@
   .auth-layout__mobile-brand > p { margin-top: 12px; }
 }
 
-@media (max-height: 560px) and (max-width: 767px) {
-  .auth-layout__mobile-brand { display: none; }
-  .auth-layout__content { margin-top: 0; }
-  .auth-layout__form-side { padding-top: calc(env(safe-area-inset-top) + 8px); }
-}
-
 @media (min-width: 768px) and (max-width: 1023px) {
   .auth-layout__form-side { padding-bottom: calc(2rem + env(safe-area-inset-bottom)); }
   .auth-layout__content { width: min(100% - 48px, 520px); }
@@ -71,8 +65,7 @@
   .auth-layout__photo figcaption { position: absolute; z-index: 1; left: 12px; bottom: 12px; padding: 6px 10px; border-radius: 999px; color: #fff; background: rgb(18 34 76 / 72%); font-size: 11px; }
   .auth-layout__form-side { display: grid; min-height: 100dvh; place-items: center; padding: 32px; }
   .auth-layout__mobile-brand { display: none; }
-  .auth-layout__content { width: min(100%, 480px); margin: 0 auto; }
-  .auth-layout--signup .auth-layout__content { width: min(100%, 600px); }
+  .auth-layout__content { width: min(100%, 440px); margin: 0 auto; }
   .auth-layout__header { display: grid; margin-bottom: 20px; }
   .auth-layout__content .auth-card { border-radius: 24px; }
 }

@@ -9,7 +9,6 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import './AuthenticatedPages.css'
 import ProviderFindWork from '../components/ProviderFindWork.jsx'
-import { NIGERIAN_STATE_OPTIONS } from '../lib/nigeriaStates.js'
 
 export default function DiscoverPage() {
   const { profile, user } = useAuth()
@@ -21,7 +20,6 @@ export default function DiscoverPage() {
   const [categories, setCategories] = useState([])
   const [selectedCategory, setSelectedCategory] = useState(initialCategory)
   const [query, setQuery] = useState(initialQuery)
-  const [stateCode, setStateCode] = useState(searchParams.get('state') || '')
   const [resultCount, setResultCount] = useState(null)
   const [resultsLoading, setResultsLoading] = useState(true)
   const [resultsError, setResultsError] = useState(false)
@@ -73,7 +71,6 @@ export default function DiscoverPage() {
   function clearAllFilters() {
     setSelectedCategory('')
     setQuery('')
-    setStateCode('')
     setSearchParams({}, { replace: true })
     searchInputRef.current?.focus()
   }
@@ -117,13 +114,6 @@ export default function DiscoverPage() {
         </label>
       </div>
 
-      <label className="discover-state-filter" htmlFor="discover-state">Show professionals serving
-        <select id="discover-state" onChange={(event) => { const nextCode = event.target.value; setStateCode(nextCode); const next = new URLSearchParams(searchParams); if (nextCode) next.set('state', nextCode); else next.delete('state'); setSearchParams(next, { replace: true }) }} value={stateCode}>
-          <option value="">all locations</option>
-          {NIGERIAN_STATE_OPTIONS.map(({ code, name }) => <option key={code} value={code}>{name}{code === 'NG-FC' ? ' (FCT)' : ''}</option>)}
-        </select>
-      </label>
-
       <div aria-label="Filter by service category" className="discover-category-chips" role="group">
         <Chip
           onClick={() => handleCategorySelect('')}
@@ -157,7 +147,6 @@ export default function DiscoverPage() {
           categorySlug={selectedCategory}
           onCountChange={handleResultCountChange}
           query={query}
-          stateCode={stateCode}
         />
 
         {!resultsLoading && !resultsError && (selectedCategory || query) && resultCount === 0 && (

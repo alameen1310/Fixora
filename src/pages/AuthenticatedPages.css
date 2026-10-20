@@ -1067,10 +1067,3 @@
 @media (min-width: 768px) { .post-detail__mobile-action { display: none; } .post-detail__owner-menu { display: none; } }
 .fixora-app .page-container .app-page.app-page--profile:not(.provider-profile-page) { width: min(100%,760px) !important; max-width: 760px !important; margin-inline: auto !important; }
 .fixora-app .page-container .app-page.provider-profile-page { width: min(100%,1100px) !important; max-width: 1100px !important; margin-inline: auto !important; }
-.profile-edit-link { display:inline-flex; min-width:64px; min-height:44px; align-items:center; justify-content:flex-end; color:var(--color-primary); font-size:14px; font-weight:650; text-decoration:none; }
-.profile-edit-link:focus-visible { outline:3px solid rgba(37,84,214,.35); outline-offset:2px; border-radius:8px; }
-.discover-state-filter { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:12px 0 18px; color:var(--color-text-secondary); font-size:.9rem; }
-.discover-state-filter select { min-height:40px; padding:0 32px 0 12px; border:1px solid var(--color-border); border-radius:10px; color:var(--color-text-primary); background:#fff; font:inherit; }
-.applicant-availability,.applicants-schedule-note { margin:0; color:var(--color-text-secondary); font-size:.88rem; line-height:1.45; }
-.applicant-availability { color:#805d00; }
-.provider-activity-row__customer { display:flex; align-items:center; gap:8px; min-width:0; }

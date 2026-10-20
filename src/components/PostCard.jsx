@@ -29,7 +29,7 @@ export function PostCardSkeleton() {
   )
 }
 
-export default function PostCard({ authorName, authorPhotoUrl, coverUrl = '', onCoverError, post, priority = false, showOwnerBadge = false }) {
+export default function PostCard({ authorName, coverUrl = '', onCoverError, post, priority = false, showOwnerBadge = false }) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageRetryAttempted, setImageRetryAttempted] = useState(false)
   const [hideImage, setHideImage] = useState(false)
@@ -74,7 +74,7 @@ export default function PostCard({ authorName, authorPhotoUrl, coverUrl = '', on
         </div>
         <div className="post-card__byline">
           <span className="post-card__author">
-            <Avatar name={authorName || 'Fixora member'} size={28} src={authorPhotoUrl} />
+            <Avatar name={authorName || 'Fixora member'} size={28} />
             <span>{authorName || 'Fixora member'}</span>
           </span>
           <span className="post-card__time">{formatRelativeTime(post.created_at)}</span>

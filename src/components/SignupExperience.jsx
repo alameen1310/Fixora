@@ -47,7 +47,7 @@ export default function SignupExperience({ audience }) {
   }, { scope: pageRef })
 
   return (
-    <AuthLayout className="auth-layout--signup">
+    <AuthLayout>
       <main className="signup-layout" ref={pageRef}>
         <section aria-labelledby="signup-title" className="signup-form-column">
           <div className="signup-intro" data-signup-enter>
