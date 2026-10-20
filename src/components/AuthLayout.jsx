@@ -9,7 +9,7 @@ const benefits = [
   { icon: LockKey, text: 'Your phone number stays private' },
 ]
 
-export default function AuthLayout({ children, wide = false }) {
+export default function AuthLayout({ children, wide = false, backTo = '/', backLabel = 'Back to Fixora home', login = false }) {
   return (
     <main className="auth-layout">
       <aside aria-label="About Fixora" className="auth-layout__brand-panel">
@@ -31,11 +31,11 @@ export default function AuthLayout({ children, wide = false }) {
       <div className={`auth-layout__form-side${wide ? ' is-wide' : ''}`}>
         <div className="auth-layout__mobile-brand">
           <img alt="" aria-hidden="true" className="auth-layout__mobile-photo" decoding="async" fetchPriority="high" height="1200" src={heroPhoto} width="1600" />
-          <AuthHeader className="auth-layout__mobile-header" /><p>The right professional for every home fix.</p>
+          <AuthHeader backLabel={backLabel} backTo={backTo} className="auth-layout__mobile-header" /><p>The right professional for every home fix.</p>
         </div>
-        <div className={`auth-layout__content${wide ? ' auth-layout__content--wide' : ''}`}>
-          <AuthHeader className="auth-layout__header" />
-          {children}
+        <div className={`auth-layout__content${wide ? ' auth-layout__content--wide' : ''}${login ? ' auth-layout__content--login' : ''}`}>
+          <AuthHeader backLabel={backLabel} backTo={backTo} className="auth-layout__header" />
+          {login ? <div className="auth-layout__login-content">{children}</div> : children}
         </div>
       </div>
     </main>

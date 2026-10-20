@@ -23,13 +23,15 @@
 @keyframes auth-drift { to { transform: translate(-12px, 9px); } }
 .auth-layout__mobile-brand > p { position: relative; z-index: 1; max-width: none; margin: 20px 0 0; font-size: clamp(.86rem, 3vw, 1.4rem); font-weight: 650; letter-spacing: -0.02em; white-space: nowrap; }
 .auth-layout__mobile-header { position: relative; z-index: 1; }
-.auth-layout__mobile-header .ui-auth-header__back { color: #fff; }
+.auth-layout__mobile-header .ui-auth-header__back { border-color: rgb(255 255 255 / 34%); color: #fff; background: rgb(255 255 255 / 12%); box-shadow: none; }
 .auth-layout__mobile-header .ui-auth-header__back:hover { background: rgb(255 255 255 / 14%); }
 .auth-layout__mobile-header .fixora-logo { color: #fff; }
 .auth-layout__mobile-header .fixora-logo__mark, .auth-layout__mobile-header .fixora-logo__mark path:nth-child(2) { stroke: #fff; }
 .auth-layout__content { position: relative; z-index: 2; width: min(100% - 32px, 560px); margin: -24px auto 0; }
 .auth-layout__header { display: none; }
 .auth-layout__content .auth-card { border-radius: 28px 28px 20px 20px; }
+.auth-layout__content--login { width: min(100%, 540px); }
+.auth-layout__login-content { width: min(100%, 540px); margin-inline: auto; }
 .auth-layout__content input { scroll-margin-block: 1rem; }
 .auth-layout__content :is(input, select, textarea):focus { scroll-margin-block: 1rem; }
 

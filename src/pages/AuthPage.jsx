@@ -157,7 +157,7 @@ export default function AuthPage({ mode = 'login' }) {
   const loginNotice = location.state?.notice
 
   return (
-    <AuthLayout>
+    <AuthLayout backLabel={mode === 'login' ? 'Back to sign up' : 'Back to sign in'} backTo={mode === 'login' ? '/signup/customer' : '/auth/login'} login={mode === 'login'}>
         <section aria-labelledby="auth-title" className="auth-card">
           <div className="auth-heading">
             <h1 className="text-large-title" id="auth-title">{config.title}</h1>

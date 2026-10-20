@@ -64,11 +64,11 @@ export function Logo({ className = '', to = '/' }) {
   )
 }
 
-export function AuthHeader({ className = '' }) {
+export function AuthHeader({ className = '', backTo = '/', backLabel = 'Back to Fixora home' }) {
   return (
     <header className={`ui-auth-header${className ? ` ${className}` : ''}`}>
-      <Link aria-label="Back to Fixora home" className="ui-auth-header__back" to="/">
-        <ArrowLeft aria-hidden="true" size={20} weight="bold" />
+      <Link aria-label={backLabel} className="ui-auth-header__back" to={backTo}>
+        <ArrowLeft aria-hidden="true" size={22} weight="bold" />
       </Link>
       <Logo className="ui-auth-header__brand" />
       <span aria-hidden="true" className="ui-auth-header__spacer" />
