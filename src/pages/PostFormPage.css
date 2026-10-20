@@ -5,7 +5,8 @@
 .post-form-progress { height: 4px; overflow: hidden; border-radius: 4px; background: var(--color-pale-blue); }
 .post-form-progress span { display: block; width: 100%; height: 100%; transform-origin: left; border-radius: inherit; background: var(--color-primary); transition: transform 220ms var(--ease-standard); }
 .post-form-content { display: grid; gap: 20px; padding: 20px; border-radius: 22px; background: #fff; box-shadow: 0 8px 24px rgb(32 56 116 / 8%); animation: post-step-in 220ms var(--ease-standard) both; }
-@keyframes post-step-in { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+/* Avoid transforms on the card: the mobile fixed action bar lives inside it. */
+@keyframes post-step-in { from { opacity: 0; } to { opacity: 1; } }
 .post-form-error { padding: 12px 14px; border-radius: 12px; color: #8f2d2d; background: #fff0ef; }
 .post-photo-picker { display: grid; min-height: 48px; place-items: center; border: 1px dashed #bac8e8; border-radius: 14px; color: var(--color-primary); font-weight: 700; cursor: pointer; }
 .post-photo-picker input { position: absolute; width: 1px; height: 1px; opacity: 0; }
@@ -114,7 +115,7 @@
 .post-photo-picker.is-drag-over { border-color: var(--color-primary); background: #edf3ff; box-shadow: inset 0 0 0 1px var(--color-primary); }
 .post-photo-hint { display: block; margin: -8px 0 0; color: var(--color-text-secondary); font-size: 13px; text-align: left; }
 .post-form-actions { z-index: 20; }
-.post-form-actions { grid-column: 1 / -1; width: 100%; box-sizing: border-box; }
+.post-form-actions { grid-column: 1 / -1; box-sizing: border-box; }
 
 @media (min-width: 1024px) {
   .post-form-page { width: min(100%, 1200px) !important; max-width: 1200px !important; padding-bottom: 36px; }
@@ -126,7 +127,6 @@
     justify-content: flex-end;
     min-height: 76px;
     margin: 4px 0 0;
-    width: 100%;
     padding: 16px 0 20px;
     border-top: 1px solid rgb(23 25 29 / 10%);
     border-radius: 0 0 24px 24px;
@@ -159,7 +159,6 @@
     background: #fff;
     box-shadow: 0 -8px 24px rgb(20 40 120 / 10%);
     margin: 0;
-    width: 100%;
   }
 }
 
