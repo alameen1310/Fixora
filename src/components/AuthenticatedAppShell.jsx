@@ -162,7 +162,9 @@ export default function AuthenticatedAppShell() {
           ))}
         </nav>
         {showPostAction ? <div className="fixora-app__post-slot"><Link className="fixora-app__post-button" to="/app/posts/new"><Plus aria-hidden="true" size={20} />Post a problem</Link></div> : isProvider && <div className="fixora-app__post-slot"><Link className="fixora-app__post-button" to="/app/discover"><Briefcase aria-hidden="true" size={20} />Find work</Link></div>}
-        <nav aria-label="Account navigation" className="fixora-app__profile-nav"><NavLink aria-label="Profile" end title="Profile" to="/app/profile">{({ isActive }) => <><UserCircle aria-hidden="true" size={22} weight={isActive ? 'fill' : 'regular'} /><span>Profile</span></>}</NavLink></nav>
+        <nav aria-label="Profile navigation" className="fixora-app__side-nav fixora-app__profile-nav">
+          <NavLink aria-label="Profile" end title="Profile" to="/app/profile">{({ isActive }) => <><UserCircle aria-hidden="true" size={22} weight={isActive ? 'fill' : 'regular'} /><span>Profile</span></>}</NavLink>
+        </nav>
         <AccountMenu firstName={firstName} isProvider={isProvider} profile={profile} user={user} />
       </aside>
 
