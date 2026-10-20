@@ -11,11 +11,6 @@ export default function AuthenticatedAppShell() {
   const { profile, user } = useAuth()
   const location = useLocation()
   const unreadMessages = useUnreadMessageCount(FEATURES.chat ? user?.id : null)
-  const isHome = location.pathname === '/app'
-  const isChatRoute = location.pathname.startsWith('/app/messages')
-  const pageTitle = destinations.find(({ to }) => location.pathname === to)?.label
-    || (location.pathname === '/app/my-posts' ? 'My Posts' : location.pathname.startsWith('/app/posts/') ? 'Post' : 'Professional')
-  const isTabRoute = destinations.some(({ to }) => location.pathname === to)
   const isCustomer = profile?.account_type === 'customer'
   const isProvider = profile?.account_type === 'provider'
   const destinations = [
@@ -25,6 +20,11 @@ export default function AuthenticatedAppShell() {
     ...(FEATURES.chat ? [{ label: 'Messages', to: '/app/messages', icon: ChatCircleDots }] : []),
     { label: 'Profile', to: '/app/profile', icon: UserCircle },
   ]
+  const isHome = location.pathname === '/app'
+  const isChatRoute = location.pathname.startsWith('/app/messages')
+  const pageTitle = destinations.find(({ to }) => location.pathname === to)?.label
+    || (location.pathname === '/app/my-posts' ? 'My Posts' : location.pathname.startsWith('/app/posts/') ? 'Post' : 'Professional')
+  const isTabRoute = destinations.some(({ to }) => location.pathname === to)
   const showPostAction = FEATURES.posts && isCustomer
   const [showCompactTitle, setShowCompactTitle] = useState(false)
   const [keyboardOpen, setKeyboardOpen] = useState(false)
