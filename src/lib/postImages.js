@@ -9,7 +9,7 @@ export function getPostImageUrl(path) {
 }
 
 export function logPostStep(step, { postId = null, error } = {}) {
-  console.error('[post-photo]', {
+  console.error('[post-step]', {
     step,
     postId,
     code: error?.code ?? error?.statusCode ?? error?.status ?? null,

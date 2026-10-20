@@ -23,7 +23,8 @@ function errorText(error, step) {
   if (message.includes('Unpublished post limit reached')) return 'You have reached the draft limit. Remove an unfinished post before starting another.'
   if (message.includes('Post limit reached')) return 'You have published several posts recently. Please try again later.'
   if (message.includes('Some post photos are not ready')) return 'A photo is still uploading. Retry publishing when it is ready.'
-  if (error?.code === '42501' && ['identity', 'stage', 'insert'].includes(step)) return 'The server rejected this post for the current account. Your sign-in is active; please retry once, and contact Fixora support if it continues.'
+  if (error?.code === '42501' && step === 'insert') return `The server rejected post creation: ${describePhotoError(error)}.`
+  if (error?.code === '42501' && ['identity', 'stage'].includes(step)) return 'The server rejected this post for the current account. Check that you are signed in as a Customer and retry.'
   if (error?.code === '42501' && step === 'publish') return 'This draft is no longer eligible to publish. Start a fresh post or contact support if this keeps happening.'
   if (error?.code === '42501') return 'This post can no longer be changed with your account.'
   return message ? `We couldn’t save this post: ${describePhotoError(error)}.` : 'We couldn’t save this post. Check your connection and try again.'
@@ -198,7 +199,6 @@ function PostFormPage({ editing = false }) {
         writeStep = 'insert'
         let { data, error: insertError } = await supabase.from('problem_posts').insert({ author_id: authorId, ...payload() }).select('id').single()
         if (insertError?.code === '42501') {
-          console.error('[post-write]', { step: 'insert', postId: null, code: insertError.code, message: insertError.message })
           const firstInsertError = insertError
           const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession()
           const refreshedUser = refreshed?.session?.user
@@ -209,7 +209,7 @@ function PostFormPage({ editing = false }) {
           data = retryResult.data
           insertError = retryResult.error
         }
-        if (insertError) { console.error('[post-write]', { step: 'insert', postId: null, code: insertError.code, message: insertError.message }); throw insertError }
+        if (insertError) throw insertError
         currentPostId = data.id; setStagedId(data.id)
       }
       writeStep = 'reserve'
@@ -232,6 +232,7 @@ function PostFormPage({ editing = false }) {
       showToast({ type: 'success', message: 'Your post is live.' })
       navigate(`/app/posts/${currentPostId}`)
     } catch (problem) {
+      if (writeStep === 'insert') logPostStep('insert', { postId: currentPostId, error: problem })
       if (problem?.code === 'CUSTOMER_REQUIRED') setError('Only a Customer account can create posts. Switch to your Customer account and try again.')
       else setError(errorText(problem, writeStep))
     }
