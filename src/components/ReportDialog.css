@@ -1,0 +1,16 @@
+.report-dialog-backdrop { position:fixed; z-index:130; inset:0; display:grid; place-items:center; padding:20px; background:rgb(11 22 48 / 38%); }
+.report-dialog { width:min(100%,480px); padding:22px; border:1px solid var(--color-border); border-radius:18px; background:#fff; box-shadow:0 24px 72px rgb(8 20 54 / 25%); }
+.report-dialog header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:20px; }
+.report-dialog h2 { margin:0; color:var(--color-text-primary); font-size:20px; }
+.report-dialog header p { margin:5px 0 0; color:var(--color-text-secondary); font-size:14px; }
+.report-dialog header button { display:grid; width:44px; height:44px; flex:0 0 44px; place-items:center; border:0; border-radius:50%; background:#f2f4f8; }
+.report-dialog form { display:grid; gap:9px; }
+.report-dialog form label { margin-top:6px; color:var(--color-text-primary); font-size:13px; font-weight:650; }
+.report-dialog form label span { color:var(--color-text-secondary); font-weight:400; }
+.report-dialog select,.report-dialog textarea { width:100%; min-height:46px; padding:11px 12px; border:1px solid var(--color-border); border-radius:10px; color:var(--color-text-primary); background:#f8f9fc; font:inherit; }
+.report-dialog textarea { resize:vertical; }
+.report-dialog select:focus-visible,.report-dialog textarea:focus-visible { outline:3px solid rgb(36 87 214 / 28%); outline-offset:1px; border-color:#6b8fe8; }
+.report-dialog__counter { justify-self:end; color:var(--color-text-secondary); font-size:11px; }
+.report-dialog form .ui-button { margin-top:8px; }
+@media (max-width:600px) { .report-dialog-backdrop { align-items:end; padding:0; } .report-dialog { width:100%; padding:20px 18px calc(20px + env(safe-area-inset-bottom)); border-radius:22px 22px 0 0; } }
+@media (prefers-reduced-motion:reduce) { .report-dialog-backdrop,.report-dialog { animation:none !important; transition:none !important; } }

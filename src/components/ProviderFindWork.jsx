@@ -105,6 +105,11 @@ export default function ProviderFindWork() {
   }, [user.id, category, matchesOnly, categoryIds, providerRegions, within, minBudget, maxBudget, sort, search])
 
   useEffect(() => { if (profileLoaded) void load() }, [profileLoaded, load])
+  useEffect(() => {
+    const refresh = () => { void load() }
+    window.addEventListener('fixora:discover-refresh', refresh)
+    return () => window.removeEventListener('fixora:discover-refresh', refresh)
+  }, [load])
   const displayRows = rows
 
   function clearFilters() { setSearch(''); setCategory(''); setMinBudget(''); setMaxBudget(''); setWithin('any'); setMatchesOnly(true); setSort('newest') }

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, MapPin } from '@phosphor-icons/react'
+import { ArrowLeft, DotsThree, Flag, MapPin } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { publishedProviderSelection } from '../lib/providerQueries.js'
 import { avatarUrl } from '../lib/avatarImages.js'
-import { Avatar, Badge, Button, Chip, ListGroup, ListRow, ProviderTypeBadge, Skeleton } from '../components/UiPrimitives.jsx'
+import { Avatar, Badge, Button, Chip, ListGroup, ListRow, Skeleton } from '../components/UiPrimitives.jsx'
 import ProviderWorkSummary from '../components/ProviderWorkSummary.jsx'
+import ReportDialog from '../components/ReportDialog.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 import { usePresence } from '../components/PresenceProvider.jsx'
 import './AuthenticatedPages.css'
 
@@ -16,6 +18,8 @@ export default function ProfessionalProfilePage() {
   const [error, setError] = useState(false)
   const [attempt, setAttempt] = useState(0)
   const { isOnline, refreshPresence } = usePresence()
+  const { user } = useAuth()
+  const [reportOpen, setReportOpen] = useState(false)
 
   const loadProfile = useCallback(async () => {
     setLoading(true)
@@ -62,6 +66,7 @@ export default function ProfessionalProfilePage() {
               <Skeleton style={{ width: '70%', height: '1.8rem', marginTop: '0.4rem' }} />
             </div>
           </header>
+          {provider.profile_id !== user?.id && <details className="professional-profile__menu"><summary aria-label="Profile actions"><DotsThree aria-hidden="true" size={22} /></summary><div><button onClick={(event) => { event.currentTarget.closest('details').open = false; setReportOpen(true) }} type="button"><Flag aria-hidden="true" size={16} />Report profile</button></div></details>}
           <Skeleton style={{ width: '100%', height: '4rem', marginTop: '1.5rem' }} />
         </article>
       ) : error ? (
@@ -86,7 +91,6 @@ export default function ProfessionalProfilePage() {
             <Avatar name={provider.display_name} size={96} src={avatarUrl(provider.avatar_path)} presence={isOnline(provider.profile_id)} />
             <div className="app-public-profile__titles">
               <h1>{provider.display_name}</h1>
-              <ProviderTypeBadge type={provider.provider_type} />
               <Badge tone={provider.availability === 'busy' ? 'neutral' : 'success'}>{provider.availability === 'busy' ? 'Busy' : 'Available'}</Badge>
               {isOnline(provider.profile_id) && <span className="app-public-profile__online">Online now</span>}
             </div>
@@ -127,9 +131,10 @@ export default function ProfessionalProfilePage() {
             )}
           </div>
 
-          <ProviderWorkSummary avatarPath={provider.avatar_path} displayName={provider.display_name} profileId={provider.profile_id} providerType={provider.provider_type} />
+          <ProviderWorkSummary avatarPath={provider.avatar_path} displayName={provider.display_name} profileId={provider.profile_id} />
         </article>
       )}
+      {provider && <ReportDialog onClose={() => setReportOpen(false)} open={reportOpen} targetId={provider.profile_id} targetType="user" />}
     </main>
   )
 }

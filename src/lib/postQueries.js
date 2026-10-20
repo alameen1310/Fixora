@@ -66,7 +66,7 @@ export async function fetchCompletedPosts({ cursor, limit = POST_PAGE_SIZE } = {
   if (!posts.length) return posts
   const providerIds = [...new Set(posts.map(({ hired_professional_id }) => hired_professional_id).filter(Boolean))]
   const [providerResult, ratingResult] = await Promise.all([
-    supabase.from('provider_profiles').select('profile_id, display_name, provider_type, avatar_path, availability').in('profile_id', providerIds),
+    supabase.from('provider_profiles').select('profile_id, display_name, avatar_path, availability').in('profile_id', providerIds),
     supabase.from('provider_rating_summary').select('provider_id, review_count, average_rating').in('provider_id', providerIds),
   ])
   if (providerResult.error) throw providerResult.error
@@ -115,16 +115,13 @@ export async function fetchProblemPost(postId) {
     .maybeSingle()
   if (error) throw error
   if (!data) return null
-  const { data: authorRows, error: authorError } = await supabase.rpc('get_problem_post_author_cards_v2', {
-    requested_post_ids: [postId],
-  })
-  if (authorError) throw authorError
+  const authorRows = await fetchAuthorCards([{ id: postId }])
+  const author = authorRows.find((row) => row.post_id === postId)
   return {
     ...data,
     images: [...(data.problem_post_images ?? [])].sort((first, second) => (first.kind === second.kind ? first.sort_order - second.sort_order : first.kind === 'before' ? -1 : 1)),
-    authorName: authorRows?.find((row) => row.post_id === postId)?.display_name ?? null,
-    authorAvatarPath: authorRows?.find((row) => row.post_id === postId)?.avatar_path ?? null,
-    authorProviderType: authorRows?.find((row) => row.post_id === postId)?.provider_type ?? null,
+    authorName: author?.display_name ?? null,
+    authorAvatarPath: author?.avatar_path ?? null,
   }
 }
 
@@ -137,9 +134,21 @@ export async function fetchAuthorCards(posts) {
   const ids = [...new Set((posts ?? []).map(({ id }) => id).filter(Boolean))]
   if (!ids.length) return []
   if (!supabase) throw new Error('Post services are unavailable.')
-  const { data, error } = await supabase.rpc('get_problem_post_author_cards_v2', { requested_post_ids: ids })
-  if (error) throw error
-  return data ?? []
+  const names = []
+  for (let index = 0; index < ids.length; index += 20) {
+    const { data, error } = await supabase.rpc('get_problem_post_author_cards', { requested_post_ids: ids.slice(index, index + 20) })
+    if (error) throw error
+    names.push(...(data ?? []))
+  }
+  const profileIds = [...new Set(names.map(({ author_id }) => author_id).filter(Boolean))]
+  const photos = []
+  for (let index = 0; index < profileIds.length; index += 100) {
+    const { data, error } = await supabase.rpc('get_profile_photo_cards', { requested_profile_ids: profileIds.slice(index, index + 100) })
+    if (error) throw error
+    photos.push(...(data ?? []))
+  }
+  const avatarByProfile = Object.fromEntries(photos.map(({ profile_id, avatar_path }) => [profile_id, avatar_path]))
+  return names.map((row) => ({ ...row, avatar_path: avatarByProfile[row.author_id] ?? null }))
 }
 
 export function postCursor(post) {

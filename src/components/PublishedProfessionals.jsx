@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { CaretRight, MapPin, Star, Wrench } from '@phosphor-icons/react'
+import { CaretRight, MapPin, Star } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { publishedProviderSelection } from '../lib/providerQueries.js'
 import { avatarUrl } from '../lib/avatarImages.js'
 import { appQueryCache } from '../lib/postListCache.js'
-import { Avatar, Badge, Button, ProviderTypeBadge, Skeleton } from './UiPrimitives.jsx'
+import { Avatar, Badge, Button, Skeleton } from './UiPrimitives.jsx'
 import { usePresence } from './PresenceProvider.jsx'
 import './PublishedProfessionals.css'
 
@@ -58,6 +58,11 @@ export default function PublishedProfessionals({ categorySlug = '', limit = 12, 
     if (!cached) void loadProfiles()
     else if (Date.now() - lastRefreshAt.current >= 60_000) void loadProfiles({ silent: true })
   }, [loadProfiles, cached, attempt])
+  useEffect(() => {
+    const refresh = () => { void loadProfiles({ silent: true }) }
+    window.addEventListener('fixora:discover-refresh', refresh)
+    return () => window.removeEventListener('fixora:discover-refresh', refresh)
+  }, [loadProfiles])
   useEffect(() => {
     const refresh = () => { if (document.visibilityState === 'visible' && Date.now() - lastRefreshAt.current >= 60_000) void loadProfiles({ silent: true }) }
     document.addEventListener('visibilitychange', refresh)
@@ -148,12 +153,10 @@ export default function PublishedProfessionals({ categorySlug = '', limit = 12, 
             to={`/app/professionals/${provider.profile_id}`}
           >
             <div className="professional-card__identity">
-              <Avatar name={provider.display_name} size={48} src={avatarUrl(provider.avatar_path)} presence={isOnline(provider.profile_id)} />
+              <Avatar name={provider.display_name} size={56} src={avatarUrl(provider.avatar_path)} presence={isOnline(provider.profile_id)} />
               <div className="professional-card__titles">
-                <ProviderTypeBadge compact type={provider.provider_type} />
                 <h3>{provider.display_name}</h3>
-                {Number(provider.rating?.review_count) > 0 ? <span className="professional-card__rating"><Star aria-hidden="true" size={14} weight="fill" />{Number(provider.rating.average_rating).toFixed(1)} ({provider.rating.review_count})</span> : <span className="professional-card__rating-empty">No reviews yet</span>}
-                <Badge tone={provider.availability === 'busy' ? 'neutral' : 'success'}>{provider.availability === 'busy' ? 'Busy' : 'Available'}</Badge>
+                <div className="professional-card__signals">{Number(provider.rating?.review_count) > 0 ? <span className="professional-card__rating"><Star aria-hidden="true" size={14} weight="fill" />{Number(provider.rating.average_rating).toFixed(1)} ({provider.rating.review_count})</span> : <span className="professional-card__rating-empty">No reviews yet</span>}<Badge tone={provider.availability === 'busy' ? 'neutral' : 'success'}>{provider.availability === 'busy' ? 'Busy' : 'Available'}</Badge></div>
               </div>
               <CaretRight aria-hidden="true" className="professional-card__chevron" size={18} />
             </div>
@@ -161,7 +164,6 @@ export default function PublishedProfessionals({ categorySlug = '', limit = 12, 
             <div className="professional-card__footer">
               {services.length > 0 && (
                 <div className="professional-card__services">
-                  <Wrench aria-hidden="true" size={15} />
                   {visibleServices.map((service) => <span className="professional-service-chip" key={service}>{service}</span>)}
                   {remainingServices > 0 && <span className="professional-service-chip">+{remainingServices}</span>}
                 </div>

@@ -250,6 +250,11 @@ export function MyPostsList({ userId }) {
     else if (Date.now() - lastRefreshAt.current >= 60_000) void loadPage(false, { silent: true })
   }, [loadPage, userId])
   useEffect(() => {
+    const refresh = () => { void loadPage(false, { silent: true }) }
+    window.addEventListener('fixora:my-posts-refresh', refresh)
+    return () => window.removeEventListener('fixora:my-posts-refresh', refresh)
+  }, [loadPage])
+  useEffect(() => {
     myPostsCache.set(userId, { posts, authors, authorAvatars, covers, hasMore, cursor: cursor.current, lastRefreshAt: lastRefreshAt.current })
   }, [userId, posts, authors, authorAvatars, covers, hasMore])
 

@@ -483,6 +483,8 @@
 }
 
 .fixora-app__side-nav a.fixora-app__messages-nav { position: relative; }
+.fixora-app__side-nav a.fixora-app__activity-nav { position: relative; }
+.fixora-app__activity-nav .fixora-app__unread-badge { position: absolute; top: 1px; right: 2px; width: auto; height: 18px; overflow: visible; clip-path: none; }
 .fixora-app__messages-nav .fixora-app__unread-badge { position: absolute; top: 1px; right: 2px; width: auto; height: 18px; overflow: visible; clip-path: none; }
 .fixora-app__messages-shortcut { position: relative; display: grid; width: 44px; height: 44px; flex: 0 0 44px; place-items: center; border-radius: 50%; color: var(--color-primary); text-decoration: none; }
 .fixora-app__messages-shortcut:hover { background: var(--color-pale-blue); }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Briefcase, Check, MapPin, SignOut, User, Wrench } from '@phosphor-icons/react'
+import { ArrowLeft, ArrowRight, Check, MapPin, SignOut, User, Wrench } from '@phosphor-icons/react'
 import PhoneNumberField, { countryOptions, getE164Phone } from '../components/PhoneNumberField.jsx'
 import LoadingIndicator from '../components/LoadingIndicator.jsx'
 import { useToast } from '../components/ToastProvider.jsx'
@@ -15,9 +15,9 @@ const providerSteps = ['Contact details', 'Professional profile', 'Services', 'S
 const customerSteps = ['Contact details', 'Add a profile photo']
 const stepContext = [
   { title: 'The right people can reach you.', description: 'Your name and private contact number help Fixora prepare your account. Your phone is not verified or shown publicly.', Icon: User },
-  { title: 'Give your work a clear identity.', description: 'Choose an individual or business profile, then tell customers what they can expect from your work.', Icon: Briefcase },
+  { title: 'Give your work a clear identity.', description: 'Tell customers what you do and what they can expect from your work.', Icon: User },
   { title: 'Show the work you take on.', description: 'Select the services that best match your skills. Customers can use them to understand where you fit.', Icon: Wrench },
-  { title: 'Set the places you can serve.', description: 'Add the cities and regions that make sense for your business, one area at a time.', Icon: MapPin },
+  { title: 'Set the places you can serve.', description: 'Add the cities and regions where you take on work.', Icon: MapPin },
   { title: 'Review before you finish.', description: 'Check the information you have shared. Your profile is published only after the required setup is complete.', Icon: Check },
   { title: 'Make your profile easier to recognise.', description: 'A profile photo is optional. You can add it now or skip and come back later.', Icon: User },
 ]
@@ -98,7 +98,6 @@ export default function OnboardingPage({ audience }) {
     phone: profile?.phone_number ?? '',
     phoneCountry: 'NG',
     displayName: user?.user_metadata?.provider_display_name ?? user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? '',
-    providerType: user?.user_metadata?.provider_type === 'business' || getSessionValue('fixora.providerType') === 'business' ? 'business' : 'individual',
     description: '',
     categoryIds: [],
     serviceAreas: [{ country_code: 'NG', region: '', city: '', state_code: '' }],
@@ -119,7 +118,7 @@ export default function OnboardingPage({ audience }) {
           ? supabase.from('service_categories').select('id, slug, name').order('name').abortSignal(controller.signal)
           : Promise.resolve({ data: [], error: null }),
         isProvider
-          ? supabase.from('provider_profiles').select('display_name, provider_type, service_description, avatar_path, is_nationwide').eq('profile_id', user.id).maybeSingle().abortSignal(controller.signal)
+          ? supabase.from('provider_profiles').select('display_name, service_description, avatar_path, is_nationwide').eq('profile_id', user.id).maybeSingle().abortSignal(controller.signal)
           : Promise.resolve({ data: null, error: null }),
         isProvider
           ? supabase.from('provider_service_categories').select('category_id').eq('provider_id', user.id).abortSignal(controller.signal)
@@ -147,7 +146,6 @@ export default function OnboardingPage({ audience }) {
           fullName: profile?.full_name ?? current.fullName,
           phone: profile?.phone_number ?? current.phone,
           displayName: savedProvider?.display_name ?? current.displayName,
-          providerType: savedProvider?.provider_type ?? current.providerType,
           description: savedProvider?.service_description ?? current.description,
           categoryIds: selectedResult.data?.length
             ? selectedResult.data.map((item) => item.category_id)
@@ -178,14 +176,7 @@ export default function OnboardingPage({ audience }) {
 
   function update(field, value) {
     setValues((current) => {
-      if (field !== 'providerType') return { ...current, [field]: value }
-      if (value === 'business' && current.displayName.trim() === current.fullName.trim()) {
-        return { ...current, providerType: value, displayName: '', nationwide: current.nationwide }
-      }
-      if (value === 'individual' && !current.displayName.trim()) {
-        return { ...current, providerType: value, displayName: current.fullName, nationwide: false }
-      }
-      return { ...current, providerType: value, nationwide: value === 'business' ? current.nationwide : false }
+      return { ...current, [field]: value }
     })
     setFieldErrors((current) => {
       const next = { ...current }
@@ -249,7 +240,7 @@ export default function OnboardingPage({ audience }) {
         }
         await saveProviderProfile(user.id, {
           display_name: values.displayName.trim(),
-          provider_type: values.providerType,
+          provider_type: 'individual',
           service_description: values.description.trim(),
         })
         removeSessionValue('fixora.providerType')
@@ -430,22 +421,8 @@ export default function OnboardingPage({ audience }) {
 
               {currentStep === 2 && isProvider && (
                 <>
-                  <fieldset className="onboarding-choice">
-                    <legend>Profile type</legend>
-                    <div className="onboarding-choice-grid">
-                      <label className={`onboarding-choice-pill ${values.providerType === 'individual' ? 'is-selected' : ''}`}>
-                        <input checked={values.providerType === 'individual'} name="providerType" onChange={() => update('providerType', 'individual')} type="radio" />
-                        <User size={18} weight="duotone" />
-                        <span><strong>Individual professional</strong><small>I work on my own</small></span>
-                      </label>
-                      <label className={`onboarding-choice-pill ${values.providerType === 'business' ? 'is-selected' : ''}`}>
-                        <input checked={values.providerType === 'business'} name="providerType" onChange={() => update('providerType', 'business')} type="radio" />
-                        <Briefcase size={18} weight="duotone" />
-                        <span><strong>Business or organization</strong><small>A company or team</small></span>
-                      </label>
-                    </div>
-                  </fieldset>
-                  <Field error={fieldErrors.displayName} id="provider-display-name" label={values.providerType === 'business' ? 'Business name' : 'Professional name'} onChange={(value) => update('displayName', value)} value={values.displayName} />
+                  <Field error={fieldErrors.displayName} id="provider-display-name" label="Display name" onChange={(value) => update('displayName', value)} value={values.displayName} />
+                  <p className="onboarding-hint">The name customers see. Your own name or the name you work under.</p>
                   <label className="onboarding-field" htmlFor="provider-description"><span>Short description <em>Optional</em></span><textarea id="provider-description" maxLength={1000} onChange={(event) => update('description', event.target.value)} placeholder="What kinds of projects do you take on?" rows={4} value={values.description} /></label>
                 </>
               )}
@@ -492,10 +469,10 @@ export default function OnboardingPage({ audience }) {
                       <Field error={fieldErrors[`area-${index}-city`]} id={`area-city-${index}`} label="City" onChange={(value) => changeArea(index, 'city', value, values, update)} value={area.city} placeholder="e.g. Ikeja, Lekki, or Surulere" />
                     </div>
                   ))}
-                  {values.providerType === 'business' && <label className="onboarding-nationwide"><input checked={values.nationwide} onChange={(event) => update('nationwide', event.target.checked)} type="checkbox" /> <span><strong>Nationwide coverage</strong><small>Serve customers across all Nigerian states without selecting each one.</small></span></label>}
                   {!values.nationwide && <button className="onboarding-add-area" onClick={() => update('serviceAreas', [...values.serviceAreas, { country_code: 'NG', region: '', city: '', state_code: '' }])} type="button">
                     + Add another service area
                   </button>}
+                  {values.nationwide && <p className="onboarding-hint">Your saved nationwide coverage is preserved. Add local areas only if you want to change it.</p>}
                   <p className="onboarding-hint">Only the country, region, and city are shown on your public professional profile.</p>
                 </div>
               )}
@@ -566,14 +543,6 @@ function changeStateArea(index, value, values, update) {
   update('serviceAreas', values.serviceAreas.map((area, areaIndex) => areaIndex === index ? { ...area, state_code: value, region: selected?.[0] || '' } : area))
 }
 
-function getSessionValue(key) {
-  try {
-    return sessionStorage.getItem(key)
-  } catch {
-    return null
-  }
-}
-
 function removeSessionValue(key) {
   try {
     sessionStorage.removeItem(key)
@@ -598,7 +567,7 @@ function Review({ values, categories }) {
         </span>
       </div>
       <div className="onboarding-review-row">
-        <span className="onboarding-review-label">{values.providerType === 'business' ? 'Business name' : 'Professional name'}</span>
+        <span className="onboarding-review-label">Display name</span>
         <span className="onboarding-review-val">{values.displayName || 'Not added'}</span>
       </div>
       <div className="onboarding-review-row">

@@ -5,11 +5,12 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import { publishedProviderSelection } from '../lib/providerQueries.js'
 import SignOutAction from '../components/SignOutAction.jsx'
-import { Avatar, Badge, Chip, ListGroup, ListRow, ProviderTypeBadge, Skeleton } from '../components/UiPrimitives.jsx'
+import { Avatar, Badge, Chip, ListGroup, ListRow, Skeleton } from '../components/UiPrimitives.jsx'
 import ProviderWorkSummary from '../components/ProviderWorkSummary.jsx'
 import { avatarUrl } from '../lib/avatarImages.js'
 import { usePresence } from '../components/PresenceProvider.jsx'
 import { useToast } from '../components/ToastProvider.jsx'
+import ProfileCompleteness from '../components/ProfileCompleteness.jsx'
 import './AuthenticatedPages.css'
 
 export default function ProfilePage() {
@@ -45,9 +46,10 @@ export default function ProfilePage() {
       : error ? <section className="posts-feed__error" role="alert"><h2>Profile didn’t load</h2><ButtonRetry onRetry={() => setAttempt((value) => value + 1)} /></section>
         : provider ? <div className="provider-profile-layout">
           <section className="provider-profile-main">
-            <header className="provider-profile-identity"><Avatar name={provider.display_name} size={68} src={avatarUrl(provider.avatar_path || profile?.avatar_path)} /><div><div className="provider-profile-identity__heading"><h2>{provider.display_name}</h2><Badge tone={provider.is_published ? 'success' : 'neutral'}>{provider.is_published ? 'Live' : 'Draft'}</Badge></div><ProviderTypeBadge type={provider.provider_type} /><p>{provider?.availability === 'busy' ? 'Busy' : 'Available'}<span>·</span>{user?.email}</p><Link className="app-text-link" to="/app/profile/edit">Edit profile</Link></div></header>
+            <ProfileCompleteness profile={profile} provider={provider} />
+            <header className="provider-profile-identity"><Avatar name={provider.display_name} size={68} src={avatarUrl(provider.avatar_path || profile?.avatar_path)} /><div><div className="provider-profile-identity__heading"><h2>{provider.display_name}</h2><Badge tone={provider.is_published ? 'success' : 'neutral'}>{provider.is_published ? 'Live' : 'Draft'}</Badge></div><p>{provider?.availability === 'busy' ? 'Busy' : 'Available'}<span>·</span>{user?.email}</p><Link className="app-text-link" to="/app/profile/edit">Edit profile</Link></div></header>
             <section className="provider-profile-details"><div><strong>Services</strong><div className="provider-profile-chips">{services.length ? services.map((service) => <Chip key={service}>{service}</Chip>) : <span>Services not added yet</span>}</div></div><div><strong>Areas</strong><div className="provider-profile-chips">{areas.length ? areas.map((area) => <Chip key={area}><MapPin aria-hidden="true" size={14} />{area}</Chip>) : <span>Areas not added yet</span>}</div></div></section>
-            <ProviderWorkSummary avatarPath={provider.avatar_path} displayName={provider.display_name} onSummaryChange={setProviderStats} profileId={provider.profile_id} providerType={provider.provider_type} showReputation={false} />
+            <ProviderWorkSummary avatarPath={provider.avatar_path} displayName={provider.display_name} onSummaryChange={setProviderStats} profileId={provider.profile_id} showReputation={false} />
           </section>
           <aside className="provider-profile-rail">
             <section className="provider-profile-stats"><div><span>Overall rating</span><strong>{Number(providerStats?.summary?.review_count) ? Number(providerStats.summary.average_rating).toFixed(1) : '–'}</strong>{Number(providerStats?.summary?.review_count) ? <small><Star aria-hidden="true" size={14} weight="fill" />{providerStats.summary.review_count} reviews</small> : <small>No reviews yet</small>}</div><div><span>Jobs completed</span><strong>{providerStats?.jobs ?? '–'}</strong></div>{Number(providerStats?.earned) > 0 && <div><span>Earned</span><strong>₦{Number(providerStats.earned).toLocaleString('en-NG')}</strong></div>}</section>

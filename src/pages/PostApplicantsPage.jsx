@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ArrowLeft, MapPin, Star, Wrench } from '@phosphor-icons/react'
 import { Link, useParams } from 'react-router-dom'
-import { ActionSheet, Avatar, Badge, Button, ProviderTypeBadge, Skeleton } from '../components/UiPrimitives.jsx'
+import { ActionSheet, Avatar, Badge, Button, Skeleton } from '../components/UiPrimitives.jsx'
 import MarketplaceDoodle from '../components/MarketplaceDoodle.jsx'
 import { useToast } from '../components/ToastProvider.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { fetchPostApplications } from '../lib/applicationQueries.js'
 import { fetchProblemPost } from '../lib/postQueries.js'
+import { formatPostBudget } from '../lib/postQueries.js'
+import { getPostImageUrl } from '../lib/postImages.js'
 import { supabase } from '../lib/supabase.js'
 import { avatarUrl } from '../lib/avatarImages.js'
 import { usePresence } from '../components/PresenceProvider.jsx'
@@ -95,23 +97,19 @@ export default function PostApplicantsPage() {
   return (
     <main className="app-page applicants-page">
       <Link className="app-back-link post-detail__back" to={`/app/posts/${postId}`}><ArrowLeft aria-hidden="true" size={19} />Back to request</Link>
-      <header className="app-page__heading applicants-heading">
-        <span className="app-eyebrow">Applicants · {applications.length}</span>
-        <h1 className="text-large-title">People ready to help</h1>
-        <p>{post.title}</p>
-      </header>
-      <section className={`applicant-schedule-note${scheduleConfirmed ? '' : ' is-unconfirmed'}`}><div><strong>Work time: {scheduleSummary}</strong><p>{scheduleConfirmed ? 'Availability was checked against these dates. The server checks again when you hire.' : 'Confirm a start and end time before hiring so Fixora can check real schedule overlaps.'}</p></div>{!scheduleConfirmed && post.status === 'open' && <Button as={Link} to={`/app/posts/${postId}/edit`} variant="secondary">Edit schedule</Button>}</section>
-      {applications.length === 0 ? (
-        <section className="applicants-empty">
-          <MarketplaceDoodle />
-          <div><h2>No applications yet</h2><p>Professionals can apply while this request is open.</p></div>
-        </section>
-      ) : (
-        <div className="applicants-layout">
-          <section aria-label="Applications" className="applicants-list">
+      <header className="applicants-page__title"><div><h1>Applicants</h1><Badge tone="neutral">{applications.length} {applications.length === 1 ? 'applicant' : 'applicants'}</Badge></div></header>
+      <section className="applicants-request-summary">
+        <span className="applicants-request-summary__image">{post.coverPath ? <img alt="" src={getPostImageUrl(post.coverPath)} /> : <Wrench aria-hidden="true" size={18} />}</span>
+        <div className="applicants-request-summary__text"><strong>{post.title}</strong><span>{post.service_categories?.name || 'Service request'} · {formatPostBudget(post)}</span></div>
+        <Badge tone={post.hired_professional_id ? 'success' : post.status === 'open' ? 'info' : 'neutral'}>{post.hired_professional_id ? 'Hired' : post.status === 'open' ? 'Open' : 'Closed'}</Badge>
+      </section>
+      <section className={`applicant-schedule-note${scheduleConfirmed ? '' : ' is-unconfirmed'}`}><span><strong>{scheduleConfirmed ? `Work time: ${scheduleSummary}` : 'Work time not confirmed'}</strong><span>{scheduleConfirmed ? 'Availability is checked again when you hire.' : 'Confirm a time so Fixora can check schedule overlaps.'}</span></span>{post.status === 'open' && <Button as={Link} to={`/app/posts/${postId}/edit`} variant="secondary">{scheduleConfirmed ? 'Change time' : 'Set work time'}</Button>}</section>
+      <div className="applicants-layout">
+        {applications.length === 0 ? <section className="applicants-empty"><MarketplaceDoodle /><div><h2>No applications yet</h2><p>Professionals can apply while this request is open.</p></div></section> : <section aria-label="Applications" className="applicants-list">
             {applications.map((application) => {
               const provider = application.professional
               const services = (provider?.provider_service_categories ?? []).map((item) => item.category?.name).filter(Boolean)
+              const shownServices = services.slice(0, 4)
               const areas = (provider?.provider_service_areas ?? []).map((item) => [item.city, item.region].filter(Boolean).join(', ')).filter(Boolean)
               const availabilityLabel = { unavailable: 'Unavailable for this time', unknown: 'Availability unconfirmed', busy: 'Not accepting work' }[application.availability]
               const isUnavailable = application.status === 'pending' && ['unavailable', 'unknown', 'busy'].includes(application.availability)
@@ -119,11 +117,12 @@ export default function PostApplicantsPage() {
               return (
                 <article className={`applicant-card${isUnavailable ? ' is-unavailable' : ''}`} key={application.id}>
                   <div className="applicant-card__head">
-                    <Avatar name={provider?.display_name || 'Professional'} size={52} src={avatarUrl(provider?.avatar_path)} presence={isOnline(application.professional_id)} />
-                    <div className="applicant-card__identity"><h2>{provider?.display_name || 'Professional profile unavailable'}</h2>{provider && <ProviderTypeBadge compact type={provider.provider_type} />}{provider && <Badge tone={provider.availability === 'busy' ? 'neutral' : 'success'}>{provider.availability === 'busy' ? 'Busy' : 'Available'}</Badge>}{Number(provider?.rating?.review_count) > 0 && <span className="applicant-card__rating"><Star aria-hidden="true" size={14} weight="fill" />{Number(provider.rating.average_rating).toFixed(1)} ({provider.rating.review_count})</span>}</div>
+                    <Avatar name={provider?.display_name || 'Professional'} size={56} src={avatarUrl(provider?.avatar_path)} presence={isOnline(application.professional_id)} />
+                    <div className="applicant-card__identity"><h2>{provider?.display_name || 'Professional profile unavailable'}</h2>{Number(provider?.rating?.review_count) > 0 ? <span className="applicant-card__rating"><Star aria-hidden="true" size={14} weight="fill" />{Number(provider.rating.average_rating).toFixed(1)} ({provider.rating.review_count})</span> : <span className="applicant-card__rating applicant-card__rating--empty">No reviews yet</span>}</div>
                     <Badge tone={application.status === 'hired' ? 'success' : application.status === 'pending' && !isUnavailable && scheduleConfirmed ? 'info' : 'neutral'}>{label}</Badge>
                   </div>
-                  {services.length > 0 && <p className="applicant-card__services"><Wrench aria-hidden="true" size={16} />{services.join(' · ')}</p>}
+                  {provider && <span className={`applicant-card__availability${provider.availability === 'busy' ? ' is-busy' : ''}`}>{provider.availability === 'busy' ? 'Not accepting work' : 'Available'}</span>}
+                  {shownServices.length > 0 && <div className="applicant-card__service-chips">{shownServices.map((service) => <span key={service}>{service}</span>)}{services.length > 4 && <span>+{services.length - 4}</span>}</div>}
                   {areas.length > 0 && <p className="applicant-card__services"><MapPin aria-hidden="true" size={16} />{areas.join(' · ')}</p>}
                   {provider?.service_description && <p className="applicant-card__description">{provider.service_description}</p>}
                   {application.message && <blockquote className="applicant-card__message">“{application.message}”</blockquote>}
@@ -134,15 +133,14 @@ export default function PostApplicantsPage() {
                 </article>
               )
             })}
-          </section>
+          </section>}
           <aside className="applicants-summary">
             <span className="app-eyebrow">Request status</span>
             <strong>{post.hired_professional_id ? 'Professional selected' : post.status === 'open' ? 'Open for applications' : 'Closed'}</strong>
             <p>{post.hired_professional_id ? 'Your request is now assigned. Applicants have received their status.' : `${pendingCount} pending ${pendingCount === 1 ? 'application' : 'applications'}.`}</p>
             <Link to={`/app/posts/${postId}`}>View request</Link>
           </aside>
-        </div>
-      )}
+      </div>
       <ActionSheet busy={hiring} confirmLabel="Hire this professional" description={`This closes the request and marks other pending applications as not selected. Work time: ${scheduleSummary}. Availability is checked again before the hire is saved.`} onCancel={() => setSelected(null)} onConfirm={() => void hire()} open={Boolean(selected)} title="Confirm hire?" />
     </main>
   )

@@ -674,11 +674,6 @@
   }
 }
 
-.provider-type-badge { display:inline-flex; width:fit-content; min-height:24px; align-items:center; gap:5px; padding:3px 8px; border:1px solid transparent; border-radius:8px; font-size:12px; font-weight:650; line-height:1.15; white-space:nowrap; }
-.provider-type-badge.is-individual { color:#234eab; border-color:#dbe6ff; background:#edf3ff; }
-.provider-type-badge.is-business { color:#fff; border-color:#243567; background:#182958; }
-.provider-type-badge.is-compact { min-height:22px; padding:2px 6px; font-size:11px; }
-.provider-type-badge:focus-visible { outline:2px solid var(--color-primary); outline-offset:2px; }
 
 /* Shared design tokens: controls are consistent and labels never stretch in grids. */
 .ui-button { min-height: 52px; border-radius: var(--radius-sm); transition: transform var(--motion-fast) var(--ease-standard), opacity var(--motion-fast) var(--ease-standard); }
@@ -697,6 +692,7 @@
 .ui-badge { display: inline-flex; width: max-content; max-width: 100%; min-height: 28px; height: 28px; flex: 0 0 auto; align-items: center; justify-content: center; justify-self: start; padding: 0 11px; border-radius: var(--radius-pill); font-size: 12px; line-height: 1; white-space: nowrap; }
 .ui-badge--success { color: #166b43; background: var(--color-success-surface); }
 .ui-badge--info { color: #1B44BF; background: var(--color-pale-blue); }
+.ui-badge--deep { color: #193f9c; background: #e8efff; }
 .ui-badge--warning { color: #80520e; background: var(--color-warning-surface); }
 .ui-badge--danger { color: #9f1c1c; background: var(--color-danger-surface); }
 .ui-field input, .ui-field select, .ui-field textarea { border-radius: var(--radius-sm); }

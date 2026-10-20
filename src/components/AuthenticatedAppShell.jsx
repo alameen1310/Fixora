@@ -3,12 +3,14 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Briefcase, ChatCircleDots, ClockCounterClockwise, Compass, House, Plus, UserCircle, X } from '@phosphor-icons/react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { avatarUrl } from '../lib/avatarImages.js'
-import { Avatar, Logo, ProviderTypeBadge } from './UiPrimitives.jsx'
+import { Avatar, Logo } from './UiPrimitives.jsx'
 import SignOutAction from './SignOutAction.jsx'
 import { useDismissable } from '../hooks/useDismissable.js'
 import PageContainer from './PageContainer.jsx'
 import { FEATURES } from '../config/features.js'
 import useUnreadMessageCount from './useUnreadMessageCount.js'
+import useUnreadActivityCount from './useUnreadActivityCount.js'
+import CommandPalette from './CommandPalette.jsx'
 import './AuthenticatedAppShell.css'
 
 const MOBILE_TABS = {
@@ -31,6 +33,8 @@ export default function AuthenticatedAppShell() {
   const { profile, user } = useAuth()
   const location = useLocation()
   const unreadMessages = useUnreadMessageCount(FEATURES.chat ? user?.id : null)
+  const unreadActivity = useUnreadActivityCount(user?.id)
+  const totalUnread = unreadMessages + unreadActivity
   const isCustomer = profile?.account_type === 'customer'
   const isProvider = profile?.account_type === 'provider'
   const destinations = [
@@ -51,6 +55,14 @@ export default function AuthenticatedAppShell() {
   const scrollPositions = useRef({})
   const activePath = useRef(location.pathname)
   const firstName = profile?.full_name?.trim().split(/\s+/)[0] || 'Account'
+
+  useEffect(() => {
+    document.title = totalUnread > 0 ? `(${totalUnread}) Fixora` : 'Fixora'
+    try {
+      if (totalUnread > 0) Promise.resolve(navigator.setAppBadge?.(totalUnread)).catch(() => {})
+      else Promise.resolve(navigator.clearAppBadge?.()).catch(() => {})
+    } catch { /* app badges are progressive enhancement */ }
+  }, [totalUnread])
 
   function handleTabClick(targetPath) {
     if (location.pathname === targetPath) {
@@ -145,8 +157,8 @@ export default function AuthenticatedAppShell() {
         <Logo className="fixora-app__sidebar-brand" to="/app" />
         <nav aria-label="Main navigation" className="fixora-app__side-nav">
           {destinations.map(({ label, to, icon: Icon, end }) => (
-            <NavLink aria-label={label} className={to === '/app/messages' ? 'fixora-app__messages-nav' : undefined} end={end} key={label} title={label} to={to}>
-              {({ isActive }) => <><Icon aria-hidden="true" size={22} weight={isActive ? 'fill' : 'regular'} /><span>{label}</span>{to === '/app/messages' && unreadMessages > 0 && <span aria-label={`${unreadMessages} unread messages`} className="fixora-app__unread-badge">{unreadMessages > 99 ? '99+' : unreadMessages}</span>}</>}
+            <NavLink aria-label={label} className={to === '/app/messages' ? 'fixora-app__messages-nav' : to === '/app/activity' ? 'fixora-app__activity-nav' : undefined} end={end} key={label} title={label} to={to}>
+              {({ isActive }) => <><Icon aria-hidden="true" size={22} weight={isActive ? 'fill' : 'regular'} /><span>{label}</span>{to === '/app/messages' && unreadMessages > 0 && <span aria-label={`${unreadMessages} unread messages`} className="fixora-app__unread-badge">{unreadMessages > 99 ? '99+' : unreadMessages}</span>}{to === '/app/activity' && unreadActivity > 0 && <span aria-label={`${unreadActivity} unread updates`} className="fixora-app__unread-badge">{unreadActivity > 99 ? '99+' : unreadActivity}</span>}</>}
             </NavLink>
           ))}
         </nav>
@@ -165,6 +177,8 @@ export default function AuthenticatedAppShell() {
         <PageContainer className={isChatRoute ? 'page-container--chat' : ''}>
           <Outlet />
         </PageContainer>
+
+      <CommandPalette isCustomer={isCustomer} />
       </div>
 
       <nav aria-label="Mobile navigation" className={`fixora-app__mobile-nav${hideTabBar ? ' is-hidden' : ''}${showPostAction ? ' has-post-action' : ''}`}>
@@ -174,7 +188,7 @@ export default function AuthenticatedAppShell() {
           </Link>
         ) : (
           <NavLink className={({ isActive }) => `fixora-app__mobile-link${isActive ? ' is-active' : ''}`} end={end} key={label} onClick={() => handleTabClick(to)} to={to}>
-            {({ isActive }) => <><Icon aria-hidden="true" size={24} weight={isActive ? 'fill' : 'regular'} /><span>{label}</span>{to === '/app/messages' && unreadMessages > 0 && <span aria-label={`${unreadMessages} unread messages`} className="fixora-app__unread-badge">{unreadMessages > 9 ? '9+' : unreadMessages}</span>}</>}
+            {({ isActive }) => <><Icon aria-hidden="true" size={24} weight={isActive ? 'fill' : 'regular'} /><span>{label}</span>{to === '/app/messages' && unreadMessages > 0 && <span aria-label={`${unreadMessages} unread messages`} className="fixora-app__unread-badge">{unreadMessages > 9 ? '9+' : unreadMessages}</span>}{to === '/app/activity' && unreadActivity > 0 && <span aria-label={`${unreadActivity} unread updates`} className="fixora-app__unread-badge">{unreadActivity > 9 ? '9+' : unreadActivity}</span>}</>}
           </NavLink>
         ))}
       </nav>
@@ -184,15 +198,8 @@ export default function AuthenticatedAppShell() {
 
 function AccountMenu({ firstName, isProvider, mobile = false, profile, user }) {
   const [open, setOpen] = useState(false)
-  const [providerType, setProviderType] = useState('')
   const boundaryRef = useRef(null)
   useDismissable({ boundaryRef, open, onDismiss: () => setOpen(false) })
-  useEffect(() => {
-    if (!isProvider || !user?.id) { setProviderType(''); return undefined }
-    let active = true
-    import('../lib/supabase.js').then(({ supabase }) => supabase.from('provider_profiles').select('provider_type').eq('profile_id', user.id).maybeSingle().then(({ data }) => { if (active) setProviderType(data?.provider_type || '') }))
-    return () => { active = false }
-  }, [isProvider, user?.id])
   return <div className={`account-menu${mobile ? ' is-mobile' : ''}`} ref={boundaryRef}>
     <button aria-expanded={open} aria-haspopup="dialog" aria-label={mobile ? 'Open account menu' : 'Account actions'} className={mobile ? 'fixora-app__profile-link' : 'fixora-app__sidebar-account'} onClick={() => setOpen((value) => !value)} type="button">
       {!mobile && <Avatar name={profile?.full_name || firstName} size={40} src={avatarUrl(profile?.avatar_path)} />}
@@ -203,7 +210,7 @@ function AccountMenu({ firstName, isProvider, mobile = false, profile, user }) {
       {mobile && <button aria-label="Close account menu" className="account-menu__backdrop" onClick={() => setOpen(false)} type="button" />}
       <section aria-label="Account menu" aria-modal={mobile || undefined} className="account-menu__panel" role="dialog">
         <button aria-label="Close account menu" className="account-menu__close" onClick={() => setOpen(false)} type="button"><X size={18} /></button>
-        <div className="account-menu__identity"><Avatar name={profile?.full_name || firstName} size={56} src={avatarUrl(profile?.avatar_path)} /><div><strong>{profile?.full_name || firstName}</strong><small>{user?.email}</small>{isProvider && providerType && <ProviderTypeBadge compact type={providerType} />}{!isProvider && <span className="account-menu__role">Customer</span>}</div></div>
+        <div className="account-menu__identity"><Avatar name={profile?.full_name || firstName} size={56} src={avatarUrl(profile?.avatar_path)} /><div><strong>{profile?.full_name || firstName}</strong><small>{user?.email}</small>{!isProvider && <span className="account-menu__role">Customer</span>}</div></div>
         <nav aria-label="Account" className="account-menu__links"><Link onClick={() => setOpen(false)} to="/app/profile"><UserCircle size={18} />View profile</Link><Link onClick={() => setOpen(false)} to="/app/profile/edit"><Briefcase size={18} />Edit profile</Link></nav>
         <SignOutAction className="account-menu__signout" location="profile" />
       </section>

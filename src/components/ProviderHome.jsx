@@ -10,6 +10,8 @@ import { supabase } from '../lib/supabase.js'
 import { avatarUrl } from '../lib/avatarImages.js'
 import { appQueryCache } from '../lib/postListCache.js'
 import './ProviderHome.css'
+import usePullToRefresh from '../hooks/usePullToRefresh.jsx'
+import ProfileCompleteness from './ProfileCompleteness.jsx'
 
 const columns = 'id, author_id, title, category_id, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, status, hired_professional_id, created_at, completed_at, final_price_naira, service_categories(name), problem_post_images(storage_path, sort_order, kind)'
 
@@ -29,6 +31,7 @@ export default function ProviderHome() {
   const [loading, setLoading] = useState(() => !cached)
   const [error, setError] = useState(false)
   const [retry, setRetry] = useState(0)
+  const pullRefresh = usePullToRefresh(() => setRetry((value) => value + 1))
 
   useEffect(() => {
     let active = true
@@ -38,7 +41,7 @@ export default function ProviderHome() {
       const startedAt = performance.now()
       try {
         const [providerResult, pendingResult, activeResult, completedResult, ratingResult, applications] = await Promise.all([
-          supabase.from('provider_profiles').select('profile_id, display_name, provider_type, service_description, is_published, avatar_path, availability, is_nationwide, provider_service_categories(category_id, category:service_categories(name, slug)), provider_service_areas(country_code, region, city, state_code)').eq('profile_id', user.id).maybeSingle(),
+          supabase.from('provider_profiles').select('profile_id, display_name, service_description, is_published, avatar_path, availability, is_nationwide, provider_service_categories(category_id, category:service_categories(name, slug)), provider_service_areas(country_code, region, city, state_code)').eq('profile_id', user.id).maybeSingle(),
           supabase.from('problem_post_applications').select('id', { count: 'exact', head: true }).eq('professional_id', user.id).eq('status', 'pending'),
           supabase.from('problem_posts').select(columns, { count: 'exact' }).eq('hired_professional_id', user.id).eq('status', 'closed').order('hired_at', { ascending: false }).limit(8),
           supabase.from('problem_posts').select('id, final_price_naira, completed_at', { count: 'exact' }).eq('hired_professional_id', user.id).eq('status', 'completed'),
@@ -61,10 +64,16 @@ export default function ProviderHome() {
         const postIds = activeJobs.map(({ id }) => id)
         let authorNames = {}; let authorAvatars = {}
         if (postIds.length) {
-          const { data: rows, error: namesError } = await supabase.rpc('get_problem_post_author_cards_v2', { requested_post_ids: postIds })
+          const { data: rows, error: namesError } = await supabase.rpc('get_problem_post_author_cards', { requested_post_ids: postIds })
           if (namesError) throw namesError
           authorNames = Object.fromEntries((rows ?? []).map(({ post_id, display_name }) => [post_id, display_name]))
-          authorAvatars = Object.fromEntries((rows ?? []).map(({ post_id, avatar_path }) => [post_id, avatar_path]))
+          const authorIds = [...new Set((rows ?? []).map(({ author_id }) => author_id).filter(Boolean))]
+          if (authorIds.length) {
+            const { data: photos, error: photosError } = await supabase.rpc('get_profile_photo_cards', { requested_profile_ids: authorIds })
+            if (photosError) throw photosError
+            const avatarByAuthor = Object.fromEntries((photos ?? []).map(({ profile_id, avatar_path }) => [profile_id, avatar_path]))
+            authorAvatars = Object.fromEntries((rows ?? []).map(({ post_id, author_id }) => [post_id, avatarByAuthor[author_id] || null]))
+          }
         }
         const applicationActivity = applications.filter((application) => application.status !== 'withdrawn').map((application) => ({
           id: application.id, created_at: application.updated_at || application.created_at,
@@ -112,10 +121,12 @@ export default function ProviderHome() {
     { label: 'Rating', value: ratingCount ? <><Star aria-hidden="true" size={18} weight="fill" /> {Number(data.rating.average_rating).toFixed(1)}</> : '–', to: `/app/professionals/${user.id}#reviews`, hint: ratingCount ? `${ratingCount} ${ratingCount === 1 ? 'review' : 'reviews'}` : 'No reviews yet' },
   ]
 
-  return <div className={`provider-home-layout${hasRailContent ? ' has-rail' : ''}`}>
+  return <div className={`provider-home-layout${hasRailContent ? ' has-rail' : ''}`} ref={pullRefresh.containerRef}>
+    {pullRefresh.indicator}
     <main className="provider-home app-page">
       <header className="provider-home__header"><div><h1>{greeting()}, {name}</h1></div><Link className={`provider-home__live${profileReady ? '' : ' is-draft'}`} to={profileReady ? `/app/professionals/${user.id}` : '/onboarding/provider'}><span />{profileReady ? 'Profile live' : 'Complete profile'}<ArrowRight aria-hidden="true" size={15} /></Link></header>
       {!profileReady && <aside className="provider-home__setup"><div><strong>Your profile needs one more step</strong><span>{setupMessage}</span></div><Button as={Link} to="/onboarding/provider" variant="secondary">Finish profile</Button></aside>}
+      {provider && <ProfileCompleteness profile={profile} provider={provider} />}
       <section aria-label="Your work summary" className="provider-home__stats">{stats.map((stat) => <Link className="provider-stat" key={stat.label} to={stat.to}><span>{stat.label}</span><strong>{stat.value}</strong><small>{stat.hint}</small></Link>)}</section>
       <section className="provider-home__section"><div className="provider-home__section-head"><h2>Matched to your services</h2><Link to="/app/discover">See all <ArrowRight aria-hidden="true" size={15} /></Link></div>
         {data?.matched.length ? <div className="provider-request-list">{data.matched.map((post) => {

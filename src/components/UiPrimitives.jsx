@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Briefcase, CaretRight, CircleNotch, LockKey, User } from '@phosphor-icons/react'
+import { ArrowLeft, CaretRight, CircleNotch, LockKey } from '@phosphor-icons/react'
 import './UiPrimitives.css'
 
 export function Button({ as: Element = 'button', children, className = '', loading = false, type, variant = 'primary', wide = false, ...props }) {
@@ -197,12 +197,6 @@ export function Avatar({ name = '', size = 44, src = '', presence = false, class
 
 export function Badge({ children, tone = 'neutral' }) {
   return <span className={`ui-badge ui-badge--${tone}`}>{children}</span>
-}
-
-export function ProviderTypeBadge({ type, compact = false }) {
-  const business = type === 'business'
-  const Icon = business ? Briefcase : User
-  return <span className={`provider-type-badge${business ? ' is-business' : ' is-individual'}${compact ? ' is-compact' : ''}`}><Icon aria-hidden="true" size={14} weight="fill" /><span>{compact ? (business ? 'Business' : 'Individual') : (business ? 'Service business' : 'Independent professional')}</span></span>
 }
 
 export function Skeleton({ className = '' }) {

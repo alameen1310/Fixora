@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowBendUpLeft, ArrowLeft, Camera, ChatCircleDots, Check, DotsThree, PaperPlaneRight, Smiley, TrashSimple, UserCircle, WarningCircle, Wrench, X } from '@phosphor-icons/react'
+import { ArrowBendUpLeft, ArrowLeft, Camera, ChatCircleDots, Check, DotsThree, Flag, Info, PaperPlaneRight, Smiley, TrashSimple, WarningCircle, Wrench, X } from '@phosphor-icons/react'
 import { Link, NavLink, Outlet, useLocation, useNavigate, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
-import { Avatar, Button, ProviderTypeBadge, Skeleton } from '../components/UiPrimitives.jsx'
+import { Avatar, Button, Skeleton } from '../components/UiPrimitives.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { fetchConversationMessages, fetchEarlierMessages, fetchMessageReactions, fetchMyConversations, markConversationRead, sendConversationMessage, setMessageReaction, unsendConversationMessage } from '../lib/chatQueries.js'
 import { formatRelativeTime } from '../lib/postQueries.js'
@@ -11,6 +11,9 @@ import { useDismissable } from '../hooks/useDismissable.js'
 import { avatarUrl } from '../lib/avatarImages.js'
 import { usePresence } from '../components/PresenceProvider.jsx'
 import { appQueryCache } from '../lib/postListCache.js'
+import appDoodles from '../assets/doodles/app-doodles.svg'
+import ReportDialog from '../components/ReportDialog.jsx'
+import usePullToRefresh from '../hooks/usePullToRefresh.jsx'
 import './MessagesPage.css'
 
 function formatClock(value) {
@@ -49,7 +52,7 @@ function MessageList({ conversations, loading, error, onRetry, userId, isProvide
             : <nav aria-label="Your conversations" className="messages-list__items">{visible.map((conversation) => (
               <NavLink className={({ isActive }) => 'messages-list__item' + (isActive ? ' is-active' : '')} key={conversation.conversation_id} to={'/app/messages/' + conversation.conversation_id}>
                 <span className="messages-list__avatar"><Avatar name={conversation.other_display_name} size={48} src={avatarUrl(conversation.other_avatar_path)} presence={onlineUsers?.has(conversation.other_user_id)} /></span>
-                <span className="messages-list__copy"><span className="messages-list__item-top"><strong className={conversation.unread_count ? 'is-unread' : ''}>{conversation.other_display_name}</strong>{conversation.other_provider_type && <ProviderTypeBadge compact type={conversation.other_provider_type} />}<time>{formatRelativeTime(conversation.last_message_at)}</time></span><span className="messages-list__preview">{conversation.last_sender_id === userId ? 'You: ' : ''}{conversation.last_message_preview}</span><span className="messages-list__post-chip">{conversation.post_title}</span></span>
+                <span className="messages-list__copy"><span className="messages-list__item-top"><strong className={conversation.unread_count ? 'is-unread' : ''}>{conversation.other_display_name}</strong><time>{formatRelativeTime(conversation.last_message_at)}</time></span><span className="messages-list__preview">{conversation.last_sender_id === userId ? 'You: ' : ''}{conversation.last_message_preview}</span><span className="messages-list__post-chip">{conversation.post_title}</span></span>
                 {conversation.unread_count > 0 && <span aria-label={conversation.unread_count + ' unread messages'} className="messages-list__unread">{conversation.unread_count > 99 ? '99+' : conversation.unread_count}</span>}
               </NavLink>
             ))}</nav>}
@@ -96,17 +99,19 @@ function MessageGroup({ group, mine, userId, otherName, replies, reactions, onRe
 
 function ConversationThread() {
   const { conversationId } = useParams()
-  const { conversations, loading: conversationsLoading } = useOutletContext()
+  const { conversations, loading: conversationsLoading, openDetails } = useOutletContext()
   const { isOnline } = usePresence()
   const { user, profile } = useAuth()
   const [messages, setMessages] = useState([])
   const [reactions, setReactions] = useState([])
+  const [jobEvents, setJobEvents] = useState([])
   const [draft, setDraft] = useState('')
   const [replyTo, setReplyTo] = useState(null)
   const [photo, setPhoto] = useState(null)
   const [photoBusy, setPhotoBusy] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
   const [lightbox, setLightbox] = useState('')
+  const [reportOpen, setReportOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [hasEarlier, setHasEarlier] = useState(false)
   const [error, setError] = useState('')
@@ -135,6 +140,27 @@ function ConversationThread() {
   const replyMap = useMemo(() => new Map(messages.map((message) => [message.id, message])), [messages])
   const draftKey = `fixora.chatDraft.${conversationId}`
   useEffect(() => { messagesRef.current = messages }, [messages])
+  useEffect(() => {
+    if (!conversation) return undefined
+    let active = true
+    async function loadJobEvents() {
+      const [postResult, reviewResult, providerResult] = await Promise.all([
+        supabase.from('problem_posts').select('id, title, status, hired_professional_id, hired_at, completed_at, final_price_naira').eq('id', conversation.post_id).maybeSingle(),
+        supabase.from('job_reviews').select('id, rating, created_at').eq('post_id', conversation.post_id).maybeSingle(),
+        supabase.from('provider_profiles').select('profile_id, display_name').eq('profile_id', conversation.provider_id).maybeSingle(),
+      ])
+      for (const result of [postResult, reviewResult, providerResult]) if (result.error) throw result.error
+      const post = postResult.data
+      if (!post || !active) return
+      const items = []
+      if (post.hired_at && post.hired_professional_id) items.push({ id: 'hired', kind: 'system', created_at: post.hired_at, text: `${providerResult.data?.display_name || 'The professional'} was hired for ${post.title}` })
+      if (post.completed_at) items.push({ id: 'completed', kind: 'system', created_at: post.completed_at, text: `Job marked as completed${post.final_price_naira ? ` · ₦${Number(post.final_price_naira).toLocaleString('en-NG')}` : ''}` })
+      if (reviewResult.data) items.push({ id: `review-${reviewResult.data.id}`, kind: 'system', created_at: reviewResult.data.created_at, text: `Review left · ${reviewResult.data.rating} ${reviewResult.data.rating === 1 ? 'star' : 'stars'}` })
+      if (active) setJobEvents(items)
+    }
+    loadJobEvents().catch((eventError) => console.error('[chat-job-events]', { postId: conversation.post_id, code: eventError?.code, message: eventError?.message }))
+    return () => { active = false }
+  }, [conversation?.post_id, conversation?.provider_id])
 
   const load = useCallback(async () => {
     if (conversationsLoading || !hasConversation) return
@@ -220,6 +246,17 @@ function ConversationThread() {
     })
     return result
   }, [messages])
+  const timeline = useMemo(() => {
+    const entries = [...groups.map((group) => ({ kind: 'messages', group, created_at: group.items[0].created_at, day: group.day })), ...jobEvents.map((event) => ({ ...event, day: new Date(event.created_at).toDateString() }))]
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+    let previousDay = ''
+    return entries.map((entry) => {
+      const day = entry.day || new Date(entry.created_at).toDateString()
+      const withSeparator = { ...entry, dayLabel: day !== previousDay ? formatDay(entry.created_at) : '' }
+      previousDay = day
+      return withSeparator
+    })
+  }, [groups, jobEvents])
 
   function onScroll(event) {
     const node = event.currentTarget
@@ -296,14 +333,16 @@ function ConversationThread() {
 
   const quickReplies = isProvider ? ['Hello, I’m ready to start', 'What time works for you?', 'Thanks for choosing me'] : ['Hi, when can you start?', 'Can you share your quote?', 'Thanks for applying']
   return <section aria-label={'Conversation with ' + conversation.other_display_name} className="messages-thread">
-    <header className="messages-thread__header"><Link aria-label="Back to messages" className="messages-thread__back" to="/app/messages"><ArrowLeft aria-hidden="true" size={21} /></Link><span className={'messages-thread__avatar' + (online ? ' is-online' : '')}><Avatar name={conversation.other_display_name} size={42} src={avatarUrl(conversation.other_avatar_path)} presence={online} /></span><div><strong>{conversation.other_display_name}</strong>{!isProvider && conversation.other_provider_type && <ProviderTypeBadge compact type={conversation.other_provider_type} />}<span>{typing ? 'Typing…' : online ? 'Active now' : conversation.post_title}</span></div><div className="messages-thread__actions"><Button as={Link} to={postHref} variant="secondary">View job</Button>{!isProvider && <Button aria-label="View professional profile" as={Link} to={`/app/professionals/${conversation.other_user_id}`} variant="ghost"><UserCircle aria-hidden="true" size={19} /></Button>}</div></header>
-    <div className="messages-job-context"><span className="messages-job-context__image">{conversation.cover_path ? <img alt="" src={getPostImageUrl(conversation.cover_path)} /> : <Wrench aria-hidden="true" size={20} />}</span><div><strong>{conversation.post_title}</strong><span>{conversation.post_status === 'completed' ? 'Completed' : conversation.post_status === 'closed' ? 'In progress' : 'Request'}</span></div>{!(window.matchMedia('(min-width: 1440px)').matches && !isProvider) && !isProvider && conversation.post_status === 'closed' && <Button as={Link} to={`${postHref}/complete`} variant="secondary">Mark as completed</Button>}</div>
+    <header className="messages-thread__header"><Link aria-label="Back to messages" className="messages-thread__back" to="/app/messages"><ArrowLeft aria-hidden="true" size={21} /></Link><span className={'messages-thread__avatar' + (online ? ' is-online' : '')}><Avatar name={conversation.other_display_name} size={40} src={avatarUrl(conversation.other_avatar_path)} presence={online} /></span><div className="messages-thread__identity"><strong>{conversation.other_display_name}</strong><span>{typing ? 'Typing…' : online ? 'Online' : conversation.post_title}</span></div><div className="messages-thread__actions"><Button className="messages-thread__view-job" as={Link} to={postHref} variant="secondary">View job</Button><Button aria-label="Conversation details" className="messages-thread__details" onClick={openDetails} variant="ghost"><Info aria-hidden="true" size={19} /></Button><details className="messages-thread__overflow"><summary aria-label="More conversation actions"><DotsThree aria-hidden="true" size={21} /></summary><div><Link to={postHref}>View job</Link><button onClick={openDetails} type="button">Details</button>{!isProvider && <Link to={`/app/professionals/${conversation.other_user_id}`}>View profile</Link>}<button onClick={() => setReportOpen(true)} type="button"><Flag aria-hidden="true" size={15} />Report</button></div></details></div></header>
+    <div className="messages-job-context"><span className="messages-job-context__image">{conversation.cover_path ? <img alt="" src={getPostImageUrl(conversation.cover_path)} /> : <Wrench aria-hidden="true" size={20} />}</span><div><strong>{conversation.post_title}</strong><span>{conversation.post_status === 'completed' ? 'Completed' : conversation.post_status === 'closed' ? 'In progress' : 'Request'}</span></div>{!isProvider && conversation.post_status === 'closed' ? <Button as={Link} to={`${postHref}/complete`} variant="primary">Mark as completed</Button> : <Button as={Link} to={postHref} variant="secondary">View request</Button>}</div>
     {error ? <div className="messages-thread__error" role="alert"><p>Messages couldn’t load.</p><Button onClick={() => void load()} variant="secondary">Retry</Button></div> : <>
-      <div aria-live="polite" className="messages-thread__scroll" onScroll={onScroll} ref={scrollNode}>
+      <div aria-live="polite" className="messages-thread__scroll" onScroll={onScroll} ref={scrollNode} style={{ '--chat-wallpaper': `url("${appDoodles}")` }}>
         {loading && <div className="messages-thread__skeletons" role="status" aria-label="Loading messages"><Skeleton /><Skeleton /><Skeleton /></div>}
         {!loading && hasEarlier && <button className="messages-load-earlier" onClick={() => void loadEarlier()} type="button">Load earlier messages</button>}
         {!loading && messages.length === 0 && <div className="messages-thread__first"><p>Say hello to {conversation.other_display_name.split(' ')[0]}. You’re both on {conversation.post_title}.</p><div>{quickReplies.map((reply) => <button key={reply} onClick={() => setDraft(reply)} type="button">{reply}</button>)}</div></div>}
-        {groups.map((group, index) => <div className="messages-day-group" key={group.day + '-' + group.items[0].id}>{(index === 0 || groups[index - 1].day !== group.day) && <time className="messages-day-separator">{formatDay(group.items[0].created_at)}</time>}{group.items.some((item) => item.id === pendingUnread.current) && <div className="messages-unread-divider">Unread messages</div>}<div ref={(node) => group.items.forEach((item) => node && messageNodes.current.set(item.id, node))}><MessageGroup group={group} mine={group.senderId === user.id} otherName={conversation.other_display_name} onCopy={onCopy} onImage={setLightbox} onMore={onMore} onQuote={onQuote} onReact={onReact} onReply={onReply} onUnsend={onUnsend} reactions={reactions} replies={replyMap} userId={user.id} /></div>{group.items.some((item) => item.failed) && <div className="message-retry-row"><span>Not sent.</span><button onClick={() => { const failed = group.items.find((item) => item.failed); void send(failed.body, failed) }} type="button">Retry</button></div>}</div>)}
+        {timeline.map((entry) => entry.kind === 'system'
+          ? <div className="messages-day-group" key={entry.id}>{entry.dayLabel && <time className="messages-day-separator">{entry.dayLabel}</time>}<p className="messages-system-event">{entry.text}</p></div>
+          : <div className="messages-day-group" key={entry.group.day + '-' + entry.group.items[0].id}>{entry.dayLabel && <time className="messages-day-separator">{entry.dayLabel}</time>}{entry.group.items.some((item) => item.id === pendingUnread.current) && <div className="messages-unread-divider">Unread messages</div>}<div ref={(node) => entry.group.items.forEach((item) => node && messageNodes.current.set(item.id, node))}><MessageGroup group={entry.group} mine={entry.group.senderId === user.id} otherName={conversation.other_display_name} onCopy={onCopy} onImage={setLightbox} onMore={onMore} onQuote={onQuote} onReact={onReact} onReply={onReply} onUnsend={onUnsend} reactions={reactions} replies={replyMap} userId={user.id} /></div>{entry.group.items.some((item) => item.failed) && <div className="message-retry-row"><span>Not sent.</span><button onClick={() => { const failed = entry.group.items.find((item) => item.failed); void send(failed.body, failed) }} type="button">Retry</button></div>}</div>)}
         {typing && <div aria-label="Typing" className="messages-typing"><i /><i /><i /></div>}{polling && <span className="messages-thread__quiet-status">Reconnecting…</span>}
       </div>
       {newMessages > 0 && <button className="messages-new-pill" onClick={() => { if (scrollNode.current) scrollNode.current.scrollTop = scrollNode.current.scrollHeight; nearBottom.current = true; setNewMessages(0); void markConversationRead(conversationId).catch(() => {}) }} type="button">{newMessages > 1 ? `${newMessages} new messages` : 'New messages'}</button>}
@@ -316,6 +355,7 @@ function ConversationThread() {
       </form>
     </>}
     {lightbox && <button aria-label="Close image" className="messages-lightbox" onClick={() => setLightbox('')} type="button"><img alt="Photo shared in chat" src={lightbox} /><span>Close</span></button>}
+    <ReportDialog onClose={() => setReportOpen(false)} open={reportOpen} targetId={conversation.other_user_id} targetType="user" />
   </section>
 }
 
@@ -330,6 +370,7 @@ export function MessagesLayout() {
   const [loading, setLoading] = useState(() => !cached)
   const [error, setError] = useState(false)
   const [polling, setPolling] = useState(false)
+  const [detailsOpen, setDetailsOpen] = useState(false)
   const lastRefreshAt = useRef(cached?.lastRefreshAt || 0)
   const { isOnline, refreshPresence } = usePresence()
   const onlineUsers = useMemo(() => new Set(conversations.filter((conversation) => isOnline(conversation.other_user_id)).map((conversation) => conversation.other_user_id)), [conversations, isOnline])
@@ -350,6 +391,7 @@ export function MessagesLayout() {
       return []
     } finally { if (!silent) setLoading(false); else setLoading(false) }
   }, [cacheKey])
+  const pullRefresh = usePullToRefresh(() => reload({ silent: true }))
 
   useEffect(() => { if (!cached) void reload(); else if (Date.now() - lastRefreshAt.current >= 60_000) void reload({ silent: true }) }, [cacheKey, cached, reload])
   useEffect(() => {
@@ -402,28 +444,51 @@ export function MessagesLayout() {
     else navigate('/app/messages', { replace: true })
   }, [conversations, loading, navigate, searchParams])
 
-  const context = useMemo(() => ({ conversations, loading, reload }), [conversations, loading, reload])
-  return <main className={'messages-shell' + (threadOpen ? ' is-thread-open' : '') + (selectedConversation ? ' has-selection' : '') + (polling ? ' is-polling' : '')}>
+  const openDetails = useCallback(() => setDetailsOpen(true), [])
+  const closeDetails = useCallback(() => setDetailsOpen(false), [])
+  useEffect(() => { setDetailsOpen(false) }, [location.pathname])
+  const context = useMemo(() => ({ conversations, loading, reload, openDetails }), [conversations, loading, openDetails, reload])
+  return <main className={'messages-shell' + (threadOpen ? ' is-thread-open' : '') + (selectedConversation ? ' has-selection' : '') + (polling ? ' is-polling' : '')} ref={pullRefresh.containerRef}>
+    {pullRefresh.indicator}
     <MessageList conversations={conversations} error={error} isProvider={profile?.account_type === 'provider'} loading={loading} onRetry={() => void reload()} onlineUsers={onlineUsers} userId={user.id} />
     <section className="messages-main"><Outlet context={context} /></section>
-    {selectedConversation && <MessageInfoPane conversation={selectedConversation} isProvider={profile?.account_type === 'provider'} />}
+    {detailsOpen && selectedConversation && <MessageInfoPane conversation={selectedConversation} isProvider={profile?.account_type === 'provider'} onClose={closeDetails} />}
   </main>
 }
 
-function MessageInfoPane({ conversation, isProvider }) {
+function MessageInfoPane({ conversation, isProvider, onClose }) {
   const [photos, setPhotos] = useState([])
+  const [preview, setPreview] = useState('')
+  const [providerSummary, setProviderSummary] = useState(null)
   const { isOnline } = usePresence()
+  const boundaryRef = useRef(null)
+  useDismissable({ boundaryRef, open: true, onDismiss: onClose })
   useEffect(() => {
     let active = true
     supabase.from('messages').select('id, image_path, created_at').eq('conversation_id', conversation.conversation_id).not('image_path', 'is', null).order('created_at', { ascending: false }).limit(12)
       .then(({ data }) => { if (active) setPhotos(data ?? []) })
     return () => { active = false }
   }, [conversation.conversation_id])
-  return <aside className="messages-info-pane">
-    <div className="messages-info-pane__person"><Avatar name={conversation.other_display_name} size={64} src={avatarUrl(conversation.other_avatar_path)} presence={isOnline(conversation.other_user_id)} /><strong>{conversation.other_display_name}</strong>{!isProvider && conversation.other_provider_type && <ProviderTypeBadge compact type={conversation.other_provider_type} />}{isOnline(conversation.other_user_id) && <span className="messages-info-pane__online">Active now</span>}{!isProvider && <Link to={`/app/professionals/${conversation.other_user_id}`}>View profile</Link>}</div>
+  useEffect(() => {
+    if (isProvider) return undefined
+    let active = true
+    Promise.all([
+      supabase.from('provider_rating_summary').select('provider_id, review_count, average_rating').eq('provider_id', conversation.other_user_id).maybeSingle(),
+      supabase.from('problem_posts').select('id', { count: 'exact', head: true }).eq('hired_professional_id', conversation.other_user_id).eq('status', 'completed'),
+    ]).then(([ratingResult, jobsResult]) => {
+      if (ratingResult.error) throw ratingResult.error
+      if (jobsResult.error) throw jobsResult.error
+      if (active) setProviderSummary({ rating: ratingResult.data, jobs: jobsResult.count ?? 0 })
+    }).catch((error) => console.error('[chat-details]', { code: error?.code, message: error?.message }))
+    return () => { active = false }
+  }, [conversation.other_user_id, isProvider])
+  return <><button aria-label="Close conversation details" className="messages-details-backdrop" onClick={onClose} tabIndex={-1} type="button" /><aside aria-label="Conversation details" className="messages-info-pane" ref={boundaryRef}>
+    <header className="messages-info-pane__header"><h2>Details</h2><button aria-label="Close details" onClick={onClose} type="button"><X size={20} /></button></header>
+    <div className="messages-info-pane__person"><Avatar name={conversation.other_display_name} size={96} src={avatarUrl(conversation.other_avatar_path)} presence={isOnline(conversation.other_user_id)} /><strong>{conversation.other_display_name}</strong>{isOnline(conversation.other_user_id) ? <span className="messages-info-pane__online">Online</span> : <span className="messages-info-pane__online">{conversation.post_title}</span>}{!isProvider && <><span className="messages-info-pane__stats">{providerSummary?.rating?.review_count ? `${Number(providerSummary.rating.average_rating).toFixed(1)} · ${providerSummary.rating.review_count} reviews` : 'No reviews yet'} · {providerSummary?.jobs ?? 0} jobs completed</span><Link to={`/app/professionals/${conversation.other_user_id}`}>View profile</Link></>}</div>
       <section><h2>Job</h2><Link className="messages-info-pane__job" to={`/app/posts/${conversation.post_id}`}>{conversation.cover_path && <img alt="" src={getPostImageUrl(conversation.cover_path)} />}<strong>{conversation.post_title}</strong><span>{conversation.post_status === 'completed' ? 'Completed' : conversation.post_status === 'closed' ? 'In progress' : 'Request'}</span></Link>{!isProvider && conversation.post_status === 'closed' && <Button as={Link} to={`/app/posts/${conversation.post_id}/complete`} variant="primary">Mark as completed</Button>}</section>
-    <section><h2>Shared photos</h2>{photos.length ? <div className="messages-info-pane__photos">{photos.map((photo) => <Link aria-label="Open conversation" key={photo.id} to={`/app/messages/${conversation.conversation_id}`}><img alt="Shared in conversation" src={getPostImageUrl(photo.image_path)} /></Link>)}</div> : <p className="messages-info-pane__empty">Photos shared in chat will appear here.</p>}</section>
-  </aside>
+    <section><h2>Shared photos</h2>{photos.length ? <div className="messages-info-pane__photos">{photos.map((photo) => <button aria-label="View shared photo" key={photo.id} onClick={() => setPreview(getPostImageUrl(photo.image_path))} type="button"><img alt="Shared in conversation" src={getPostImageUrl(photo.image_path)} /></button>)}</div> : <p className="messages-info-pane__empty">No shared photos yet.</p>}</section>
+    {preview && <button aria-label="Close photo" className="messages-lightbox" onClick={() => setPreview('')} type="button"><img alt="Shared in conversation" src={preview} /><span>Close</span></button>}
+  </aside></>
 }
 
 export function MessagesHome() { return <MessagesWelcome /> }
