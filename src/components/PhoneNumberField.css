@@ -12,7 +12,7 @@
 
 .auth-phone-field .auth-phone-control {
   display: grid;
-  grid-template-columns: minmax(128px, 38%) minmax(0, 1fr);
+  grid-template-columns: minmax(88px, 108px) minmax(0, 1fr);
   gap: 8px;
   min-width: 0;
 }
@@ -38,6 +38,34 @@
   font-size: 14px;
   font-weight: 550;
   cursor: pointer;
+}
+
+.auth-phone-country {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.auth-phone-field .auth-phone-control .auth-phone-country select {
+  color: transparent;
+}
+
+.auth-phone-country option {
+  color: var(--color-text-primary, #14203f);
+}
+
+.auth-phone-country__preview {
+  position: absolute;
+  inset: 0 20px 0 12px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  color: var(--color-text-primary, #14203f);
+  font-size: 13px;
+  font-weight: 600;
+  pointer-events: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .auth-phone-field .auth-phone-control input {
@@ -82,7 +110,7 @@
 
 @media (max-width: 360px) {
   .auth-phone-field .auth-phone-control {
-    grid-template-columns: minmax(116px, 40%) minmax(0, 1fr);
+    grid-template-columns: minmax(80px, 96px) minmax(0, 1fr);
   }
 
   .auth-phone-field .auth-phone-control select {

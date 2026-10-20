@@ -26,23 +26,28 @@ export default function PhoneNumberField({
   const errorId = error ? `${id}-error` : undefined
   const hintId = hint ? `${id}-hint` : undefined
   const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined
+  const selectedCountry = countryOptions.find((option) => option.code === country) ?? countryOptions[0]
 
   return (
     <div className={`auth-field auth-phone-field${error ? ' has-error' : ''}${className ? ` ${className}` : ''}`}>
       <label htmlFor={id}>Phone number</label>
       <div className="auth-phone-control">
-        <select
-          aria-label="Country calling code"
-          autoComplete="tel-country-code"
-          onChange={(event) => onCountryChange(event.target.value)}
-          value={country}
-        >
-          {countryOptions.map(({ code, label, callingCode }) => (
-            <option key={code} value={code}>
-              {label} (+{callingCode})
-            </option>
-          ))}
-        </select>
+        <span className="auth-phone-country">
+          <select
+            aria-label="Country calling code"
+            autoComplete="tel-country-code"
+            onChange={(event) => onCountryChange(event.target.value)}
+            title={`${selectedCountry.label} (+${selectedCountry.callingCode})`}
+            value={country}
+          >
+            {countryOptions.map(({ code, label, callingCode }) => (
+              <option key={code} value={code}>
+                {label} (+{callingCode})
+              </option>
+            ))}
+          </select>
+          <span aria-hidden="true" className="auth-phone-country__preview">{selectedCountry.code} (+{selectedCountry.callingCode})</span>
+        </span>
         <input
           aria-describedby={describedBy}
           aria-invalid={Boolean(error)}
