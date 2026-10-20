@@ -1,9 +1,10 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { ClockCounterClockwise, Compass, House, Plus, UserCircle } from '@phosphor-icons/react'
+import { ChatCircleDots, ClockCounterClockwise, Compass, House, Plus, UserCircle } from '@phosphor-icons/react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { Avatar, Logo } from './UiPrimitives.jsx'
 import { FEATURES } from '../config/features.js'
+import useUnreadMessageCount from './useUnreadMessageCount.js'
 import './AuthenticatedAppShell.css'
 
 const destinations = [
@@ -14,9 +15,11 @@ const destinations = [
 ]
 
 export default function AuthenticatedAppShell() {
-  const { profile } = useAuth()
+  const { profile, user } = useAuth()
   const location = useLocation()
+  const unreadMessages = useUnreadMessageCount(FEATURES.chat ? user?.id : null)
   const isHome = location.pathname === '/app'
+  const isChatRoute = location.pathname.startsWith('/app/messages')
   const pageTitle = destinations.find(({ to }) => location.pathname === to)?.label
     || (location.pathname === '/app/my-posts' ? 'My Posts' : location.pathname.startsWith('/app/posts/') ? 'Post' : 'Professional')
   const isTabRoute = destinations.some(({ to }) => location.pathname === to)
@@ -25,7 +28,7 @@ export default function AuthenticatedAppShell() {
   const [showCompactTitle, setShowCompactTitle] = useState(false)
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   const hideTabBar = keyboardOpen || location.pathname.startsWith('/app/professionals/')
-    || location.pathname === '/app/posts/new' || /^\/app\/posts\/[^/]+\/edit$/.test(location.pathname)
+    || location.pathname === '/app/posts/new' || /^\/app\/posts\/[^/]+\/edit$/.test(location.pathname) || isChatRoute
   const scrollPositions = useRef({})
   const activePath = useRef(location.pathname)
   const firstName = profile?.full_name?.trim().split(/\s+/)[0] || 'Account'
@@ -62,7 +65,7 @@ export default function AuthenticatedAppShell() {
   }, [location.pathname])
 
   return (
-    <div className="fixora-app">
+    <div className={`fixora-app${isChatRoute ? ' is-chat-route' : ''}`}>
       <a className="fixora-app__skip" href="#app-content">Skip to content</a>
 
       <aside aria-label="Application navigation" className="fixora-app__sidebar">
@@ -73,6 +76,9 @@ export default function AuthenticatedAppShell() {
               {({ isActive }) => <><Icon aria-hidden="true" size={22} weight={isActive ? 'fill' : 'regular'} /><span>{label}</span></>}
             </NavLink>
           ))}
+          {FEATURES.chat && <NavLink aria-label="Messages" className="fixora-app__messages-nav" title="Messages" to="/app/messages">
+            {({ isActive }) => <><ChatCircleDots aria-hidden="true" size={22} weight={isActive ? 'fill' : 'regular'} /><span>Messages</span>{unreadMessages > 0 && <span aria-label={`${unreadMessages} unread messages`} className="fixora-app__unread-badge">{unreadMessages > 99 ? '99+' : unreadMessages}</span>}</>}
+          </NavLink>}
         </nav>
         {showPostAction && <div className="fixora-app__post-slot"><Link className="fixora-app__post-button" to="/app/posts/new"><Plus aria-hidden="true" size={20} />Post a problem</Link></div>}
         <Link aria-label="View your profile" className="fixora-app__sidebar-account" to="/app/profile">
@@ -84,6 +90,11 @@ export default function AuthenticatedAppShell() {
       <header className="fixora-app__topbar">
         <Logo className="fixora-app__brand" to="/app" />
         <span aria-hidden="true" className={`fixora-app__compact-title${showCompactTitle ? ' is-visible' : ''}`}>{pageTitle}</span>
+
+        {FEATURES.chat && <Link aria-label={unreadMessages > 0 ? `Messages, ${unreadMessages} unread` : 'Messages'} className="fixora-app__messages-shortcut" to="/app/messages">
+          <ChatCircleDots aria-hidden="true" size={23} />
+          {unreadMessages > 0 && <span aria-hidden="true" className="fixora-app__unread-badge">{unreadMessages > 99 ? '99+' : unreadMessages}</span>}
+        </Link>}
 
         <div className="fixora-app__account">
           <Link

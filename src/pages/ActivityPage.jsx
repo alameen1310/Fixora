@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ArrowRight, Bell, CheckCircle, ClockCounterClockwise } from '@phosphor-icons/react'
+import { ArrowRight, Bell, ChatCircleDots, CheckCircle, ClockCounterClockwise } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { Avatar, Badge, Button, EmptyState, Skeleton } from '../components/UiPrimitives.jsx'
 import MarketplaceDoodle from '../components/MarketplaceDoodle.jsx'
@@ -95,7 +95,7 @@ export default function ActivityPage() {
                     {item.message && <p className="provider-application-card__quote">“{item.message}”</p>}
                     <div className="provider-application-card__foot"><Badge tone={selected ? 'success' : declined ? 'neutral' : 'info'}>{statusLabel}</Badge><time>{formatRelativeTime(item.activity?.created_at || item.updated_at || item.created_at)}</time></div>
                   </Link>
-                  {selected && FEATURES.chat && <Button as={Link} to={`/app/messages/${post.id}`} variant="primary">Message</Button>}
+                  {selected && FEATURES.chat && <Button as={Link} to={`/app/messages?postId=${post.id}`} variant="primary">Message</Button>}
                 </article>
               })}</section>
           })() : items.length === 0 ? <section className="activity-empty"><MarketplaceDoodle className="activity-empty__doodle" /><EmptyState action={<Button as={Link} to="/app/discover" variant="secondary">Discover professionals <ArrowRight aria-hidden="true" size={16} /></Button>} icon={Bell} message="When a professional applies or a customer makes a decision, updates will appear here." title="No activity yet" /></section>
@@ -112,6 +112,7 @@ export default function ActivityPage() {
                     {item.kind === 'application_received' && <Avatar name={item.actorName || 'Professional'} size={40} />}
                     <div className="activity-item__body"><p>{activityMessage(item, isProvider)}</p><time>{new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.created_at))}</time></div>
                     <div className="activity-item__actions">
+                      {FEATURES.chat && ['post_hired', 'post_completed'].includes(item.kind) && <Link aria-label="Message the hired professional" className="activity-message-action" to={`/app/messages?postId=${item.post_id}`}><ChatCircleDots aria-hidden="true" size={17} /><span>Message</span></Link>}
                       {!item.read_at && <button aria-label="Mark as read" className="activity-read-button" onClick={() => void markRead(item)} title="Mark as read" type="button"><span /></button>}
                       <Link aria-label="Open related request" to={target}><ArrowRight aria-hidden="true" size={19} /></Link>
                     </div>

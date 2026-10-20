@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabase.js'
 import { useToast } from '../components/ToastProvider.jsx'
 import { fetchMyApplication, fetchPostApplicationCount } from '../lib/applicationQueries.js'
 import BeforeAfterSlider from '../components/BeforeAfterSlider.jsx'
+import { FEATURES } from '../config/features.js'
 import '../components/Posts.css'
 
 function ReviewStars({ rating }) {
@@ -191,6 +192,9 @@ export default function PostDetailPage() {
           {post.status !== 'removed' && !post.hired_professional_id && <Button disabled={actionBusy} onClick={() => setRemoveOpen(true)} variant="secondary">Remove</Button>}
           {post.published_at && <Button as={Link} to={`/app/posts/${post.id}/applicants`} variant="primary">Applicants · {applicationCount}</Button>}
         </div>}
+        {FEATURES.chat && post.hired_professional_id && post.status !== 'removed'
+          && (post.author_id === user?.id || post.hired_professional_id === user?.id)
+          && <Button as={Link} to={`/app/messages?postId=${post.id}`} variant="primary">Message</Button>}
         {post.status !== 'completed' && post.author_id !== user?.id && profile?.account_type === 'provider' && <section aria-label="Your application" className="post-application-panel">
           {application ? <>
             <div className="post-application-panel__heading"><h2>Your application</h2><Badge tone={application.status === 'hired' ? 'success' : application.status === 'pending' ? 'info' : 'neutral'}>{({ pending: 'Pending', hired: 'Selected', not_selected: 'Not selected', withdrawn: 'Withdrawn' })[application.status]}</Badge></div>

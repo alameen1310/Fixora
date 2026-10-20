@@ -1,1 +1,1 @@
-export const FEATURES = { posts: true, chat: false }
+export const FEATURES = { posts: true, chat: true }

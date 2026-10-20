@@ -26,6 +26,9 @@ const PostApplicantsPage = lazy(() => import('./pages/PostApplicantsPage.jsx'))
 const CreatePostPage = lazy(() => import('./pages/CreatePostPage.jsx'))
 const EditPostPage = lazy(() => import('./pages/EditPostPage.jsx'))
 const CompleteJobPage = lazy(() => import('./pages/CompleteJobPage.jsx'))
+const MessagesLayout = lazy(() => import('./pages/MessagesPage.jsx').then((module) => ({ default: module.MessagesLayout })))
+const MessagesHome = lazy(() => import('./pages/MessagesPage.jsx').then((module) => ({ default: module.MessagesHome })))
+const MessagesConversationPage = lazy(() => import('./pages/MessagesPage.jsx').then((module) => ({ default: module.ConversationThread })))
 
 export default function App() {
   return (
@@ -51,6 +54,10 @@ export default function App() {
               <Route element={<AccountHomePage />} index />
               <Route element={<DiscoverPage />} path="discover" />
               <Route element={<ActivityPage />} path="activity" />
+              <Route element={<MessagesLayout />} path="messages">
+                <Route element={<MessagesHome />} index />
+                <Route element={<MessagesConversationPage />} path=":conversationId" />
+              </Route>
               <Route element={<ProfilePage />} path="profile" />
               <Route element={<ProfessionalProfilePage />} path="professionals/:professionalId" />
               <Route element={<PostRoleGuard customersOnly><MyPostsPage /></PostRoleGuard>} path="my-posts" />
