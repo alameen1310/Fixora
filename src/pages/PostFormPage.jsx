@@ -23,7 +23,7 @@ function errorText(error, step) {
   if (message.includes('Unpublished post limit reached')) return 'You have reached the draft limit. Remove an unfinished post before starting another.'
   if (message.includes('Post limit reached')) return 'You have published several posts recently. Please try again later.'
   if (message.includes('Some post photos are not ready')) return 'A photo is still uploading. Retry publishing when it is ready.'
-  if (error?.code === '42501' && ['identity', 'stage', 'insert'].includes(step)) return 'Fixora could not authorize this new post. Sign out, sign back in to your Customer account, and try again.'
+  if (error?.code === '42501' && ['identity', 'stage', 'insert'].includes(step)) return 'The server rejected this post for the current account. Your sign-in is active; please retry once, and contact Fixora support if it continues.'
   if (error?.code === '42501' && step === 'publish') return 'This draft is no longer eligible to publish. Start a fresh post or contact support if this keeps happening.'
   if (error?.code === '42501') return 'This post can no longer be changed with your account.'
   return 'We couldn’t save this post. Check your connection and try again.'
@@ -150,13 +150,17 @@ function PostFormPage({ editing = false }) {
     try {
       if (!editing) {
         writeStep = 'identity'
+        const { data: sessionResult, error: sessionError } = await supabase.auth.getSession()
+        const sessionUser = sessionResult?.session?.user
+        if (sessionError || !sessionUser?.id) throw sessionError || new Error('No authenticated customer session is available.')
         const { data: authResult, error: authError } = await supabase.auth.getUser()
         const verifiedUser = authResult?.user
         if (authError || !verifiedUser?.id) throw authError || new Error('No authenticated customer session is available.')
-        const { data: verifiedProfile, error: profileError } = await supabase.from('profiles').select('id, account_type').eq('id', verifiedUser.id).maybeSingle()
+        if (verifiedUser.id !== sessionUser.id) throw new Error('Your account session changed. Please retry the post.')
+        const { data: verifiedProfile, error: profileError } = await supabase.from('profiles').select('id, account_type').eq('id', sessionUser.id).maybeSingle()
         if (profileError) throw profileError
         if (verifiedProfile?.account_type !== 'customer') throw Object.assign(new Error('A customer account is required to create posts.'), { code: 'CUSTOMER_REQUIRED' })
-        authorId = verifiedUser.id
+        authorId = sessionUser.id
       }
       if (editing) {
         if (existing.length + photos.length > 5) throw new Error('Keep no more than five photos.')
@@ -174,7 +178,19 @@ function PostFormPage({ editing = false }) {
         const { error: staleError } = await supabase.from('problem_posts').update({ status: 'removed' }).eq('author_id', authorId).is('published_at', null).neq('status', 'removed')
         if (staleError) { console.error('[post-write]', { step: 'stage', postId: null, code: staleError.code, message: staleError.message }); throw staleError }
         writeStep = 'insert'
-        const { data, error: insertError } = await supabase.from('problem_posts').insert({ author_id: authorId, ...payload() }).select('id').single()
+        let { data, error: insertError } = await supabase.from('problem_posts').insert({ author_id: authorId, ...payload() }).select('id').single()
+        if (insertError?.code === '42501') {
+          console.error('[post-write]', { step: 'insert', postId: null, code: insertError.code, message: insertError.message })
+          const firstInsertError = insertError
+          const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession()
+          const refreshedUser = refreshed?.session?.user
+          if (refreshError || !refreshedUser?.id || refreshedUser.id !== authorId) throw firstInsertError
+          const { data: refreshedProfile, error: refreshedProfileError } = await supabase.from('profiles').select('id, account_type').eq('id', refreshedUser.id).maybeSingle()
+          if (refreshedProfileError || refreshedProfile?.account_type !== 'customer') throw firstInsertError
+          const retryResult = await supabase.from('problem_posts').insert({ author_id: refreshedUser.id, ...payload() }).select('id').single()
+          data = retryResult.data
+          insertError = retryResult.error
+        }
         if (insertError) { console.error('[post-write]', { step: 'insert', postId: null, code: insertError.code, message: insertError.message }); throw insertError }
         currentPostId = data.id; setStagedId(data.id)
       }
