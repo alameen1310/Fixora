@@ -38,21 +38,18 @@ function CustomerActivityCard({ item, isOnline, onRead }) {
   const profileLink = item.actor_id ? `/app/professionals/${item.actor_id}` : null
 
   return <article className={`activity-item${item.read_at ? '' : ' is-unread'}`}>
-    <Avatar className="activity-item__avatar" name={name} size={52} src={avatarUrl(item.actorAvatarPath)} presence={item.actor_id ? isOnline(item.actor_id) : false} />
+    <Link aria-label={`Open ${postTitle}`} className="activity-item__cover" onClick={() => void onRead(item)} to={`/app/posts/${item.post_id}`}>{post?.coverPath ? <img alt="" loading="lazy" src={getPostImageUrl(post.coverPath)} /> : <ClockCounterClockwise aria-hidden="true" size={24} />}</Link>
     <div className="activity-item__body">
       <div className="activity-item__topline">
-        <div className="activity-item__identity"><strong>{name}</strong>
-          {Number(item.actorRating?.review_count) > 0 && <span className="activity-item__reputation"><Star aria-hidden="true" size={14} weight="fill" />{Number(item.actorRating.average_rating).toFixed(1)} ({item.actorRating.review_count}){item.actorCompletedJobs > 0 && <span> · {item.actorCompletedJobs} {item.actorCompletedJobs === 1 ? 'job' : 'jobs'} completed</span>}</span>}
-        </div>
+        <div className="activity-item__request-title"><span>{category}</span><Link onClick={() => void onRead(item)} to={`/app/posts/${item.post_id}`}>{postTitle}</Link></div>
         <Badge tone={statusTone}>{status}</Badge>
       </div>
-      <p className="activity-item__sentence">{isApplication ? 'applied to' : isHired ? 'You hired this professional for' : isCompleted ? 'Completed' : 'Updated'}
-        <Link className="activity-item__request-link" onClick={() => void onRead(item)} to={`/app/posts/${item.post_id}`}>
-          <span className="activity-item__post-thumb">{post?.coverPath ? <img alt="" loading="lazy" src={getPostImageUrl(post.coverPath)} /> : <ClockCounterClockwise aria-hidden="true" size={16} />}</span>
-          <strong>{postTitle}</strong>
-        </Link>
-      </p>
-      <div className="activity-item__details"><span className="activity-item__category">{category}</span>{budget && !(isCompleted && post?.final_price_naira) && <span className="activity-item__budget">{budget}</span>}{post?.city || post?.region ? <span className="activity-item__location">{[post.city, post.region].filter(Boolean).join(', ')}</span> : null}</div>
+      <div className="activity-item__identity-row"><Avatar className="activity-item__avatar" name={name} size={34} src={avatarUrl(item.actorAvatarPath)} presence={item.actor_id ? isOnline(item.actor_id) : false} /><div className="activity-item__identity"><strong>{name}</strong>
+          {Number(item.actorRating?.review_count) > 0 && <span className="activity-item__reputation"><Star aria-hidden="true" size={14} weight="fill" />{Number(item.actorRating.average_rating).toFixed(1)} ({item.actorRating.review_count}){item.actorCompletedJobs > 0 && <span> · {item.actorCompletedJobs} {item.actorCompletedJobs === 1 ? 'job' : 'jobs'} completed</span>}</span>}
+        </div><time dateTime={item.created_at} title={activityTime(item.created_at)}>{formatRelativeTime(item.created_at)}</time><span className="activity-item__unread-wrap">{!item.read_at && <span aria-label="Unread activity" className="activity-item__unread-dot" />}</span>
+      </div>
+      <strong className="activity-item__budget">{isCompleted && post?.final_price_naira ? `Paid ${formatNaira(post.final_price_naira)}` : budget}</strong>
+      <div className="activity-item__details">{post?.city || post?.region ? <span className="activity-item__location">{[post.city, post.region].filter(Boolean).join(', ')}</span> : null}</div>
       {item.problem_post_applications?.message && <blockquote className="activity-item__note">{item.problem_post_applications.message}</blockquote>}
       {isCompleted && <div className="activity-item__completion-meta">{item.review?.rating && <span aria-label={`${item.review.rating} out of 5 stars`}><Star aria-hidden="true" size={15} weight="fill" />{item.review.rating} stars given</span>}{post?.final_price_naira > 0 && <strong>Paid {formatNaira(post.final_price_naira)}</strong>}</div>}
       <div className="activity-item__actions" onClick={(event) => event.stopPropagation()}>
@@ -62,7 +59,6 @@ function CustomerActivityCard({ item, isOnline, onRead }) {
         {!isApplication && !isHired && !isCompleted && <Button as={Link} to={target} variant="secondary">View request</Button>}
       </div>
     </div>
-    <div className="activity-item__aside"><time dateTime={item.created_at} title={activityTime(item.created_at)}>{formatRelativeTime(item.created_at)}</time>{!item.read_at && <span aria-label="Unread activity" className="activity-item__unread-dot" />}</div>
   </article>
 }
 
@@ -165,11 +161,14 @@ export default function ActivityPage() {
                   const statusLabel = selected ? post.status === 'completed' ? 'Completed' : 'In progress' : declined ? 'Declined' : 'Applied'
                   const unread = item.activity && !item.activity.read_at
                   return <article className={`provider-application-card${declined ? ' is-declined' : ''}`} key={item.id}>
-                    <Avatar name={item.customerName} size={52} src={avatarUrl(item.customerAvatarPath)} />
+                    <Link aria-label={`View request: ${post.title}`} className="provider-application-card__cover" to={`/app/posts/${post.id}`}>{post.coverPath ? <img alt="" loading="lazy" src={getPostImageUrl(post.coverPath)} /> : <ClockCounterClockwise aria-hidden="true" size={24} />}</Link>
                     <div className="provider-application-card__main">
-                      <div className="provider-application-card__top"><div><strong>{item.customerName}</strong><Link to={`/app/posts/${post.id}`}><span className="provider-application-card__thumb">{post.coverPath ? <img alt="" loading="lazy" src={getPostImageUrl(post.coverPath)} /> : <ClockCounterClockwise aria-hidden="true" size={15} />}</span>{post.title}</Link></div><Badge tone={selected ? 'success' : declined ? 'neutral' : 'info'}>{statusLabel}</Badge></div>
-                      <div className="provider-application-card__meta"><span className="provider-application-card__category">{post.service_categories?.name || 'Service request'}</span><span>{formatPostBudget(post)}</span>{(post.city || post.region) && <span>{[post.city, post.region].filter(Boolean).join(', ')}</span>}{item.message && <span>Your note: {item.message}</span>}</div>
-                      <div className="provider-application-card__foot"><time title={activityTime(item.activity?.created_at || item.updated_at || item.created_at)}>{formatRelativeTime(item.activity?.created_at || item.updated_at || item.created_at)}</time><span className="provider-application-card__actions">{unread && <span aria-label="New activity" className="provider-application-card__new" />}{selected && FEATURES.chat && <Button as={Link} to={`/app/messages?postId=${post.id}`} variant="secondary">Message</Button>}<Button as={Link} to={`/app/posts/${post.id}`} variant="secondary">View request</Button></span></div>
+                      <div className="provider-application-card__top"><div><span className="provider-application-card__category">{post.service_categories?.name || 'Service request'}</span><Link to={`/app/posts/${post.id}`}>{post.title}</Link></div><Badge tone={selected ? 'success' : declined ? 'neutral' : 'info'}>{statusLabel}</Badge></div>
+                      <strong className="provider-application-card__budget">{formatPostBudget(post)}</strong>
+                      <div className="provider-application-card__meta">{(post.city || post.region) && <span>{[post.city, post.region].filter(Boolean).join(', ')}</span>}</div>
+                      <div className="provider-application-card__identity"><Avatar name={item.customerName} size={34} src={avatarUrl(item.customerAvatarPath)} /><span>{item.customerName}</span><time title={activityTime(item.activity?.created_at || item.updated_at || item.created_at)}>{formatRelativeTime(item.activity?.created_at || item.updated_at || item.created_at)}</time>{unread && <span aria-label="New activity" className="provider-application-card__new" />}</div>
+                      {item.message && <blockquote className="provider-application-card__note">{item.message}</blockquote>}
+                      <div className="provider-application-card__foot"><span className="provider-application-card__actions">{selected && FEATURES.chat && <Button as={Link} to={`/app/messages?postId=${post.id}`} variant="secondary">Message</Button>}<Button as={Link} to={`/app/posts/${post.id}`} variant="secondary">View request</Button></span></div>
                     </div>
                   </article>
                 })}
