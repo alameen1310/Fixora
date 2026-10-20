@@ -1,5 +1,28 @@
+import { supabase } from './supabase.js'
+
 const MAX_EDGE = 1600
 const TARGET_BYTES = 300 * 1024
+
+export function getPostImageUrl(path) {
+  if (!path || !supabase) return null
+  return supabase.storage.from('problem-post-photos').getPublicUrl(path).data.publicUrl
+}
+
+export function logPostStep(step, { postId = null, error } = {}) {
+  console.error('[post-photo]', {
+    step,
+    postId,
+    code: error?.code ?? error?.statusCode ?? error?.status ?? null,
+    message: error?.message ?? String(error ?? 'Unknown error'),
+  })
+}
+
+export function describePhotoError(error) {
+  const message = error?.message || 'Unknown upload error'
+  const code = error?.code || error?.statusCode || error?.status
+  const detail = code ? `${message} (${code})` : message
+  return detail.length > 180 ? `${detail.slice(0, 177)}…` : detail
+}
 
 async function decodeFile(file) {
   if ('createImageBitmap' in window) {

@@ -4,8 +4,6 @@ export const POST_PAGE_SIZE = 10
 export const POST_COLUMNS = 'id, author_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, job_type, status, created_at, published_at, hired_at, service_categories(name, slug), problem_post_images(storage_path, sort_order)'
 export const POST_DETAIL_COLUMNS = 'id, author_id, category_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, job_type, status, created_at, published_at, closed_at, hired_professional_id, hired_at, service_categories(name, slug), problem_post_images(storage_path, sort_order)'
 
-const signedUrlCache = new Map()
-const SIGNED_URL_TTL = 10 * 60 * 1000
 
 function applyCursor(query, cursor) {
   if (!cursor) return query
@@ -109,33 +107,6 @@ export async function fetchAuthorNames(posts) {
   const { data, error } = await supabase.rpc('get_problem_post_author_cards', { requested_post_ids: ids })
   if (error) throw error
   return Object.fromEntries((data ?? []).map(({ post_id, display_name }) => [post_id, display_name]))
-}
-
-export async function signPostImages(paths, { refresh = false } = {}) {
-  const uniquePaths = [...new Set((paths ?? []).filter(Boolean))]
-  const now = Date.now()
-  const signed = {}
-  const missing = []
-  uniquePaths.forEach((path) => {
-    const cached = signedUrlCache.get(path)
-    if (!refresh && cached?.expiresAt > now) signed[path] = cached.url
-    else missing.push(path)
-  })
-  if (!missing.length) return signed
-  if (!supabase) return signed
-
-  const { data, error } = await supabase.storage.from('problem-post-photos').createSignedUrls(missing, 15 * 60)
-  if (error) throw error
-  for (const item of data ?? []) {
-    if (!item.signedUrl || item.error) continue
-    signed[item.path] = item.signedUrl
-    signedUrlCache.set(item.path, { url: item.signedUrl, expiresAt: now + SIGNED_URL_TTL })
-  }
-  return signed
-}
-
-export function invalidateSignedPostImage(path) {
-  if (path) signedUrlCache.delete(path)
 }
 
 export function postCursor(post) {

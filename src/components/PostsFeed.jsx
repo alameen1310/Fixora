@@ -3,8 +3,8 @@ import { ArrowClockwise, ClipboardText } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { Button, EmptyState } from './UiPrimitives.jsx'
 import PostCard, { PostCardSkeleton } from './PostCard.jsx'
-import { fetchAuthorNames, fetchLatestOwnPost, fetchOtherOpenPosts, fetchMyPosts, invalidateSignedPostImage, postCursor, signPostImages } from '../lib/postQueries.js'
-import { useToast } from './ToastProvider.jsx'
+import { fetchAuthorNames, fetchLatestOwnPost, fetchOtherOpenPosts, fetchMyPosts, postCursor } from '../lib/postQueries.js'
+import { getPostImageUrl } from '../lib/postImages.js'
 import { homeFeedCache, myPostsCache } from '../lib/postListCache.js'
 
 const PAGE_SIZE = 10
@@ -34,16 +34,12 @@ export function PostsFeed({ userId, showOwnLatest = false, categorySlug = '' }) 
   pendingOwnLatestRef.current = pendingOwnLatest
   newPostsRef.current = newPosts
   const busy = useRef(false)
-  const { showToast } = useToast()
 
   const attachAssets = useCallback(async (items) => {
     if (!items.length) return
-    const [names, signed] = await Promise.all([
-      fetchAuthorNames(items),
-      signPostImages(items.map((item) => item.coverPath)),
-    ])
+    const [names] = await Promise.all([fetchAuthorNames(items)])
     setAuthors((current) => ({ ...current, ...names }))
-    setCovers((current) => ({ ...current, ...signed }))
+    setCovers((current) => ({ ...current, ...Object.fromEntries(items.filter(({ coverPath }) => coverPath).map(({ coverPath }) => [coverPath, getPostImageUrl(coverPath)])) }))
   }, [])
 
   const loadFirstPage = useCallback(async ({ silent = false } = {}) => {
@@ -137,10 +133,6 @@ export function PostsFeed({ userId, showOwnLatest = false, categorySlug = '' }) 
     const onVisible = () => {
       if (document.visibilityState !== 'visible') return
       if (Date.now() - lastRefreshAt.current >= 90_000) void loadFirstPage({ silent: true })
-      const paths = [...postsRef.current, ...(ownLatestRef.current ? [ownLatestRef.current] : [])].map(({ coverPath }) => coverPath).filter(Boolean)
-      if (paths.length) {
-        void signPostImages(paths, { refresh: true }).then((signed) => setCovers((current) => ({ ...current, ...signed }))).catch(() => {})
-      }
     }
     document.addEventListener('visibilitychange', onVisible)
     const onHomeRefresh = () => {
@@ -162,20 +154,7 @@ export function PostsFeed({ userId, showOwnLatest = false, categorySlug = '' }) 
     return () => observer.disconnect()
   }, [hasMore, loadMore, loading, loadingMore])
 
-  async function retryCover(path) {
-    invalidateSignedPostImage(path)
-    try {
-      const signed = await signPostImages([path], { refresh: true })
-      setCovers((current) => {
-        const next = { ...current }
-        if (signed[path]) next[path] = signed[path]
-        else delete next[path]
-        return next
-      })
-    } catch {
-      showToast({ type: 'warning', message: 'This photo is temporarily unavailable.' })
-    }
-  }
+  function retryCover(path) { setCovers((current) => { const next = { ...current }; delete next[path]; return next }) }
 
   const visiblePosts = useMemo(() => posts, [posts])
   const empty = !loading && !error && !ownLatest && visiblePosts.length === 0
@@ -244,11 +223,9 @@ export function MyPostsList({ userId }) {
     else { setLoading(true); setError('') }
     try {
       const page = await fetchMyPosts(userId, { cursor: append ? cursor.current : null, limit: PAGE_SIZE })
-      const [names, signed] = await Promise.all([
-        fetchAuthorNames(page), signPostImages(page.map(({ coverPath }) => coverPath)),
-      ])
+      const names = await fetchAuthorNames(page)
       setAuthors((current) => ({ ...current, ...names }))
-      setCovers((current) => ({ ...current, ...signed }))
+      setCovers((current) => ({ ...current, ...Object.fromEntries(page.filter(({ coverPath }) => coverPath).map(({ coverPath }) => [coverPath, getPostImageUrl(coverPath)])) }))
       setPosts((current) => append ? [...current, ...page] : page)
       cursor.current = postCursor(page.at(-1))
       setHasMore(page.length === PAGE_SIZE)

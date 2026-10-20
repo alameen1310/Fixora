@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { ArrowLeft, CalendarBlank, MapPin, Wrench } from '@phosphor-icons/react'
 import { Link, useParams } from 'react-router-dom'
 import { ActionSheet, Avatar, Badge, Button, Skeleton } from '../components/UiPrimitives.jsx'
-import { fetchProblemPost, formatPostBudget, formatRelativeTime, invalidateSignedPostImage, signPostImages } from '../lib/postQueries.js'
+import { fetchProblemPost, formatPostBudget, formatRelativeTime } from '../lib/postQueries.js'
+import { getPostImageUrl } from '../lib/postImages.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import { useToast } from '../components/ToastProvider.jsx'
@@ -24,7 +25,6 @@ export default function PostDetailPage() {
   const [providerPublished, setProviderPublished] = useState(false)
   const [applicationCount, setApplicationCount] = useState(0)
   const [applicationMessage, setApplicationMessage] = useState('')
-  const retriedImages = useRef(new Set())
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -53,8 +53,7 @@ export default function PostDetailPage() {
       setPost(result)
       setApplication(ownApplication)
       if (isOwner) setApplicationCount(await fetchPostApplicationCount(postId))
-      const signed = await signPostImages(result.images.map(({ storage_path }) => storage_path))
-      setImageUrls(signed)
+      setImageUrls(Object.fromEntries(result.images.map(({ storage_path }) => [storage_path, getPostImageUrl(storage_path)])))
     } catch {
       setError(true)
     } finally {
@@ -73,25 +72,7 @@ export default function PostDetailPage() {
     ? new Intl.DateTimeFormat('en-NG', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${post.target_date}T00:00:00`))
     : post.timing.replaceAll('_', ' ')
 
-  async function retryImage(path) {
-    if (retriedImages.current.has(path)) {
-      setImageUrls((current) => { const next = { ...current }; delete next[path]; return next })
-      return
-    }
-    retriedImages.current.add(path)
-    invalidateSignedPostImage(path)
-    try {
-      const signed = await signPostImages([path], { refresh: true })
-      setImageUrls((current) => {
-        const next = { ...current }
-        if (signed[path]) next[path] = signed[path]
-        else delete next[path]
-        return next
-      })
-    } catch {
-      setImageUrls((current) => { const next = { ...current }; delete next[path]; return next })
-    }
-  }
+  function hideMissingImage(path) { setImageUrls((current) => ({ ...current, [path]: null })) }
 
   async function changeStatus(status) {
     setActionBusy(true)
@@ -145,7 +126,7 @@ export default function PostDetailPage() {
           <div className="post-gallery__track" onScroll={(event) => setActivePhoto(Math.round(event.currentTarget.scrollLeft / event.currentTarget.clientWidth))}>
             {post.images.map((image, index) => imageUrls[image.storage_path] ? (
               <figure className="post-gallery__slide" key={image.storage_path}>
-                <img alt={`${post.title}, photo ${index + 1}`} onError={() => void retryImage(image.storage_path)} src={imageUrls[image.storage_path]} />
+                <img alt={`${post.title}, photo ${index + 1}`} onError={() => hideMissingImage(image.storage_path)} src={imageUrls[image.storage_path]} />
               </figure>
             ) : null)}
           </div>
@@ -176,7 +157,7 @@ export default function PostDetailPage() {
           <time>{formatRelativeTime(post.created_at)}</time>
         </section>
         {post.author_id === user?.id && post.status !== 'removed' && <div className="post-detail__owner-actions">
-          {!post.hired_professional_id && <Button as={Link} to={`/app/posts/${post.id}/edit`} variant="secondary">Edit</Button>}
+          <Button as={Link} to={`/app/posts/${post.id}/edit`} variant="secondary">Edit</Button>
           {!post.hired_professional_id && post.status !== 'removed' && <Button disabled={actionBusy} onClick={() => void changeStatus(post.status === 'closed' ? 'open' : 'closed')} variant="secondary">{post.status === 'closed' ? 'Reopen' : 'Close'}</Button>}
           {post.status !== 'removed' && !post.hired_professional_id && <Button disabled={actionBusy} onClick={() => setRemoveOpen(true)} variant="secondary">Remove</Button>}
           {post.published_at && <Button as={Link} to={`/app/posts/${post.id}/applicants`} variant="primary">Applicants · {applicationCount}</Button>}

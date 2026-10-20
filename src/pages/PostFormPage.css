@@ -95,6 +95,69 @@
   .post-form-content { animation: none; }
 }
 
+.post-form-page { padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
+.post-form-workspace { align-items: start; }
+.post-photo-picker {
+  position: relative;
+  min-height: 140px;
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
+  border: 1.5px dashed #9aadd8;
+  color: var(--color-primary-dark);
+  background: #f7f9ff;
+  transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+.post-photo-picker strong { font-size: 1rem; }
+.post-photo-picker span { color: var(--color-text-secondary); font-size: .82rem; font-weight: 500; }
+.post-photo-picker input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.post-photo-picker.is-drag-over { border-color: var(--color-primary); background: #edf3ff; box-shadow: inset 0 0 0 1px var(--color-primary); }
+.post-photo-hint { display: block; margin: -8px 0 0; color: var(--color-text-secondary); font-size: 13px; text-align: left; }
+.post-form-actions { z-index: 20; }
+
+@media (min-width: 1024px) {
+  .post-form-page { width: min(100%, 1200px) !important; max-width: 1200px !important; padding-bottom: 36px; }
+  .post-form-workspace { grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; }
+  .post-form-content { grid-column: 1; min-width: 0; padding-bottom: 0; }
+  .post-form-actions {
+    position: static;
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    min-height: 76px;
+    margin: 0;
+    padding: 16px 24px 20px;
+    border-top: 1px solid rgb(23 25 29 / 10%);
+    background: #fff;
+    box-shadow: none;
+  }
+  .post-form-aside {
+    position: sticky;
+    top: 24px;
+    display: block;
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    width: 340px;
+    padding: 24px;
+    border: 1px solid rgb(18 38 110 / 7%);
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgb(32 56 116 / 6%);
+  }
+}
+
+@media (max-width: 1023px) {
+  .post-form-actions {
+    position: fixed;
+    right: 0;
+    bottom: var(--keyboard-offset, 0px);
+    left: 0;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid rgb(23 25 29 / 10%);
+    background: #fff;
+    box-shadow: 0 -8px 24px rgb(20 40 120 / 10%);
+  }
+}
+
 .post-form-content--step-1 .post-photo-picker { grid-column: 1 / -1; }
 .post-photo-list { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); align-content: start; }
 .post-photo-item { display: grid !important; overflow: hidden; min-width: 0; padding: 0 !important; border: 1px solid #e7ebf3; border-radius: 16px !important; background: #fff !important; box-shadow: 0 5px 16px rgb(32 56 116 / 6%); }
