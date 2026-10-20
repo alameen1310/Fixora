@@ -86,6 +86,72 @@
   .messages-list__item,.messages-composer__send { transition: none; }
 }
 
+@media (max-width: 899px) {
+  .fixora-app.is-chat-route { overflow: hidden; overscroll-behavior: none; }
+  .messages-shell:not(.is-thread-open) { height: calc(100dvh - 52px - env(safe-area-inset-top) - var(--tabbar-space)); min-height: 0; }
+  .messages-shell.is-thread-open { height: var(--visual-viewport-height, 100dvh); min-height: var(--visual-viewport-height, 100dvh); overscroll-behavior: contain; }
+  .messages-shell.is-thread-open .messages-main { height: 100%; min-height: 0; }
+  .messages-thread__scroll { overscroll-behavior: contain; }
+  .messages-composer { flex-shrink: 0; }
+  .fixora-app.is-messages-root .fixora-app__topbar { display: flex; }
+  .fixora-app.is-messages-root .fixora-app__viewport { height: calc(100dvh - 52px - env(safe-area-inset-top)); min-height: 0; }
+  .fixora-app.is-messages-root .page-container--chat { height: 100%; min-height: 0; }
+  .fixora-app.is-messages-root .messages-shell:not(.is-thread-open) { height: calc(100% - var(--tabbar-space)); min-height: 0; }
+  .fixora-app.is-messages-root .messages-list-pane { height: 100%; min-height: 0; }
+  .messages-composer__tools > button { width: 44px; height: 44px; }
+  .messages-composer__reply button,.messages-composer__photo button { width: 44px; height: 44px; flex-basis: 44px; }
+  .messages-emoji-tray { width: min(288px, calc(100vw - 24px)); grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .messages-emoji-tray button { width: 44px; height: 44px; }
+  .message-bubble-menu__reactions button { width: 44px; height: 44px; }
+}
+
+@media (max-width: 899px) {
+  .fixora-app.is-messages-root .fixora-app__topbar { display: flex; }
+  .fixora-app.is-messages-root .fixora-app__viewport { height: calc(100dvh - 52px - env(safe-area-inset-top)); min-height: 0; }
+  .fixora-app.is-messages-root .page-container--chat { height: 100%; min-height: 0; }
+  .fixora-app.is-messages-root .messages-shell:not(.is-thread-open) { height: calc(100% - var(--tabbar-space)); min-height: 0; }
+  .fixora-app.is-messages-root .messages-list-pane { min-height: 0; height: 100%; }
+  .messages-shell:not(.is-thread-open) .messages-main { display: none; }
+  .message-group { max-width: min(78%,520px); }
+}
+@media (max-width: 767px) { .messages-thread__actions .ui-button:first-child { display: inline-flex; min-width: 72px; padding-inline: 8px; font-size: 12px; } }
+.messages-list__search { position: relative; }
+.messages-list__search input { min-width: 0; }
+.messages-list__search button { display: grid; width: 36px; height: 36px; flex: 0 0 36px; place-items: center; border: 0; border-radius: 50%; color: var(--color-text-secondary); background: transparent; }
+.messages-thread__scroll,.message-bubble { font-size: 16px; }
+.message-bubble { padding: 11px 14px; }
+.message-group { max-width: min(68%,520px); }
+.message-group time,.messages-day-separator,.messages-list__item-top time,.messages-list__post-chip,.messages-list__unread { font-size: 12px; }
+.messages-list__item { min-height: 76px; }
+.messages-list__segments button { min-height: 44px; }
+.message-bubble-menu__reactions button { min-width: 44px; min-height: 44px; }
+
+@media (max-width: 767px) {
+  .fixora-app.is-messages-root .fixora-app__topbar { display: flex; }
+  .fixora-app.is-messages-root .fixora-app__viewport { height: calc(100dvh - 52px - env(safe-area-inset-top)); min-height: 0; }
+  .fixora-app.is-messages-root .page-container--chat { height: 100%; min-height: 0; }
+  .fixora-app.is-messages-root .messages-shell:not(.is-thread-open) { height: calc(100% - var(--tabbar-space)); min-height: 0; }
+  .fixora-app.is-messages-root .messages-list-pane { min-height: 0; height: 100%; }
+}
+
+.messages-list__search { position: relative; }
+.messages-list__search input { min-width: 0; }
+.messages-list__search button { display: grid; width: 36px; height: 36px; flex: 0 0 36px; place-items: center; border: 0; border-radius: 50%; color: var(--color-text-secondary); background: transparent; }
+.messages-thread__scroll { font-size: 16px; }
+.message-bubble { padding: 11px 14px; font-size: 16px; }
+.message-group { max-width: min(68%, 520px); }
+.message-group time,.messages-day-separator,.messages-list__item-top time,.messages-list__post-chip,.messages-list__unread { font-size: 12px; }
+.messages-list__item { min-height: 76px; }
+.messages-list__segments button { min-height: 44px; }
+.message-bubble-menu__reactions button { min-width: 44px; min-height: 44px; }
+@media (max-width: 899px) {
+  .messages-shell:not(.is-thread-open) .messages-main { display: none; }
+  .message-group { max-width: min(78%,520px); }
+  .messages-thread { height: var(--visual-viewport-height,100dvh); grid-template-rows: 62px auto minmax(0,1fr) auto; }
+  .messages-thread__header { min-height: 62px; }
+  .messages-thread__scroll { font-size: 16px; }
+}
+
 /* Premium two-pane conversation workspace */
 .fixora-app.is-chat-route .fixora-app__viewport { height: 100dvh; padding: 0; }
 .fixora-app.is-chat-route .fixora-app__topbar { display: none; }
@@ -242,4 +308,14 @@
   .messages-bubble-wrap.is-flashing .message-bubble,.messages-typing i { animation: none; }
   .message-bubble-toolbar,.messages-list__item,.message-bubble,.messages-new-pill { transition: none; }
   .messages-thread__scroll { scroll-behavior: auto; }
+}
+
+@media (max-width: 899px) {
+  .fixora-app.is-chat-route { overflow: hidden; overscroll-behavior: none; }
+  .messages-shell:not(.is-thread-open) { height: calc(100dvh - 52px - env(safe-area-inset-top) - var(--tabbar-space)); min-height: 0; }
+  .messages-shell:not(.is-thread-open) .messages-list-pane { min-height: 0; }
+  .messages-shell.is-thread-open { height: var(--visual-viewport-height, 100dvh); min-height: var(--visual-viewport-height, 100dvh); overscroll-behavior: contain; }
+  .messages-shell.is-thread-open .messages-main { height: var(--visual-viewport-height, 100dvh); min-height: 0; }
+  .messages-thread__scroll { overscroll-behavior: contain; }
+  .messages-composer { flex-shrink: 0; }
 }

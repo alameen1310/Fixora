@@ -1,0 +1,8 @@
+.not-found-page { display: grid; min-height: 100dvh; grid-template-rows: auto 1fr auto; align-items: start; gap: 24px; padding: max(24px,env(safe-area-inset-top)) clamp(20px,5vw,64px) max(24px,env(safe-area-inset-bottom)); color: var(--color-text-primary); background: var(--bg-app); }
+.not-found-page__brand { width: fit-content; }
+.not-found-page section { display: grid; width: min(100%,560px); align-content: center; justify-self: center; gap: 16px; padding: clamp(24px,5vw,48px); border: 1px solid var(--color-border); border-radius: 20px; background: #fff; box-shadow: var(--shadow-card); }
+.not-found-page__code { color: var(--color-primary); font-size: 14px; font-weight: 700; letter-spacing: .12em; }
+.not-found-page h1 { margin: 0; font-size: clamp(30px,5vw,42px); letter-spacing: -.04em; }
+.not-found-page p { margin: 0; color: var(--color-text-secondary); line-height: 1.55; }
+.not-found-page section > a,.not-found-page__back { display: inline-flex; width: fit-content; min-height: 48px; align-items: center; gap: 9px; padding-inline: 16px; border-radius: 12px; color: #fff; background: var(--color-primary); font-weight: 650; text-decoration: none; }
+.not-found-page__back { color: var(--color-text-secondary); background: transparent; }

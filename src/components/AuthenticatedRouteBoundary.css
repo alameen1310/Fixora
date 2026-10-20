@@ -1,0 +1,16 @@
+.authenticated-route-error {
+  display: grid;
+  min-height: 100dvh;
+  align-content: center;
+  justify-items: start;
+  gap: 12px;
+  padding: max(24px, env(safe-area-inset-top)) var(--gutter, 20px) max(24px, env(safe-area-inset-bottom));
+  color: var(--color-text-primary, #14203F);
+  background: var(--bg-app, #EEF2FA);
+}
+
+.authenticated-route-error > span { color: var(--color-primary, #2355E0); font-size: 13px; font-weight: 650; }
+.authenticated-route-error h1 { margin: 0; font-size: clamp(26px, 4vw, 34px); line-height: 1.15; }
+.authenticated-route-error p { margin: 0 0 8px; color: var(--color-text-secondary, #5B6785); }
+.authenticated-route-error a,.authenticated-route-error button { display: inline-flex; min-height: 48px; align-items: center; gap: 9px; padding: 0 16px; border: 1px solid var(--color-border, rgba(18,38,110,.08)); border-radius: 10px; color: var(--color-primary, #2355E0); background: white; font: inherit; font-weight: 650; text-decoration: none; cursor: pointer; }
+.authenticated-route-error a:focus-visible,.authenticated-route-error button:focus-visible { outline: 3px solid rgb(35 85 224 / 35%); outline-offset: 2px; }

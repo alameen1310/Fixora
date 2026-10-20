@@ -37,7 +37,7 @@ function MessageList({ conversations, loading, error, onRetry, userId, isProvide
   return (
     <aside aria-label="Conversations" className="messages-list-pane">
       <header className="messages-list__header"><div><h1>Messages</h1></div><ChatCircleDots aria-hidden="true" size={23} /></header>
-      <label className="messages-list__search"><span className="visually-hidden">Search messages</span><input onChange={(event) => setSearch(event.target.value)} placeholder="Search people or jobs" value={search} /></label>
+      <label className="messages-list__search"><span className="visually-hidden">Search messages</span><input onChange={(event) => setSearch(event.target.value)} placeholder="Search people or jobs" value={search} />{search && <button aria-label="Clear search" onClick={() => setSearch('')} type="button"><X aria-hidden="true" size={17} /></button>}</label>
       <div aria-label="Filter messages" className="messages-list__segments" role="group"><button aria-pressed={segment === 'all'} onClick={() => setSegment('all')} type="button">All</button><button aria-pressed={segment === 'unread'} onClick={() => setSegment('unread')} type="button">Unread</button></div>
       {loading ? <div className="messages-list__skeletons" role="status" aria-label="Loading conversations">{[0, 1, 2].map((item) => <Skeleton className="messages-list__skeleton" key={item} />)}</div>
         : error ? <div className="messages-list__empty" role="alert"><WarningCircle aria-hidden="true" size={28} /><p>Messages couldn’t load.</p><Button onClick={onRetry} variant="secondary">Try again</Button></div>
@@ -126,7 +126,10 @@ function ConversationThread() {
       setMessages(rows); setReactions(reactionRows); setHasEarlier(rows.length === 30)
       pendingUnread.current = rows.find((message) => message.sender_id !== user.id && !message.read_at)?.id ?? null
       if (document.visibilityState === 'visible') await markConversationRead(conversationId)
-    } catch (loadError) { setError(loadError.message || 'Could not load this conversation.') }
+    } catch (loadError) {
+      console.error('[chat-load]', { conversationId, code: loadError?.code, message: loadError?.message })
+      setError('This conversation couldn’t load. Check your connection and try again.')
+    }
     finally { setLoading(false) }
   }, [conversationId, conversationsLoading, hasConversation, user.id])
 
@@ -239,7 +242,10 @@ function ConversationThread() {
     if (!file) return
     setPhotoBusy(true)
     try { const prepared = await preparePostPhoto(file); if (photo?.preview) URL.revokeObjectURL(photo.preview); setPhoto({ file: prepared, preview: URL.createObjectURL(prepared) }) }
-    catch (photoError) { setError(photoError.message) }
+    catch (photoError) {
+      console.error('[chat-photo-prepare]', { conversationId, code: photoError?.code, message: photoError?.message })
+      setError('This photo couldn’t be prepared. Choose another image and try again.')
+    }
     finally { setPhotoBusy(false) }
   }
   async function send(text = draft, retryMessage = null) {
@@ -269,7 +275,7 @@ function ConversationThread() {
       setMessages((current) => current.map((message) => message.id === optimisticId ? { ...message, sending: false, failed: true, image_path: imagePath, file, uploadComplete, reply_to_id: replyId } : message))
     }
   }
-  function handleKeyDown(event) { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send() } }
+  function handleKeyDown(event) { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && window.matchMedia('(pointer: fine)').matches) { event.preventDefault(); void send() } }
   function handleDraftChange(value) { setDraft(value); if (channelRef.current) { void channelRef.current.send({ type: 'broadcast', event: 'typing', payload: { senderId: user.id } }); clearTimeout(typingTimer.current); typingTimer.current = setTimeout(() => { setTyping(false) }, 900) } }
 
   if (!conversation) return conversationsLoading ? <div className="messages-welcome" role="status"><Skeleton style={{ width: '72%', height: 48 }} /><Skeleton style={{ width: '56%', height: 48 }} /></div> : <div className="messages-welcome" role="status"><p>This conversation is unavailable.</p><Button as={Link} to="/app/messages" variant="secondary">Back to messages</Button></div>
@@ -277,7 +283,7 @@ function ConversationThread() {
   const quickReplies = isProvider ? ['Hello, I’m ready to start', 'What time works for you?', 'Thanks for choosing me'] : ['Hi, when can you start?', 'Can you share your quote?', 'Thanks for applying']
   return <section aria-label={'Conversation with ' + conversation.other_display_name} className="messages-thread">
     <header className="messages-thread__header"><Link aria-label="Back to messages" className="messages-thread__back" to="/app/messages"><ArrowLeft aria-hidden="true" size={21} /></Link><span className={'messages-thread__avatar' + (online ? ' is-online' : '')}><Avatar name={conversation.other_display_name} size={42} /></span><div><strong>{conversation.other_display_name}</strong><span>{typing ? 'Typing…' : online ? 'Active now' : conversation.post_title}</span></div><div className="messages-thread__actions"><Button as={Link} to={postHref} variant="secondary">View job</Button>{!isProvider && <Button aria-label="View professional profile" as={Link} to={`/app/professionals/${conversation.other_user_id}`} variant="ghost"><UserCircle aria-hidden="true" size={19} /></Button>}</div></header>
-    <div className="messages-job-context"><span className="messages-job-context__image">{conversation.cover_path ? <img alt="" src={getPostImageUrl(conversation.cover_path)} /> : <Wrench aria-hidden="true" size={20} />}</span><div><strong>{conversation.post_title}</strong><span>{conversation.post_status === 'completed' ? 'Completed' : conversation.post_status === 'closed' ? 'In progress' : 'Request'}</span></div><Button as={Link} to={!isProvider && conversation.post_status === 'closed' ? `${postHref}/complete` : postHref} variant="secondary">{!isProvider && conversation.post_status === 'closed' ? 'Mark as completed' : isProvider ? 'View request' : 'View job'}</Button></div>
+    <div className="messages-job-context"><span className="messages-job-context__image">{conversation.cover_path ? <img alt="" src={getPostImageUrl(conversation.cover_path)} /> : <Wrench aria-hidden="true" size={20} />}</span><div><strong>{conversation.post_title}</strong><span>{conversation.post_status === 'completed' ? 'Completed' : conversation.post_status === 'closed' ? 'In progress' : 'Request'}</span></div>{!isProvider && conversation.post_status === 'closed' && <Button as={Link} to={`${postHref}/complete`} variant="secondary">Mark as completed</Button>}</div>
     {error ? <div className="messages-thread__error" role="alert"><p>Messages couldn’t load.</p><Button onClick={() => void load()} variant="secondary">Retry</Button></div> : <>
       <div aria-live="polite" className="messages-thread__scroll" onScroll={onScroll} ref={scrollNode}>
         {loading && <div className="messages-thread__skeletons" role="status" aria-label="Loading messages"><Skeleton /><Skeleton /><Skeleton /></div>}

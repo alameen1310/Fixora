@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import ScrollToTop from './components/ScrollToTop.jsx'
 import PwaControls from './components/PwaControls.jsx'
 import AuthenticatedAppShell from './components/AuthenticatedAppShell.jsx'
+import AuthenticatedRouteBoundary from './components/AuthenticatedRouteBoundary.jsx'
 import { ToastProvider } from './components/ToastProvider.jsx'
 import LandingPage from './pages/LandingPage.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
@@ -29,6 +30,7 @@ const CompleteJobPage = lazy(() => import('./pages/CompleteJobPage.jsx'))
 const MessagesLayout = lazy(() => import('./pages/MessagesPage.jsx').then((module) => ({ default: module.MessagesLayout })))
 const MessagesHome = lazy(() => import('./pages/MessagesPage.jsx').then((module) => ({ default: module.MessagesHome })))
 const MessagesConversationPage = lazy(() => import('./pages/MessagesPage.jsx').then((module) => ({ default: module.ConversationThread })))
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage.jsx'))
 
 export default function App() {
   return (
@@ -50,7 +52,7 @@ export default function App() {
             <Route element={<ProtectedRoute onboarding><AccountTypePage /></ProtectedRoute>} path="/onboarding/account-type" />
             <Route element={<ProtectedRoute onboarding><OnboardingPage audience="customer" /></ProtectedRoute>} path="/onboarding/customer" />
             <Route element={<ProtectedRoute onboarding><OnboardingPage audience="provider" /></ProtectedRoute>} path="/onboarding/provider" />
-            <Route element={<ProtectedRoute><AuthenticatedAppShell /></ProtectedRoute>} path="/app">
+            <Route element={<ProtectedRoute><AuthenticatedRouteBoundary><AuthenticatedAppShell /></AuthenticatedRouteBoundary></ProtectedRoute>} path="/app">
               <Route element={<AccountHomePage />} index />
               <Route element={<DiscoverPage />} path="discover" />
               <Route element={<ActivityPage />} path="activity" />
@@ -67,7 +69,7 @@ export default function App() {
               <Route element={<PostRoleGuard customersOnly><CompleteJobPage /></PostRoleGuard>} path="posts/:postId/complete" />
               <Route element={<PostDetailPage />} path="posts/:postId" />
             </Route>
-            <Route element={<Navigate replace to="/" />} path="*" />
+            <Route element={<NotFoundPage />} path="*" />
             </Routes>
           </Suspense>
         </ToastProvider>
