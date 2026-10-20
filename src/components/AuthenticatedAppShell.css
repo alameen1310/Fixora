@@ -340,6 +340,9 @@
 .fixora-app__side-nav a { color: var(--sidebar-text); }
 .fixora-app__side-nav a:hover { color: #fff; background: var(--sidebar-hover); }
 .fixora-app__side-nav a.active { color: #fff; background: var(--sidebar-active); }
+.fixora-app__profile-nav a { color: var(--sidebar-text); }
+.fixora-app__profile-nav a:hover { color: #fff; background: var(--sidebar-hover); }
+.fixora-app__profile-nav a.active { color: #fff; background: var(--sidebar-active); }
 .fixora-app__sidebar-account { color: #fff; background: var(--sidebar-account); }
 .fixora-app__post-button { background: linear-gradient(135deg, var(--sidebar-post-start), var(--sidebar-post-end)); box-shadow: 0 8px 20px rgb(35 85 224 / 24%); }
 
@@ -452,10 +455,16 @@
   .fixora-app__sidebar-brand .fixora-logo__mark { flex: 0 0 36px; }
   .fixora-app__side-nav { display: grid; width: 100%; gap: 8px; margin-top: 32px; }
   .fixora-app__side-nav a { display: grid; width: 52px; height: 48px; margin-inline: auto; place-items: center; border-radius: 14px; color: var(--color-text-secondary); text-decoration: none; transition: background-color 180ms ease, color 180ms ease; }
+  .fixora-app__profile-nav { display:grid; width:100%; margin-top:auto; padding-top:12px; border-top:1px solid rgb(255 255 255 / 14%); }
+  .fixora-app__profile-nav a { display:grid; width:52px; height:48px; margin-inline:auto; place-items:center; border-radius:14px; color:var(--sidebar-text); text-decoration:none; transition:background-color 180ms ease,color 180ms ease; }
+  .fixora-app__profile-nav a:hover,.fixora-app__profile-nav a.active { color:#fff; background:var(--sidebar-active); }
+  .fixora-app__profile-nav a:focus-visible { outline-offset:2px; }
+  .fixora-app__profile-nav a span { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+  .fixora-app__sidebar > .account-menu { width:100%; margin-top:10px; }
   .fixora-app__side-nav a span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   .fixora-app__side-nav a:hover, .fixora-app__side-nav a.active { color: var(--color-primary); background: var(--color-pale-blue); }
   .fixora-app__side-nav a:focus-visible { outline-offset: 2px; }
-  .fixora-app__sidebar-account { display: grid; width: 52px; min-height: 52px; margin-top: auto; place-items: center; border-radius: 16px; color: var(--color-text-primary); text-decoration: none; }
+  .fixora-app__sidebar-account { display: grid; width: 52px; min-height: 52px; place-items: center; border-radius: 16px; color: var(--color-text-primary); text-decoration: none; }
   .fixora-app__sidebar-account span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   .fixora-app__viewport { min-height: 100dvh; margin-left: 76px; padding: 32px; }
 }
@@ -465,6 +474,9 @@
   .fixora-app__sidebar-brand { width: fit-content; overflow: visible; font-size: 1.58rem; }
   .fixora-app__side-nav { margin-top: 40px; }
   .fixora-app__side-nav a { display: flex; width: 100%; height: 48px; justify-content: flex-start; gap: 14px; padding: 0 14px; border-radius: 13px; font-size: var(--type-body); font-weight: 650; }
+  .fixora-app__profile-nav { padding-top:14px; }
+  .fixora-app__profile-nav a { display:flex; width:100%; height:48px; justify-content:flex-start; gap:14px; padding:0 14px; border-radius:13px; font-size:var(--type-body); font-weight:650; }
+  .fixora-app__profile-nav a span { position:static; width:auto; height:auto; overflow:visible; clip-path:none; }
   .fixora-app__side-nav a span, .fixora-app__sidebar-account span { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
   .fixora-app__post-slot { margin-top: 18px; }
 .fixora-app__post-button { display: flex; width: 100%; min-height: 50px; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 14px; color: #fff; background: linear-gradient(145deg, #3266e6, #1946b8); font: inherit; font-weight: 700; text-decoration: none; transition: transform 160ms var(--ease-standard), box-shadow 160ms var(--ease-standard); }

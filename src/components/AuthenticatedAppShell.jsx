@@ -42,7 +42,6 @@ export default function AuthenticatedAppShell() {
     { label: isProvider ? 'Find work' : 'Discover', to: '/app/discover', icon: isProvider ? Briefcase : Compass },
     { label: 'Activity', to: '/app/activity', icon: ClockCounterClockwise },
     ...(FEATURES.chat ? [{ label: 'Messages', to: '/app/messages', icon: ChatCircleDots }] : []),
-    { label: 'Profile', to: '/app/profile', icon: UserCircle },
   ]
   const isChatRoute = location.pathname.startsWith('/app/messages')
   const isTabRoute = destinations.some(({ to }) => location.pathname === to)
@@ -163,6 +162,7 @@ export default function AuthenticatedAppShell() {
           ))}
         </nav>
         {showPostAction ? <div className="fixora-app__post-slot"><Link className="fixora-app__post-button" to="/app/posts/new"><Plus aria-hidden="true" size={20} />Post a problem</Link></div> : isProvider && <div className="fixora-app__post-slot"><Link className="fixora-app__post-button" to="/app/discover"><Briefcase aria-hidden="true" size={20} />Find work</Link></div>}
+        <nav aria-label="Account navigation" className="fixora-app__profile-nav"><NavLink aria-label="Profile" end title="Profile" to="/app/profile">{({ isActive }) => <><UserCircle aria-hidden="true" size={22} weight={isActive ? 'fill' : 'regular'} /><span>Profile</span></>}</NavLink></nav>
         <AccountMenu firstName={firstName} isProvider={isProvider} profile={profile} user={user} />
       </aside>
 
