@@ -146,8 +146,14 @@ export function SelectField({ children, error, hint, label, id, ...props }) {
 }
 
 export function SegmentedControl({ label, options, value, onChange }) {
+  const selectedIndex = Math.max(0, options.findIndex((option) => option.value === value))
+  const thumbStyle = {
+    width: `calc((100% - 8px - ${(options.length - 1) * 4}px) / ${options.length})`,
+    transform: `translateX(calc(${selectedIndex * 100}% + ${selectedIndex * 4}px))`,
+  }
   return (
     <div aria-label={label} className="ui-segmented-control" role="group" style={{ '--segmented-count': options.length }}>
+      <span aria-hidden="true" className="ui-segmented-control__thumb" style={thumbStyle} />
       {options.map((option) => (
         <button
           aria-pressed={option.value === value}

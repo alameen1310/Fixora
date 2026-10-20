@@ -667,3 +667,27 @@
     animation-duration: 1.4s;
   }
 }
+
+/* Shared design tokens: controls are consistent and labels never stretch in grids. */
+.ui-button { min-height: 52px; border-radius: var(--radius-sm); transition: transform var(--motion-fast) var(--ease-standard), opacity var(--motion-fast) var(--ease-standard); }
+.ui-button--secondary { min-height: 48px; }
+.ui-button--compact { min-height: 40px; padding-block: 0.45rem; font-size: var(--type-footnote); }
+.ui-button:active:not(:disabled), .ui-icon-button:active:not(:disabled), .ui-list-row:active:not(:disabled), .ui-chip:active { transform: scale(.98); }
+.ui-button--primary { background: var(--color-primary); background-image: none; box-shadow: none; }
+.ui-button--primary:hover { background: var(--color-primary-hover); }
+.ui-icon-button { border-radius: var(--radius-sm); }
+.ui-card, .ui-list-group { border-color: var(--color-border); border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
+.ui-segmented-control { position: relative; isolation: isolate; border-radius: 999px; }
+.ui-segmented-control__thumb { position: absolute; z-index: 0; inset: 4px auto 4px 4px; border-radius: 999px; background: #fff; box-shadow: 0 1px 4px rgba(16,32,96,.10); transition: transform 200ms var(--ease-standard); pointer-events: none; }
+.ui-segmented-control button { position: relative; z-index: 1; background: transparent !important; box-shadow: none !important; }
+.ui-segmented-control button.is-selected { color: var(--color-primary-dark); }
+.ui-chip { min-height: 44px; border-radius: var(--radius-pill); }
+.ui-badge { display: inline-flex; width: max-content; max-width: 100%; min-height: 28px; height: 28px; flex: 0 0 auto; align-items: center; justify-content: center; justify-self: start; padding: 0 11px; border-radius: var(--radius-pill); font-size: 12px; line-height: 1; white-space: nowrap; }
+.ui-badge--success { color: #166b43; background: var(--color-success-surface); }
+.ui-badge--info { color: #1B44BF; background: var(--color-pale-blue); }
+.ui-badge--warning { color: #80520e; background: var(--color-warning-surface); }
+.ui-badge--danger { color: #9f1c1c; background: var(--color-danger-surface); }
+.ui-field input, .ui-field select, .ui-field textarea { border-radius: var(--radius-sm); }
+.ui-field input, .ui-field select, .ui-field textarea { font-size: 16px; }
+@media (prefers-reduced-motion: reduce) { .ui-segmented-control__thumb { transition: none; } }
+@media (prefers-contrast: more) { .ui-badge { border: 1px solid currentColor; } }
