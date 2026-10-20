@@ -12,6 +12,10 @@ import './ProviderFindWork.css'
 const columns = 'id, author_id, title, description, category_id, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, status, created_at, published_at, service_categories(name, slug), problem_post_images(storage_path, sort_order, kind)'
 const PAGE_SIZE = 24
 const normalize = (value) => String(value || '').trim().toLowerCase().replace(/\s+state$/, '')
+const budgetValue = (value) => {
+  const digits = String(value || '').replace(/\D/g, '')
+  return digits ? Number(digits) : null
+}
 
 export default function ProviderFindWork() {
   const { user } = useAuth()
@@ -64,6 +68,15 @@ export default function ProviderFindWork() {
   const load = useCallback(async (append = false) => {
     if (!append) { setLoading(true); setError(false); cursor.current = null }
     else setLoadingMore(true)
+    const minimum = budgetValue(minBudget)
+    const maximum = budgetValue(maxBudget)
+    if (minimum !== null && maximum !== null && minimum > maximum) {
+      setRows([])
+      setHasMore(false)
+      setLoading(false)
+      setLoadingMore(false)
+      return
+    }
     try {
       let query = supabase.from('problem_posts').select(columns).eq('status', 'open').not('published_at', 'is', null).neq('author_id', user.id)
       if (category) query = query.eq('category_id', category)
@@ -72,8 +85,12 @@ export default function ProviderFindWork() {
         const age = within === '24h' ? 24 : 168
         query = query.gte('created_at', new Date(Date.now() - age * 60 * 60 * 1000).toISOString())
       }
-      if (minBudget) query = query.gte('budget_max_naira', Number(minBudget.replaceAll(',', '')))
-      if (maxBudget) query = query.lte('budget_min_naira', Number(maxBudget.replaceAll(',', '')))
+      if (minimum !== null) {
+        // A request matches when its budget range reaches the selected minimum.
+        // Fixed-price posts store the amount in budget_min_naira with no maximum.
+        query = query.or(`budget_max_naira.gte.${minimum},and(budget_max_naira.is.null,budget_min_naira.gte.${minimum})`)
+      }
+      if (maximum !== null) query = query.lte('budget_min_naira', maximum)
       if (append && cursor.current && sort === 'newest') query = query.or(`created_at.lt.${cursor.current.created_at},and(created_at.eq.${cursor.current.created_at},id.lt.${cursor.current.id})`)
       if (append && cursor.current && sort === 'budget') {
         query = cursor.current.budget_max_naira === null
@@ -115,7 +132,7 @@ export default function ProviderFindWork() {
   function clearFilters() { setSearch(''); setCategory(''); setMinBudget(''); setMaxBudget(''); setWithin('any'); setMatchesOnly(true); setSort('newest') }
 
   const activeFilterCount = Number(Boolean(category)) + Number(Boolean(minBudget)) + Number(Boolean(maxBudget)) + Number(within !== 'any') + Number(sort !== 'newest')
-  const filterControls = <><h2>Filters</h2><div><strong>Service</strong><div className="provider-find-work__chips">{[...myCategories, ...categories.filter((item) => !categoryIds.includes(item.id))].map((item) => <Chip key={item.id} onClick={() => setCategory(category === item.id ? '' : item.id)} selected={category === item.id}>{item.name}</Chip>)}</div></div><div className="provider-find-work__budget"><strong>Budget (₦)</strong><input aria-label="Minimum budget" inputMode="numeric" onChange={(event) => setMinBudget(event.target.value)} placeholder="Min" value={minBudget} /><input aria-label="Maximum budget" inputMode="numeric" onChange={(event) => setMaxBudget(event.target.value)} placeholder="Max" value={maxBudget} /></div><label><span>Posted within</span><select onChange={(event) => setWithin(event.target.value)} value={within}><option value="24h">24 hours</option><option value="7d">7 days</option><option value="any">Any time</option></select></label><label><span>Sort</span><select onChange={(event) => setSort(event.target.value)} value={sort}><option value="newest">Newest</option><option value="budget">Budget high to low</option></select></label><Button onClick={clearFilters} variant="secondary">Clear filters</Button></>
+  const filterControls = <><h2>Filters</h2><div><strong>Service</strong><div className="provider-find-work__chips">{[...myCategories, ...categories.filter((item) => !categoryIds.includes(item.id))].map((item) => <Chip key={item.id} onClick={() => setCategory(category === item.id ? '' : item.id)} selected={category === item.id}>{item.name}</Chip>)}</div></div><div className="provider-find-work__budget"><strong>Budget (₦)</strong><input aria-label="Minimum budget" inputMode="numeric" onChange={(event) => setMinBudget(event.target.value.replace(/\D/g, ''))} placeholder="Min" value={minBudget} /><input aria-label="Maximum budget" inputMode="numeric" onChange={(event) => setMaxBudget(event.target.value.replace(/\D/g, ''))} placeholder="Max" value={maxBudget} />{budgetValue(minBudget) !== null && budgetValue(maxBudget) !== null && budgetValue(minBudget) > budgetValue(maxBudget) && <span className="provider-find-work__budget-error">Minimum must not exceed maximum.</span>}</div><label><span>Posted within</span><select onChange={(event) => setWithin(event.target.value)} value={within}><option value="24h">24 hours</option><option value="7d">7 days</option><option value="any">Any time</option></select></label><label><span>Sort</span><select onChange={(event) => setSort(event.target.value)} value={sort}><option value="newest">Newest</option><option value="budget">Budget high to low</option></select></label><Button onClick={clearFilters} variant="secondary">Clear filters</Button></>
 
   return <main className="provider-find-work app-page">
     <header className="provider-find-work__header"><h1>Find work</h1><label className="provider-find-work__search"><MagnifyingGlass aria-hidden="true" size={19} /><span className="visually-hidden">Search requests</span><input onChange={(event) => setSearch(event.target.value)} placeholder="Search title, service or location" value={search} /></label><label className="provider-find-work__toggle"><input checked={matchesOnly} onChange={(event) => setMatchesOnly(event.target.checked)} type="checkbox" /><span>Matches my services</span></label></header>

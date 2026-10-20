@@ -16,6 +16,7 @@
 .provider-find-work__chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .provider-find-work__budget { grid-template-columns: 1fr 1fr; }
 .provider-find-work__budget strong { grid-column: 1/-1; }
+.provider-find-work__budget-error { grid-column: 1/-1; color: var(--color-danger, #b42318); font-size: 12px; }
 .provider-find-work__budget input,.provider-find-work__filters select { width: 100%; min-height: 40px; padding: 0 10px; border: 1px solid var(--color-separator); border-radius: 9px; color: var(--color-text-primary); background: #fff; font: inherit; font-size: 13px; }
 .provider-find-work__results { min-width: 0; }
 .provider-find-work__list { display: grid; grid-template-columns: repeat(auto-fill,minmax(min(100%,340px),1fr)); align-items: stretch; gap: 16px; }
