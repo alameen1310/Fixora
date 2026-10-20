@@ -497,6 +497,20 @@
 @media (min-width: 768px) and (max-width: 1023px) {
   .fixora-app__side-nav a.fixora-app__messages-nav { display: grid; width: 52px; height: 48px; padding: 0; place-items: center; }
 }
+
+/* Keep the desktop shell fully themed when a lazy-loaded page has not added its CSS yet. */
+@media (min-width: 768px) {
+  .fixora-app__sidebar {
+    border: 0;
+    background: linear-gradient(180deg, var(--sidebar-start), var(--sidebar-end));
+  }
+  .fixora-app__sidebar-brand { color: #fff; filter: brightness(0) invert(1); }
+  .fixora-app__side-nav a { color: var(--sidebar-text); }
+  .fixora-app__side-nav a:hover { color: #fff; background: var(--sidebar-hover); }
+  .fixora-app__side-nav a.active { color: #fff; background: var(--sidebar-active); }
+  .fixora-app__sidebar-account { color: #fff; background: var(--sidebar-account); }
+}
+
 @media (max-width: 767px) {
   .fixora-app.is-chat-route .fixora-app__viewport { padding: 0; }
 }
