@@ -352,7 +352,7 @@
 .messages-thread__header .messages-thread__identity { display:grid; min-width:0; flex:1 1 auto; gap:2px; }
 .messages-thread__identity strong { font-size:16px; font-weight:650; }
 .messages-thread__identity span { max-width:100%; color:var(--color-text-secondary); font-size:12px; }
-.messages-thread__actions { flex:0 0 auto; }
+.messages-thread__header .messages-thread__actions { display:flex; flex:0 0 auto; align-items:center; gap:6px; }
 .messages-thread__actions .ui-button { min-height:40px; }
 .messages-thread__actions .ui-button:last-child { width:40px; padding:0; border-radius:50%; }
 .messages-thread__avatar { width:40px !important; height:40px !important; flex-basis:40px !important; }
