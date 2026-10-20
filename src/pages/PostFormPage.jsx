@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Image as ImageIcon, MapPin, X } from '@phosphor-icons/react'
+import { ArrowLeft, Camera, Image as ImageIcon, MapPin, X } from '@phosphor-icons/react'
 import { Button, Chip, InputField, SegmentedControl, SelectField, Skeleton } from '../components/UiPrimitives.jsx'
 import MarketplaceDoodle from '../components/MarketplaceDoodle.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -47,6 +47,7 @@ function PostFormPage({ editing = false }) {
   const [stagedId, setStagedId] = useState(null)
   const [uploaded, setUploaded] = useState(new Set())
   const [previewPhoto, setPreviewPhoto] = useState(null)
+  const [photoDragOver, setPhotoDragOver] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -58,7 +59,7 @@ function PostFormPage({ editing = false }) {
       if (!active) return
       if (categoryError) setError('We couldn’t load service categories. Check your connection and retry.')
       setCategories(categoryRows ?? [])
-      if (savedDraft) setValues((current) => ({ ...current, ...savedDraft }))
+      if (savedDraft) setValues((current) => ({ ...current, ...savedDraft, category_id: '', region: '', city: '' }))
       if (editing) {
         const { data, error: loadError } = await supabase.from('problem_posts').select(editColumns).eq('id', postId).maybeSingle()
         if (!active) return
@@ -93,6 +94,23 @@ function PostFormPage({ editing = false }) {
     document.addEventListener('keydown', closeOnEscape)
     return () => document.removeEventListener('keydown', closeOnEscape)
   }, [previewPhoto])
+
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return undefined
+    const updateKeyboardOffset = () => {
+      const offset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
+      document.documentElement.style.setProperty('--keyboard-offset', `${offset}px`)
+    }
+    updateKeyboardOffset()
+    viewport.addEventListener('resize', updateKeyboardOffset)
+    viewport.addEventListener('scroll', updateKeyboardOffset)
+    return () => {
+      viewport.removeEventListener('resize', updateKeyboardOffset)
+      viewport.removeEventListener('scroll', updateKeyboardOffset)
+      document.documentElement.style.removeProperty('--keyboard-offset')
+    }
+  }, [])
 
   function set(key, value) { setValues((current) => ({ ...current, [key]: value })); setError('') }
   async function selectPhotos(files) {
@@ -228,7 +246,7 @@ function PostFormPage({ editing = false }) {
       {error && <p className="post-form-error" role="alert">{error}</p>}
       <div className="post-form-workspace">
       <section className={`post-form-content post-form-content--step-${step}`}>
-        {step === 1 && <><InputField id="post-title" label="Title" maxLength={120} onChange={(event) => set('title', event.target.value)} placeholder="What needs fixing?" value={values.title} />{photosEditable && <label className="post-photo-picker">Add photos (optional)<input accept="image/*" multiple onChange={(event) => { void selectPhotos(event.target.files); event.target.value = '' }} type="file" /></label>}<div className="post-photo-list">{existing.map((image) => <div className="post-photo-item" key={image.storage_path}>{existingUrls[image.storage_path] ? <button aria-label={`Preview photo ${image.sort_order + 1}`} className="post-photo-item__preview" onClick={() => setPreviewPhoto({ src: existingUrls[image.storage_path], alt: `Existing post photo ${image.sort_order + 1}` })} type="button"><img alt="" src={existingUrls[image.storage_path]} /><span>Preview</span></button> : <div className="post-photo-item__missing"><ImageIcon aria-hidden="true" size={24} /><span>Photo unavailable</span></div>}<div className="post-photo-item__details"><strong>Photo {image.sort_order + 1}</strong>{photosEditable && <button aria-label={`Remove photo ${image.sort_order + 1}`} className="post-photo-item__remove" disabled={saving} onClick={() => void removeExistingPhoto(image).catch(() => setError('Could not remove this photo. Try again.'))} type="button"><X size={18} /></button>}</div></div>)}{photos.map((photo, index) => <div className="post-photo-item" key={photo.url}><button aria-label={`Preview selected photo ${index + 1}`} className="post-photo-item__preview" onClick={() => setPreviewPhoto({ src: photo.url, alt: `Selected post photo ${index + 1}` })} type="button"><img alt="" src={photo.url} /><span>Preview</span></button><div className="post-photo-item__details"><strong>{photo.name}</strong><button aria-label={`Remove photo ${index + 1}`} className="post-photo-item__remove" onClick={() => void removePhoto(index)} type="button"><X size={18} /></button></div></div>)}</div>{!editing && <small>Photos are not saved in drafts. Avoid faces, documents, or valuables.</small>}</>}
+        {step === 1 && <><InputField id="post-title" label="Title" maxLength={120} onChange={(event) => set('title', event.target.value)} placeholder="What needs fixing?" value={values.title} />{photosEditable && <label className={`post-photo-picker${photoDragOver ? ' is-drag-over' : ''}`} onDragEnter={(event) => { event.preventDefault(); setPhotoDragOver(true) }} onDragOver={(event) => event.preventDefault()} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPhotoDragOver(false) }} onDrop={(event) => { event.preventDefault(); setPhotoDragOver(false); void selectPhotos(event.dataTransfer.files) }}><Camera aria-hidden="true" size={27} /><strong>Add photos</strong><span>Up to 5. JPG or PNG</span><input accept="image/jpeg,image/png" multiple onChange={(event) => { void selectPhotos(event.target.files); event.target.value = '' }} type="file" /></label>}<div className="post-photo-list">{existing.map((image) => <div className="post-photo-item" key={image.storage_path}>{existingUrls[image.storage_path] ? <button aria-label={`Preview photo ${image.sort_order + 1}`} className="post-photo-item__preview" onClick={() => setPreviewPhoto({ src: existingUrls[image.storage_path], alt: `Existing post photo ${image.sort_order + 1}` })} type="button"><img alt="" src={existingUrls[image.storage_path]} /><span>Preview</span></button> : <div className="post-photo-item__missing"><ImageIcon aria-hidden="true" size={24} /><span>Photo unavailable</span></div>}<div className="post-photo-item__details"><strong>Photo {image.sort_order + 1}</strong>{photosEditable && <button aria-label={`Remove photo ${image.sort_order + 1}`} className="post-photo-item__remove" disabled={saving} onClick={() => void removeExistingPhoto(image).catch(() => setError('Could not remove this photo. Try again.'))} type="button"><X size={18} /></button>}</div></div>)}{photos.map((photo, index) => <div className="post-photo-item" key={photo.url}><button aria-label={`Preview selected photo ${index + 1}`} className="post-photo-item__preview" onClick={() => setPreviewPhoto({ src: photo.url, alt: `Selected post photo ${index + 1}` })} type="button"><img alt="" src={photo.url} /><span>Preview</span></button><div className="post-photo-item__details"><strong>{photo.name}</strong><button aria-label={`Remove photo ${index + 1}`} className="post-photo-item__remove" onClick={() => void removePhoto(index)} type="button"><X size={18} /></button></div></div>)}</div>{!editing && <small className="post-photo-hint">Photos are not saved in drafts. Avoid faces, documents, or valuables.</small>}</>}
         {step === 2 && <><SelectField id="post-category" label="Service category" onChange={(event) => set('category_id', event.target.value)} value={values.category_id}><option value="">Choose a category</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</SelectField><label className="ui-field" htmlFor="post-description"><span className="ui-field__label">Description</span><textarea className="post-form-description" id="post-description" maxLength={2500} onChange={(event) => set('description', event.target.value)} placeholder="Describe what needs fixing, where it is, and any helpful details…" rows={7} value={values.description} /><small className="ui-field__hint">{values.description.length}/2,500</small></label></>}
         {step === 3 && <><SegmentedControl label="Budget type" onChange={(value) => set('budget_type', value)} options={budgetOptions} value={values.budget_type} />{values.budget_type !== 'open_to_quotes' && <div className="post-form-budget"><InputField id="post-min" inputMode="numeric" label={values.budget_type === 'range' ? 'Minimum (₦)' : 'Amount (₦)'} onChange={(event) => set('min', event.target.value.replace(/\D/g, ''))} value={values.min} /><output>{values.min ? new Intl.NumberFormat('en-NG').format(Number(values.min)) : ''}</output>{values.budget_type === 'range' && <InputField id="post-max" inputMode="numeric" label="Maximum (₦)" onChange={(event) => set('max', event.target.value.replace(/\D/g, ''))} value={values.max} />}</div>}<label className="post-form-switch"><input checked={values.negotiable} onChange={(event) => set('negotiable', event.target.checked)} type="checkbox" />Budget is negotiable</label><InputField id="post-region" label="State or region" onChange={(event) => set('region', event.target.value)} placeholder="e.g. Lagos State" value={values.region} /><InputField id="post-city" label="City or area" onChange={(event) => set('city', event.target.value)} placeholder="e.g. Ikeja" value={values.city} /><fieldset className="post-form-options"><legend>When do you need the work?</legend>{timings.map(([value, label]) => <Chip key={value} onClick={() => set('timing', value)} selected={values.timing === value}>{label}</Chip>)}</fieldset>{values.timing === 'specific_date' && <InputField id="post-date" label="Date" onChange={(event) => set('target_date', event.target.value)} type="date" value={values.target_date} />}<fieldset className="post-form-options"><legend>Type of work</legend>{jobTypes.map(([value, label]) => <Chip key={value} onClick={() => set('job_type', value)} selected={values.job_type === value}>{label}</Chip>)}</fieldset></>}
         {step === 4 && <div className="post-form-review">
@@ -245,6 +263,7 @@ function PostFormPage({ editing = false }) {
           <p className="post-form-review__note">Your photos are visible to signed-in Fixora users. Avoid sensitive images.</p>
         </div>}
       </section>
+      <footer className="post-form-actions">{step > 1 && <Button disabled={saving} onClick={() => setStep((current) => current - 1)} variant="secondary">Back</Button>}{step < 4 ? <Button onClick={() => { const problem = step === 1 && (!values.title.trim() || values.title.length > 120) ? 'Add a title between 1 and 120 characters.' : step === 2 && (!values.category_id || !values.description.trim()) ? 'Choose a category and describe the work.' : step === 3 && (!values.region.trim() || !values.city.trim()) ? 'Choose a state and city or area before continuing.' : ''; if (problem) setError(problem); else { setError(''); setStep((current) => current + 1) } }}>Next</Button> : <Button loading={saving} onClick={() => void publish()}>{editing ? 'Save changes' : 'Publish post'}</Button>}</footer>
       <aside aria-label="Request guidance" className="post-form-aside">
         <MarketplaceDoodle />
         <span className="app-eyebrow">As you work</span>
@@ -252,13 +271,12 @@ function PostFormPage({ editing = false }) {
         <p>Share the work needed and the area where it should happen. Keep your street address and sensitive details private.</p>
         <div className="post-form-aside__summary">
           <span>Request title</span><strong>{values.title.trim() || 'Add a short title'}</strong>
-          <span>Service</span><strong>{selectedCategory?.name || 'Choose a category'}</strong>
-          <span>Area</span><strong>{[values.city, values.region].filter(Boolean).join(', ') || 'Add a city or area'}</strong>
+          <span>Service</span><strong>{selectedCategory?.name || 'Not chosen yet'}</strong>
+          <span>Area</span><strong>{[values.city, values.region].filter(Boolean).join(', ') || 'Not chosen yet'}</strong>
         </div>
       </aside>
       </div>
       {previewPhoto && <div className="post-photo-lightbox" onClick={(event) => { if (event.target === event.currentTarget) setPreviewPhoto(null) }} role="presentation"><section aria-label="Photo preview" aria-modal="true" className="post-photo-lightbox__panel" role="dialog"><button aria-label="Close photo preview" className="post-photo-lightbox__close" onClick={() => setPreviewPhoto(null)} type="button"><X aria-hidden="true" size={22} /></button><img alt={previewPhoto.alt} src={previewPhoto.src} /></section></div>}
-      <footer className="post-form-actions">{step > 1 && <Button disabled={saving} onClick={() => setStep((current) => current - 1)} variant="secondary">Back</Button>}{step < 4 ? <Button onClick={() => { const problem = step === 1 && (!values.title.trim() || values.title.length > 120) ? 'Add a title between 1 and 120 characters.' : step === 2 && (!values.category_id || !values.description.trim()) ? 'Choose a category and describe the work.' : ''; if (problem) setError(problem); else { setError(''); setStep((current) => current + 1) } }}>Next</Button> : <Button loading={saving} onClick={() => void publish()}>{editing ? 'Save changes' : 'Publish post'}</Button>}</footer>
     </main>
   )
 }

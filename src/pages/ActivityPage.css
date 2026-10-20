@@ -38,3 +38,6 @@
 @media (prefers-reduced-motion: reduce) {
   .activity-item, .activity-read-button { transition: none; }
 }
+.activity-group { display:grid; gap:12px; }
+.activity-group h2 { margin:0 0 2px; color:var(--color-text-secondary); font-size:13px; font-weight:600; }
+@media (max-width:620px) { .activity-item { align-items:center; gap:8px; padding:16px !important; } .activity-item__actions { flex-direction:row !important; align-items:center; gap:2px; margin-left:auto; } .activity-item__actions > a,.activity-read-button { width:36px; height:36px; } }

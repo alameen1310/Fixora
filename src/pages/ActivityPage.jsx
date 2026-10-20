@@ -3,6 +3,7 @@ import { ArrowRight, Bell, CheckCircle, ClockCounterClockwise } from '@phosphor-
 import { Link } from 'react-router-dom'
 import { Avatar, Button, EmptyState, Skeleton } from '../components/UiPrimitives.jsx'
 import MarketplaceDoodle from '../components/MarketplaceDoodle.jsx'
+import MarketplaceRail from '../components/MarketplaceRail.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { fetchMarketplaceActivities, markMarketplaceActivityRead } from '../lib/applicationQueries.js'
 import './ActivityPage.css'
@@ -46,7 +47,6 @@ export default function ActivityPage() {
   return (
     <main className="app-page app-page--activity">
       <header className="app-page__heading activity-heading">
-        <span className="app-eyebrow">Your marketplace</span>
         <h1 className="text-large-title">Activity</h1>
         <p>Updates on requests and applications.</p>
       </header>
@@ -55,7 +55,10 @@ export default function ActivityPage() {
           : items.length === 0 ? <section className="activity-empty"><MarketplaceDoodle className="activity-empty__doodle" /><EmptyState action={<Button as={Link} to="/app/discover" variant="secondary">{isProvider ? 'Browse requests' : 'Discover professionals'} <ArrowRight aria-hidden="true" size={16} /></Button>} icon={Bell} message="When a professional applies or a customer makes a decision, updates will appear here." title="No activity yet" /></section>
             : <div className="activity-layout">
               <section aria-label="Recent activity" className="activity-list">
-                {items.map((item) => {
+                {['New', 'Earlier'].map((group) => {
+                  const groupedItems = items.filter((item) => group === 'New' ? !item.read_at : Boolean(item.read_at))
+                  if (!groupedItems.length) return null
+                  return <div className="activity-group" key={group}><h2>{group}</h2>{groupedItems.map((item) => {
                   const target = item.kind === 'application_received' && item.problem_posts?.id
                     ? `/app/posts/${item.post_id}/applicants`
                     : `/app/posts/${item.post_id}`
@@ -68,9 +71,10 @@ export default function ActivityPage() {
                       <Link aria-label="Open related request" to={target}><ArrowRight aria-hidden="true" size={19} /></Link>
                     </div>
                   </article>
+                  })}</div>
                 })}
               </section>
-              <aside className="activity-rail"><span className="app-eyebrow">Next step</span><h2>{isProvider ? 'Keep your profile current' : 'Stay close to your requests'}</h2><p>{isProvider ? 'Clear services and service areas help customers understand your work.' : 'Review applications from the request detail page when they arrive.'}</p><Link to={isProvider ? '/app/profile' : '/app/my-posts'}>{isProvider ? 'View profile' : 'View My Posts'} <ArrowRight aria-hidden="true" size={16} /></Link></aside>
+              {!isProvider && <MarketplaceRail userId={user.id} />}
             </div>}
     </main>
   )

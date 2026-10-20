@@ -113,9 +113,8 @@ export default function PublishedProfessionals({ categorySlug = '', limit = 12, 
           .map((area) => [area.city, area.region].filter(Boolean).join(', '))
           .filter(Boolean)
 
-        const serviceSummary = services.length > 3
-          ? `${services.slice(0, 3).join(' · ')} +${services.length - 3}`
-          : services.join(' · ')
+        const visibleServices = services.slice(0, 4)
+        const remainingServices = Math.max(0, services.length - visibleServices.length)
 
         return (
           <Link
@@ -139,9 +138,11 @@ export default function PublishedProfessionals({ categorySlug = '', limit = 12, 
               {services.length > 0 && (
                 <div className="professional-card__services">
                   <Wrench aria-hidden="true" size={15} />
-                  <span>{serviceSummary}</span>
+                  {visibleServices.map((service) => <span className="professional-service-chip" key={service}>{service}</span>)}
+                  {remainingServices > 0 && <span className="professional-service-chip">+{remainingServices}</span>}
                 </div>
               )}
+              {provider.service_description && <p className="professional-card__description">{provider.service_description}</p>}
               {areas.length > 0 && (
                 <div className="professional-card__areas">
                   <MapPin aria-hidden="true" size={15} />
