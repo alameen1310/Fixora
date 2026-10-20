@@ -110,7 +110,14 @@ export default function PostDetailPage() {
     setActionBusy(false)
     if (applyError) {
       console.error('[marketplace-write]', { step: 'apply', postId: post.id, code: applyError.code, message: applyError.message })
-      showToast({ type: 'error', message: applyError.code === '23505' ? 'You have already applied to this request.' : 'Could not submit your application. Check your connection and try again.' })
+      const message = applyError.code === '23505'
+        ? 'You have already applied to this request.'
+        : applyError.code === '42501'
+          ? 'Your application could not be accepted. Confirm your professional profile is published and the request is still open.'
+          : applyError.code === '42P17'
+            ? 'A server permission check blocked this application. Please try again; the issue has been logged.'
+            : applyError.message || 'The server could not save your application.'
+      showToast({ type: 'error', message: `Could not submit your application: ${message}${applyError.code ? ` (${applyError.code})` : ''}` })
       return
     }
     setApplication(data)

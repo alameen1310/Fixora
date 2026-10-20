@@ -1,5 +1,5 @@
-const SHELL_CACHE = 'fixora-shell-v3'
-const ASSET_CACHE = 'fixora-assets-v3'
+const SHELL_CACHE = 'fixora-shell-v4'
+const ASSET_CACHE = 'fixora-assets-v4'
 const APP_ROOT = new URL('./', self.registration.scope)
 const APP_BASE_PATH = APP_ROOT.pathname
 const appUrl = (path) => new URL(path, APP_ROOT).href
@@ -49,13 +49,7 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
-        .then(async (response) => {
-          if (response.ok && response.headers.get('content-type')?.includes('text/html')) {
-            await caches.open(SHELL_CACHE).then((cache) => cache.put(request, response.clone()))
-          }
-          return response
-        })
-        .catch(async () => (await caches.match(request)) || caches.match(APP_ROOT.href)),
+        .catch(async () => (await caches.match(APP_ROOT.href)) || Response.error()),
     )
     return
   }
