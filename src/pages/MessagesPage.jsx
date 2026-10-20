@@ -123,12 +123,14 @@ function ConversationThread() {
   const [typing, setTyping] = useState(false)
   const nearBottom = useRef(true)
   const scrollNode = useRef(null)
+  const emojiBoundaryRef = useRef(null)
   const channelRef = useRef(null)
   const typingTimer = useRef(null)
   const remoteTypingTimer = useRef(null)
   const pendingUnread = useRef(null)
   const messageNodes = useRef(new Map())
   const messagesRef = useRef([])
+  useDismissable({ boundaryRef: emojiBoundaryRef, open: emojiOpen, onDismiss: () => setEmojiOpen(false) })
   const isProvider = profile?.account_type === 'provider'
   const conversation = conversations.find((item) => item.conversation_id === conversationId)
   const online = conversation ? isOnline(conversation.other_user_id) : false
@@ -352,7 +354,7 @@ function ConversationThread() {
       <form className="messages-composer" onSubmit={(event) => { event.preventDefault(); void send() }}>
         {replyTo && <div className="messages-composer__reply"><div><strong>Replying to {replyTo.sender_id === user.id ? 'yourself' : conversation.other_display_name}</strong><span>{replyTo.deleted_at ? 'Message deleted' : replyTo.body || (replyTo.image_path ? 'Photo' : '')}</span></div><button aria-label="Cancel reply" onClick={() => setReplyTo(null)} type="button"><X size={18} /></button></div>}
         {photo && <div className="messages-composer__photo"><img alt="Photo preview" src={photo.preview} /><span>Ready to send</span><button aria-label="Remove photo" onClick={() => { URL.revokeObjectURL(photo.preview); setPhoto(null) }} type="button"><X size={18} /></button></div>}
-        <div className="messages-composer__tools"><button aria-label="Attach an image" onClick={() => document.getElementById('chat-photo')?.click()} type="button"><Camera size={20} /></button><button aria-label="Choose emoji" onClick={() => setEmojiOpen((open) => !open)} type="button"><Smiley size={20} /></button>{emojiOpen && <div className="messages-emoji-tray">{EMOJI_TRAY.map((emoji, index) => <button key={`${emoji}-${index}`} onClick={() => setDraft((value) => value + emoji)} type="button">{emoji}</button>)}</div>}<input accept="image/*" hidden id="chat-photo" onChange={(event) => { void choosePhoto(event.target.files?.[0]); event.target.value = '' }} type="file" /><span>{photoBusy ? 'Preparing photo…' : ''}</span></div>
+        <div className="messages-composer__tools" ref={emojiBoundaryRef}><button aria-label="Attach an image" onClick={() => document.getElementById('chat-photo')?.click()} type="button"><Camera size={20} /></button><button aria-label="Choose emoji" onClick={() => setEmojiOpen((open) => !open)} type="button"><Smiley size={20} /></button>{emojiOpen && <div className="messages-emoji-tray">{EMOJI_TRAY.map((emoji, index) => <button key={`${emoji}-${index}`} onClick={() => setDraft((value) => value + emoji)} type="button">{emoji}</button>)}</div>}<input accept="image/*" hidden id="chat-photo" onChange={(event) => { void choosePhoto(event.target.files?.[0]); event.target.value = '' }} type="file" /><span>{photoBusy ? 'Preparing photo…' : ''}</span></div>
         <textarea aria-label="Write a message" maxLength={2000} onBlur={() => window.scrollTo(0, 0)} onChange={(event) => handleDraftChange(event.target.value)} onFocus={() => window.scrollTo(0, 0)} onKeyDown={handleKeyDown} onPaste={(event) => { const image = [...(event.clipboardData?.items ?? [])].find((item) => item.type.startsWith('image/')); if (image) { event.preventDefault(); void choosePhoto(image.getAsFile()) } }} placeholder={conversation.post_status === 'removed' ? 'Messaging is unavailable for this request' : 'Write a message…'} readOnly={conversation.post_status === 'removed'} rows={1} value={draft} />
         <button aria-label="Send message" className="messages-composer__send" disabled={(!draft.trim() && !photo) || photoBusy || conversation.post_status === 'removed'} type="submit"><PaperPlaneRight aria-hidden="true" size={21} weight="fill" /></button>
       </form>
