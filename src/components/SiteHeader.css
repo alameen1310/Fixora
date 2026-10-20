@@ -126,6 +126,7 @@
   }
 
   .site-header__inner {
+    position: relative;
     min-height: 76px;
   }
 
@@ -161,17 +162,25 @@
   }
 
   .primary-navigation {
-    position: fixed;
+    position: absolute;
     z-index: 25;
-    inset: calc(76px + env(safe-area-inset-top)) 0 0;
+    top: 100%;
+    left: 50%;
     display: none;
     align-items: stretch;
     flex-direction: column;
     gap: 1.2rem;
-    padding: 1.1rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom));
+    width: 100vw;
+    max-height: calc(100dvh - 100px - env(safe-area-inset-top));
+    padding: 1rem max(1.5rem, calc((100vw - 720px) / 2)) 1.25rem;
     overflow-y: auto;
     overscroll-behavior: contain;
     background: var(--color-background);
+    border: 0;
+    border-bottom: 1px solid var(--color-border);
+    border-radius: 0;
+    box-shadow: none;
+    transform: translateX(-50%);
   }
 
   .primary-navigation.is-open {
