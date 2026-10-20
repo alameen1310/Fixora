@@ -178,8 +178,8 @@
     background: var(--color-background);
     border: 0;
     border-bottom: 1px solid var(--color-border);
-    border-radius: 0;
-    box-shadow: none;
+    border-radius: 0 0 22px 22px;
+    box-shadow: 0 14px 24px -14px rgb(20 32 63 / 32%);
     transform: translateX(-50%);
   }
 
