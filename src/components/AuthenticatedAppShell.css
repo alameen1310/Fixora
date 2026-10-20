@@ -448,6 +448,7 @@
     border-right: 1px solid var(--color-separator);
     background: #fff;
   }
+  .fixora-app__sidebar > .account-menu { width: 100%; margin-top: auto; }
   .fixora-app__sidebar-brand { overflow: hidden; width: 44px; font-size: 0; }
   .fixora-app__sidebar-brand .fixora-logo__mark { flex: 0 0 36px; }
   .fixora-app__side-nav { display: grid; width: 100%; gap: 8px; margin-top: 32px; }
