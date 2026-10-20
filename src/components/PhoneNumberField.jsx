@@ -16,6 +16,7 @@ export default function PhoneNumberField({
   error,
   hint = 'Kept private. Not verified at signup.',
   id = 'phone-number',
+  className = '',
   onBlur,
   onChange,
   onCountryChange,
@@ -26,7 +27,7 @@ export default function PhoneNumberField({
   const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined
 
   return (
-    <div className={`auth-field${error ? ' has-error' : ''}`}>
+    <div className={`auth-field${error ? ' has-error' : ''}${className ? ` ${className}` : ''}`}>
       <label htmlFor={id}>Phone number</label>
       <div className="auth-phone-control">
         <select

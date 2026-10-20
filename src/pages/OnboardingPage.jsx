@@ -406,7 +406,7 @@ export default function OnboardingPage({ audience }) {
                   <div className="onboarding-contact-fields">
                     <Field error={fieldErrors.fullName} id="onboarding-full-name" label="Full name" onChange={(value) => update('fullName', value)} value={values.fullName} />
                     {user?.user_metadata?.name && !profile?.full_name && <p className="onboarding-hint">Suggested from your Google account; change it if needed. It isn’t identity verification.</p>}
-                    <PhoneNumberField country={values.phoneCountry} error={fieldErrors.phone} onChange={(value) => update('phone', value)} onCountryChange={(value) => update('phoneCountry', value)} value={values.phone} />
+                    <PhoneNumberField className="onboarding-phone-field" country={values.phoneCountry} error={fieldErrors.phone} onChange={(value) => update('phone', value)} onCountryChange={(value) => update('phoneCountry', value)} value={values.phone} />
                     <p className="onboarding-hint">Your phone number is saved securely and privately with your account. It is never displayed publicly.</p>
                     {!isProvider && contactAlreadySaved && <button className="onboarding-text-action" onClick={() => setEditingContact(false)} type="button">Cancel editing</button>}
                   </div>

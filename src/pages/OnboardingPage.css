@@ -314,6 +314,39 @@
   gap: 1rem;
 }
 
+/*
+  Phone field styling starter kit (onboarding only).
+  The class is passed to PhoneNumberField from OnboardingPage.jsx.
+  Add your styles inside these blocks, they are ready for you to fill in
+*/
+.onboarding-phone-field {
+  /* The whole phone field including its label, controls, hint, and error */
+}
+
+.onboarding-phone-field > label {
+  /* The Phone number label */
+}
+
+.onboarding-phone-field .auth-phone-control {
+  /* The layout and spacing for the country selector and number box */
+}
+
+.onboarding-phone-field .auth-phone-control select {
+  /* The country and calling code selector box */
+}
+
+.onboarding-phone-field .auth-phone-control input {
+  /* The box where the phone number is entered */
+}
+
+.onboarding-phone-field .auth-field__hint {
+  /* The small helper text inside the phone field */
+}
+
+.onboarding-phone-field .auth-field__error {
+  /* The message shown when the phone number needs fixing */
+}
+
 .onboarding-hint {
   margin: -0.25rem 0 0;
   color: var(--color-text-tertiary);
