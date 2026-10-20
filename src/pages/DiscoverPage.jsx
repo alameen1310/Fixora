@@ -8,6 +8,7 @@ import { PostsFeed } from '../components/PostsFeed.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import './AuthenticatedPages.css'
+import ProviderFindWork from '../components/ProviderFindWork.jsx'
 
 export default function DiscoverPage() {
   const { profile, user } = useAuth()
@@ -30,6 +31,7 @@ export default function DiscoverPage() {
   }, [])
 
   useEffect(() => {
+    if (isProvider) return undefined
     let active = true
     supabase?.from('service_categories').select('name, slug').order('name')
       .then(({ data }) => {
@@ -38,7 +40,7 @@ export default function DiscoverPage() {
     return () => {
       active = false
     }
-  }, [])
+  }, [isProvider])
 
   useEffect(() => {
     if (searchParams.get('focus') === 'true') {
@@ -73,11 +75,12 @@ export default function DiscoverPage() {
     searchInputRef.current?.focus()
   }
 
+  if (isProvider) return <ProviderFindWork />
+
   return (
     <main className="app-page app-page--discover">
       <header className="app-page__heading">
         <h1 className="text-large-title">Discover professionals</h1>
-        <p>Explore published profiles and service areas across Nigeria.</p>
       </header>
 
       <div className="discover-controls">

@@ -1,18 +1,11 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { ChatCircleDots, ClockCounterClockwise, Compass, House, Plus, UserCircle } from '@phosphor-icons/react'
+import { Briefcase, ChatCircleDots, ClockCounterClockwise, Compass, House, Plus, UserCircle } from '@phosphor-icons/react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { Avatar, Logo } from './UiPrimitives.jsx'
 import { FEATURES } from '../config/features.js'
 import useUnreadMessageCount from './useUnreadMessageCount.js'
 import './AuthenticatedAppShell.css'
-
-const destinations = [
-  { label: 'Home', to: '/app', icon: House, end: true },
-  { label: 'Discover', to: '/app/discover', icon: Compass },
-  { label: 'Activity', to: '/app/activity', icon: ClockCounterClockwise },
-  { label: 'Profile', to: '/app/profile', icon: UserCircle },
-]
 
 export default function AuthenticatedAppShell() {
   const { profile, user } = useAuth()
@@ -24,6 +17,14 @@ export default function AuthenticatedAppShell() {
     || (location.pathname === '/app/my-posts' ? 'My Posts' : location.pathname.startsWith('/app/posts/') ? 'Post' : 'Professional')
   const isTabRoute = destinations.some(({ to }) => location.pathname === to)
   const isCustomer = profile?.account_type === 'customer'
+  const isProvider = profile?.account_type === 'provider'
+  const destinations = [
+    { label: 'Home', to: '/app', icon: House, end: true },
+    { label: isProvider ? 'Find work' : 'Discover', to: '/app/discover', icon: isProvider ? Briefcase : Compass },
+    { label: 'Activity', to: '/app/activity', icon: ClockCounterClockwise },
+    ...(FEATURES.chat ? [{ label: 'Messages', to: '/app/messages', icon: ChatCircleDots }] : []),
+    { label: 'Profile', to: '/app/profile', icon: UserCircle },
+  ]
   const showPostAction = FEATURES.posts && isCustomer
   const [showCompactTitle, setShowCompactTitle] = useState(false)
   const [keyboardOpen, setKeyboardOpen] = useState(false)
@@ -72,15 +73,12 @@ export default function AuthenticatedAppShell() {
         <Logo className="fixora-app__sidebar-brand" to="/app" />
         <nav aria-label="Main navigation" className="fixora-app__side-nav">
           {destinations.map(({ label, to, icon: Icon, end }) => (
-            <NavLink aria-label={label} end={end} key={label} title={label} to={to}>
-              {({ isActive }) => <><Icon aria-hidden="true" size={22} weight={isActive ? 'fill' : 'regular'} /><span>{label}</span></>}
+            <NavLink aria-label={label} className={to === '/app/messages' ? 'fixora-app__messages-nav' : undefined} end={end} key={label} title={label} to={to}>
+              {({ isActive }) => <><Icon aria-hidden="true" size={22} weight={isActive ? 'fill' : 'regular'} /><span>{label}</span>{to === '/app/messages' && unreadMessages > 0 && <span aria-label={`${unreadMessages} unread messages`} className="fixora-app__unread-badge">{unreadMessages > 99 ? '99+' : unreadMessages}</span>}</>}
             </NavLink>
           ))}
-          {FEATURES.chat && <NavLink aria-label="Messages" className="fixora-app__messages-nav" title="Messages" to="/app/messages">
-            {({ isActive }) => <><ChatCircleDots aria-hidden="true" size={22} weight={isActive ? 'fill' : 'regular'} /><span>Messages</span>{unreadMessages > 0 && <span aria-label={`${unreadMessages} unread messages`} className="fixora-app__unread-badge">{unreadMessages > 99 ? '99+' : unreadMessages}</span>}</>}
-          </NavLink>}
         </nav>
-        {showPostAction && <div className="fixora-app__post-slot"><Link className="fixora-app__post-button" to="/app/posts/new"><Plus aria-hidden="true" size={20} />Post a problem</Link></div>}
+        {showPostAction ? <div className="fixora-app__post-slot"><Link className="fixora-app__post-button" to="/app/posts/new"><Plus aria-hidden="true" size={20} />Post a problem</Link></div> : isProvider && <div className="fixora-app__post-slot"><Link className="fixora-app__post-button" to="/app/discover"><Briefcase aria-hidden="true" size={20} />Find work</Link></div>}
         <Link aria-label="View your profile" className="fixora-app__sidebar-account" to="/app/profile">
           <Avatar name={profile?.full_name || 'Account'} size={40} />
           <span>{firstName}</span>
@@ -112,8 +110,8 @@ export default function AuthenticatedAppShell() {
         <Outlet />
       </div>
 
-      <nav aria-label="Mobile navigation" className={`fixora-app__mobile-nav${hideTabBar ? ' is-hidden' : ''}${showPostAction ? ' has-post-action' : ''}`}>
-        {destinations.map(({ label, to, icon: Icon, end }) => (
+      <nav aria-label="Mobile navigation" className={`fixora-app__mobile-nav${hideTabBar ? ' is-hidden' : ''}${showPostAction ? ' has-post-action' : ''}${isProvider ? ' has-messages' : ''}`}>
+        {destinations.filter(({ to }) => showPostAction ? to !== '/app/messages' : true).map(({ label, to, icon: Icon, end }) => (
           <NavLink
             className={({ isActive }) => `fixora-app__mobile-link${isActive ? ' is-active' : ''}`}
             end={end}
@@ -125,6 +123,7 @@ export default function AuthenticatedAppShell() {
               <>
                 <Icon aria-hidden="true" size={24} weight={isActive ? 'fill' : 'regular'} />
                 <span>{label}</span>
+                {to === '/app/messages' && unreadMessages > 0 && <span aria-label={`${unreadMessages} unread messages`} className="fixora-app__unread-badge">{unreadMessages > 99 ? '99+' : unreadMessages}</span>}
               </>
             )}
           </NavLink>

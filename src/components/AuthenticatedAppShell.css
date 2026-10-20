@@ -269,6 +269,8 @@
 }
 .fixora-app__mobile-nav.is-hidden { transform: translateY(calc(100% + 20px)); opacity: 0; pointer-events: none; }
 .fixora-app__mobile-link { min-height: 48px; position: relative; z-index: 1; gap: 2px; font-size: 11px; }
+.fixora-app__mobile-nav.has-messages { grid-template-columns: repeat(5,minmax(0,1fr)); }
+.fixora-app__mobile-nav.has-messages .fixora-app__unread-badge { position:absolute; top:2px; right:calc(50% - 21px); }
 .fixora-app__mobile-link svg { padding: 2px; box-sizing: content-box; border-radius: 12px; }
 .fixora-app__mobile-link.is-active svg { background: var(--color-pale-blue); }
 .fixora-app__mobile-link:active { transform: scale(.96); }
