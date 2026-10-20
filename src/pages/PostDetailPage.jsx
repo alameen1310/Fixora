@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { ArrowLeft, CalendarBlank, DotsThree, MapPin, Wrench } from '@phosphor-icons/react'
 import { Star } from '@phosphor-icons/react'
 import { Link, useParams } from 'react-router-dom'
-import { ActionSheet, Avatar, Badge, Button, Skeleton } from '../components/UiPrimitives.jsx'
+import { ActionSheet, Avatar, Badge, Button, ProviderTypeBadge, Skeleton } from '../components/UiPrimitives.jsx'
 import { fetchProblemPost, formatNaira, formatPostBudget, formatRelativeTime } from '../lib/postQueries.js'
 import { getPostImageUrl } from '../lib/postImages.js'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -11,6 +11,8 @@ import { useToast } from '../components/ToastProvider.jsx'
 import { fetchMyApplication, fetchPostApplicationCount } from '../lib/applicationQueries.js'
 import BeforeAfterSlider from '../components/BeforeAfterSlider.jsx'
 import { FEATURES } from '../config/features.js'
+import { avatarUrl } from '../lib/avatarImages.js'
+import { usePresence } from '../components/PresenceProvider.jsx'
 import '../components/Posts.css'
 
 function ReviewStars({ rating }) {
@@ -21,6 +23,7 @@ export default function PostDetailPage() {
   const { postId } = useParams()
   const { user, profile } = useAuth()
   const { showToast } = useToast()
+  const { isOnline, refreshPresence } = usePresence()
   const [post, setPost] = useState(null)
   const [imageUrls, setImageUrls] = useState({})
   const [activePhoto, setActivePhoto] = useState(0)
@@ -64,7 +67,7 @@ export default function PostDetailPage() {
       setImageUrls(Object.fromEntries(result.images.map(({ storage_path }) => [storage_path, getPostImageUrl(storage_path)])))
       if (result.status === 'completed' && result.hired_professional_id) {
         const [providerResult, reviewResult, ratingResult] = await Promise.all([
-          supabase.from('provider_profiles').select('profile_id, display_name').eq('profile_id', result.hired_professional_id).maybeSingle(),
+          supabase.from('provider_profiles').select('profile_id, display_name, provider_type, avatar_path, availability').eq('profile_id', result.hired_professional_id).maybeSingle(),
           supabase.from('job_reviews').select('id, post_id, provider_id, customer_id, rating, comment, customer_display_name, created_at').eq('post_id', result.id).maybeSingle(),
           supabase.from('provider_rating_summary').select('provider_id, review_count, average_rating').eq('provider_id', result.hired_professional_id).maybeSingle(),
         ])
@@ -81,6 +84,7 @@ export default function PostDetailPage() {
   }, [postId, user?.id, profile?.account_type])
 
   useEffect(() => { void load() }, [load])
+  useEffect(() => { if (completion?.provider?.profile_id) void refreshPresence([completion.provider.profile_id]) }, [completion?.provider?.profile_id, refreshPresence])
 
   if (loading) return <main className="app-page post-detail"><Skeleton className="post-detail__hero-skeleton" /><Skeleton className="post-skeleton-line" /><Skeleton className="post-skeleton-line post-skeleton-line--medium" /></main>
   if (error) return <main className="app-page"><section className="posts-feed__error" role="alert"><h1>We couldn’t load this post</h1><p>Check your connection and try again.</p><Button onClick={() => void load()} variant="secondary">Retry</Button></section></main>
@@ -90,6 +94,9 @@ export default function PostDetailPage() {
   const timing = post.timing === 'specific_date' && post.target_date
     ? new Intl.DateTimeFormat('en-NG', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${post.target_date}T00:00:00`))
     : post.timing.replaceAll('_', ' ')
+  const scheduleLabel = post.schedule_mode === 'confirmed' && post.scheduled_start_at && post.scheduled_end_at
+    ? `${new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Lagos' }).format(new Date(post.scheduled_start_at))} – ${new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Lagos' }).format(new Date(post.scheduled_end_at))} WAT`
+    : 'Schedule to be agreed before hiring'
 
   function hideMissingImage(path) { setImageUrls((current) => ({ ...current, [path]: null })) }
 
@@ -170,6 +177,7 @@ export default function PostDetailPage() {
         <div className="post-detail__meta">
           {location && <span><MapPin aria-hidden="true" size={18} />{location}</span>}
           <span><CalendarBlank aria-hidden="true" size={18} />{timing}</span>
+          <span><CalendarBlank aria-hidden="true" size={18} />{scheduleLabel}</span>
           <span><Wrench aria-hidden="true" size={18} />{post.job_type.replaceAll('_', ' ')}</span>
         </div>
         {post.status === 'completed' && <section className="completed-post-paid"><span>Paid</span><strong>{formatNaira(post.final_price_naira)}</strong></section>}
@@ -178,11 +186,11 @@ export default function PostDetailPage() {
           <p className="post-detail__description">{post.description}</p>
         </section>
         <section className="post-detail__author">
-          <Avatar name={post.authorName || 'Fixora member'} size={44} />
+          <Avatar name={post.authorName || 'Fixora member'} size={44} src={avatarUrl(post.authorAvatarPath)} />
           <div><span>Posted by</span><strong>{post.authorName || 'Fixora member'}</strong></div>
           <time>{formatRelativeTime(post.created_at)}</time>
         </section>
-        {post.status === 'completed' && <section className="completed-post-professional"><h2>Fixed by</h2><Link className="completed-post-provider" to={`/app/professionals/${post.hired_professional_id}`}><Avatar name={completion?.provider?.display_name || 'Professional'} size={48} /><div><strong>{completion?.provider?.display_name || 'Fixora professional'}</strong>{Number(completion?.rating?.review_count) > 0 ? <span className="completed-post-rating"><Star aria-hidden="true" size={15} weight="fill" />{Number(completion.rating.average_rating).toFixed(1)} · {completion.rating.review_count} {Number(completion.rating.review_count) === 1 ? 'review' : 'reviews'}</span> : <span>New on Fixora</span>}</div></Link>{completion?.review && <div className="completed-post-review"><div className="completed-post-review__head"><strong>{completion.review.customer_display_name}</strong><time>{new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium' }).format(new Date(completion.review.created_at))}</time></div><ReviewStars rating={completion.review.rating} />{completion.review.comment && <p>{completion.review.comment}</p>}</div>}<div className="completed-post-details">{post.service_categories?.name && <span>{post.service_categories.name}</span>}{location && <span>{location}</span>}{post.completed_at && <span>Completed {new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium' }).format(new Date(post.completed_at))}</span>}</div></section>}
+        {post.status === 'completed' && <section className="completed-post-professional"><h2>Fixed by</h2><Link className="completed-post-provider" to={`/app/professionals/${post.hired_professional_id}`}><Avatar name={completion?.provider?.display_name || 'Professional'} size={48} src={avatarUrl(completion?.provider?.avatar_path)} presence={isOnline(post.hired_professional_id)} /><div><strong>{completion?.provider?.display_name || 'Fixora professional'}</strong>{completion?.provider?.provider_type && <ProviderTypeBadge compact type={completion.provider.provider_type} />}{Number(completion?.rating?.review_count) > 0 ? <span className="completed-post-rating"><Star aria-hidden="true" size={15} weight="fill" />{Number(completion.rating.average_rating).toFixed(1)} · {completion.rating.review_count} {Number(completion.rating.review_count) === 1 ? 'review' : 'reviews'}</span> : <span>No reviews yet</span>}</div></Link>{completion?.review && <div className="completed-post-review"><div className="completed-post-review__head"><strong>{completion.review.customer_display_name}</strong><time>{new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium' }).format(new Date(completion.review.created_at))}</time></div><ReviewStars rating={completion.review.rating} />{completion.review.comment && <p>{completion.review.comment}</p>}</div>}<div className="completed-post-details">{post.service_categories?.name && <span>{post.service_categories.name}</span>}{location && <span>{location}</span>}{post.completed_at && <span>Completed {new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium' }).format(new Date(post.completed_at))}</span>}</div></section>}
         {post.author_id === user?.id && post.status !== 'removed' && post.status !== 'completed' && <div className="post-detail__owner-actions">
           <Button as={Link} to={`/app/posts/${post.id}/edit`} variant="secondary">Edit</Button>
           {post.status === 'closed' && post.hired_professional_id && <Button as={Link} to={`/app/posts/${post.id}/complete`} variant="primary">Mark as completed</Button>}

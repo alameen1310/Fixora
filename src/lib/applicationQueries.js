@@ -28,27 +28,48 @@ export async function fetchPostApplications(postId) {
   const { data: providers, error: providerError } = await supabase.from('provider_profiles')
     .select(publishedProviderSelection).in('profile_id', ids).eq('is_published', true)
   if (providerError) throw providerError
-  const { data: ratings, error: ratingError } = await supabase.from('provider_rating_summary')
-    .select('provider_id, review_count, average_rating').in('provider_id', ids)
+  const [{ data: ratings, error: ratingError }, { data: availabilityRows, error: availabilityError }] = await Promise.all([
+    supabase.from('provider_rating_summary')
+      .select('provider_id, review_count, average_rating').in('provider_id', ids),
+    supabase.rpc('get_request_provider_availability', { requested_post_id: postId, requested_provider_ids: ids }),
+  ])
   if (ratingError) throw ratingError
+  if (availabilityError) throw availabilityError
   const providerById = Object.fromEntries((providers ?? []).map((provider) => [provider.profile_id, provider]))
   const ratingById = Object.fromEntries((ratings ?? []).map((rating) => [rating.provider_id, rating]))
-  return rows.map((application) => ({ ...application, professional: providerById[application.professional_id] ? { ...providerById[application.professional_id], rating: ratingById[application.professional_id] ?? null } : null }))
+  const availabilityById = Object.fromEntries((availabilityRows ?? []).map((row) => [row.provider_id, row.availability]))
+  return rows.map((application) => ({ ...application, availability: availabilityById[application.professional_id] ?? (application.status === 'pending' ? 'unknown' : null), professional: providerById[application.professional_id] ? { ...providerById[application.professional_id], rating: ratingById[application.professional_id] ?? null } : null }))
 }
 
 export async function fetchMarketplaceActivities(userId) {
   const { data, error } = await supabase.from('marketplace_activities')
-    .select('id, recipient_id, actor_id, kind, post_id, application_id, read_at, created_at, problem_posts(id, title, status), problem_post_applications(id, professional_id, status)')
+    .select('id, recipient_id, actor_id, kind, post_id, application_id, read_at, created_at, problem_posts(id, title, status, budget_type, budget_min_naira, budget_max_naira, negotiable, category_id, service_categories(name), problem_post_images(storage_path, sort_order, kind)), problem_post_applications(id, professional_id, message, status)')
     .eq('recipient_id', userId).order('created_at', { ascending: false }).limit(60)
   if (error) throw error
   const rows = data ?? []
-  const providerIds = [...new Set(rows.filter((row) => row.kind === 'application_received').map((row) => row.actor_id).filter(Boolean))]
+  const providerIds = [...new Set(rows.map((row) => row.actor_id).filter(Boolean))]
   if (!providerIds.length) return rows.map((row) => ({ ...row, actorName: null }))
-  const { data: providers, error: providerError } = await supabase.from('provider_profiles')
-    .select('profile_id, display_name').in('profile_id', providerIds).eq('is_published', true)
+  const [{ data: providers, error: providerError }, { data: ratings, error: ratingError }, { data: completedJobs, error: jobsError }] = await Promise.all([
+    supabase.from('provider_profiles')
+      .select('profile_id, display_name, avatar_path, provider_type').in('profile_id', providerIds).eq('is_published', true),
+    supabase.from('provider_rating_summary')
+      .select('provider_id, review_count, average_rating').in('provider_id', providerIds),
+    supabase.from('problem_posts')
+      .select('hired_professional_id').eq('status', 'completed').in('hired_professional_id', providerIds),
+  ])
   if (providerError) throw providerError
-  const names = Object.fromEntries((providers ?? []).map((provider) => [provider.profile_id, provider.display_name]))
-  return rows.map((row) => ({ ...row, actorName: row.actor_id ? names[row.actor_id] ?? null : null }))
+  if (ratingError) throw ratingError
+  if (jobsError) throw jobsError
+  const providerById = Object.fromEntries((providers ?? []).map((provider) => [provider.profile_id, provider]))
+  const ratingById = Object.fromEntries((ratings ?? []).map((rating) => [rating.provider_id, rating]))
+  const completedById = {}
+  for (const post of completedJobs ?? []) completedById[post.hired_professional_id] = (completedById[post.hired_professional_id] || 0) + 1
+  return rows.map((row) => {
+    const post = row.problem_posts
+    const coverPath = [...(post?.problem_post_images ?? []).filter((image) => image.kind === 'before')].sort((a, b) => a.sort_order - b.sort_order)[0]?.storage_path ?? null
+    const actor = row.actor_id ? providerById[row.actor_id] : null
+    return { ...row, problem_posts: post ? { ...post, coverPath } : post, actorName: actor?.display_name ?? null, actorAvatarPath: actor?.avatar_path ?? null, actorProviderType: actor?.provider_type ?? null, actorRating: ratingById[row.actor_id] ?? null, actorCompletedJobs: completedById[row.actor_id] ?? 0 }
+  })
 }
 
 export async function fetchProviderApplications(userId) {

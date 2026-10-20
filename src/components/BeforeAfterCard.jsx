@@ -1,6 +1,7 @@
 import { Star } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
-import { Avatar } from './UiPrimitives.jsx'
+import { Avatar, ProviderTypeBadge } from './UiPrimitives.jsx'
+import { avatarUrl } from '../lib/avatarImages.js'
 import { getPostImageUrl } from '../lib/postImages.js'
 import { formatRelativeTime } from '../lib/postQueries.js'
 import './BeforeAfterCard.css'
@@ -15,6 +16,6 @@ export default function BeforeAfterCard({ post }) {
   const count = Number(post.rating?.review_count || 0)
   return <Link aria-label={`View completed project: ${post.title}`} className="before-after-card" to={`/app/posts/${post.id}`}>
     <div className="before-after-card__images">{[[before, 'Before'], [after, 'After']].map(([image, label]) => <div className="before-after-card__image" key={label}>{image ? <img alt={`${post.title}, ${label.toLowerCase()}`} loading="lazy" onError={(event) => { event.currentTarget.hidden = true }} src={getPostImageUrl(image.storage_path)} /> : <span>No photo</span>}<small>{label}</small></div>)}</div>
-    <div className="before-after-card__body"><h2>{post.title}</h2><div className="before-after-card__provider"><Avatar name={post.provider?.display_name || 'Professional'} size={28} /><span>{post.provider?.display_name || 'Fixora professional'}</span>{count > 0 && <span className="before-after-card__rating"><Star aria-hidden="true" size={14} weight="fill" />{rating.toFixed(1)} ({count})</span>}</div><div className="before-after-card__meta"><strong>{post.final_price_naira ? `Paid ${naira(post.final_price_naira)}` : 'Completed'}</strong><time>{formatRelativeTime(post.completed_at || post.created_at)}</time></div></div>
+    <div className="before-after-card__body"><h2>{post.title}</h2><div className="before-after-card__provider"><Avatar name={post.provider?.display_name || 'Professional'} size={28} src={avatarUrl(post.provider?.avatar_path)} /><span>{post.provider?.display_name || 'Fixora professional'}</span>{post.provider?.provider_type && <ProviderTypeBadge compact type={post.provider.provider_type} />}{count > 0 && <span className="before-after-card__rating"><Star aria-hidden="true" size={14} weight="fill" />{rating.toFixed(1)} ({count})</span>}</div><div className="before-after-card__meta"><strong>{post.final_price_naira ? `Paid ${naira(post.final_price_naira)}` : 'Completed'}</strong><time>{formatRelativeTime(post.completed_at || post.created_at)}</time></div></div>
   </Link>
 }

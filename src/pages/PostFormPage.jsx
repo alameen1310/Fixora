@@ -11,11 +11,23 @@ import { supabase } from '../lib/supabase.js'
 import '../components/Posts.css'
 import './PostFormPage.css'
 
-const blank = { title: '', description: '', category_id: '', budget_type: 'open_to_quotes', min: '', max: '', negotiable: false, region: '', city: '', timing: 'flexible', target_date: '', job_type: 'repair' }
+const blank = { title: '', description: '', category_id: '', budget_type: 'open_to_quotes', min: '', max: '', negotiable: false, region: '', city: '', timing: 'flexible', target_date: '', schedule_mode: 'flexible', scheduled_start_at: '', scheduled_end_at: '', job_type: 'repair' }
 const budgetOptions = [{ value: 'fixed', label: 'Fixed' }, { value: 'range', label: 'Range' }, { value: 'open_to_quotes', label: 'Open to quotes' }]
 const timings = [['urgent', 'Urgent'], ['this_week', 'This week'], ['flexible', 'Flexible'], ['specific_date', 'Pick a date']]
 const jobTypes = [['repair', 'Repair'], ['installation', 'Installation'], ['maintenance', 'Maintenance'], ['new_project', 'New project']]
-const editColumns = 'id, author_id, category_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, job_type, status, published_at, hired_professional_id, problem_post_images(storage_path, sort_order, kind)'
+const editColumns = 'id, author_id, category_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, schedule_mode, scheduled_start_at, scheduled_end_at, job_type, status, published_at, hired_professional_id, problem_post_images(storage_path, sort_order, kind)'
+
+function toLagosInput(value) {
+  if (!value) return ''
+  return new Date(new Date(value).getTime() + 60 * 60 * 1000).toISOString().slice(0, 16)
+}
+
+function fromLagosInput(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value || '')
+  if (!match) return null
+  const [, year, month, day, hour, minute] = match.map(Number)
+  return new Date(Date.UTC(year, month - 1, day, hour - 1, minute)).toISOString()
+}
 
 function errorText(error, step) {
   const message = error?.message || ''
@@ -66,7 +78,7 @@ function PostFormPage({ editing = false }) {
         if (loadError || !data || data.author_id !== user.id || data.status === 'removed') {
           setError('This post is unavailable or can no longer be edited.')
         } else {
-          setValues({ title: data.title, description: data.description, category_id: data.category_id, budget_type: data.budget_type, min: data.budget_min_naira?.toString() || '', max: data.budget_max_naira?.toString() || '', negotiable: data.negotiable, region: data.region, city: data.city, timing: data.timing, target_date: data.target_date || '', job_type: data.job_type })
+          setValues({ title: data.title, description: data.description, category_id: data.category_id, budget_type: data.budget_type, min: data.budget_min_naira?.toString() || '', max: data.budget_max_naira?.toString() || '', negotiable: data.negotiable, region: data.region, city: data.city, timing: data.timing, target_date: data.target_date || '', schedule_mode: data.schedule_mode || 'flexible', scheduled_start_at: toLagosInput(data.scheduled_start_at), scheduled_end_at: toLagosInput(data.scheduled_end_at), job_type: data.job_type })
           const beforeImages = (data.problem_post_images ?? []).filter((image) => image.kind === 'before').sort((a, b) => a.sort_order - b.sort_order)
           setExisting(beforeImages)
           setExistingUrls(Object.fromEntries(beforeImages.map((image) => [image.storage_path, getPostImageUrl(image.storage_path)])))
@@ -113,6 +125,15 @@ function PostFormPage({ editing = false }) {
   }, [])
 
   function set(key, value) { setValues((current) => ({ ...current, [key]: value })); setError('') }
+  function validateSchedule() {
+    if (values.schedule_mode !== 'confirmed') return ''
+    const start = fromLagosInput(values.scheduled_start_at)
+    const end = fromLagosInput(values.scheduled_end_at)
+    if (!start || !end) return 'Add the confirmed start and end time in Nigeria time (WAT).'
+    if (new Date(end) <= new Date(start)) return 'The scheduled end must be after the start.'
+    if (new Date(start) <= new Date()) return 'Choose a future start time for the work.'
+    return ''
+  }
   async function selectPhotos(files) {
     setError('')
     const remaining = 5 - existing.length - photos.length
@@ -148,10 +169,12 @@ function PostFormPage({ editing = false }) {
     if (values.budget_type !== 'open_to_quotes' && (!Number.isSafeInteger(Number(values.min)) || Number(values.min) < 1 || Number(values.min) > 100000000000)) return 'Enter a valid whole Naira amount.'
     if (values.budget_type === 'range' && (!Number.isSafeInteger(Number(values.max)) || Number(values.max) < Number(values.min) || Number(values.max) > 100000000000)) return 'Enter a valid maximum amount at or above the minimum.'
     if (values.timing === 'specific_date' && !values.target_date) return 'Choose the date you need the work.'
+    const scheduleError = validateSchedule()
+    if (scheduleError) return scheduleError
     return ''
   }
   function payload() {
-    return { category_id: values.category_id, title: values.title.trim(), description: values.description.trim(), budget_type: values.budget_type, budget_min_naira: values.budget_type === 'open_to_quotes' ? null : Number(values.min), budget_max_naira: values.budget_type === 'range' ? Number(values.max) : null, negotiable: values.negotiable, country_code: 'NG', region: values.region.trim(), city: values.city.trim(), timing: values.timing, target_date: values.timing === 'specific_date' ? values.target_date : null, job_type: values.job_type }
+    return { category_id: values.category_id, title: values.title.trim(), description: values.description.trim(), budget_type: values.budget_type, budget_min_naira: values.budget_type === 'open_to_quotes' ? null : Number(values.min), budget_max_naira: values.budget_type === 'range' ? Number(values.max) : null, negotiable: values.negotiable, country_code: 'NG', region: values.region.trim(), city: values.city.trim(), timing: values.timing, target_date: values.timing === 'specific_date' ? values.target_date : null, schedule_mode: values.schedule_mode, scheduled_start_at: values.schedule_mode === 'confirmed' ? fromLagosInput(values.scheduled_start_at) : null, scheduled_end_at: values.schedule_mode === 'confirmed' ? fromLagosInput(values.scheduled_end_at) : null, job_type: values.job_type }
   }
   async function removeExistingPhoto(image) {
     const { error: storageError } = await supabase.storage.from('problem-post-photos').remove([image.storage_path])
@@ -250,7 +273,19 @@ function PostFormPage({ editing = false }) {
       <section className={`post-form-content post-form-content--step-${step}`}>
         {step === 1 && <><InputField id="post-title" label="Title" maxLength={120} onChange={(event) => set('title', event.target.value)} placeholder="What needs fixing?" value={values.title} /><label className={`post-photo-picker${photoDragOver ? ' is-drag-over' : ''}`} onDragEnter={(event) => { event.preventDefault(); setPhotoDragOver(true) }} onDragOver={(event) => event.preventDefault()} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPhotoDragOver(false) }} onDrop={(event) => { event.preventDefault(); setPhotoDragOver(false); void selectPhotos(event.dataTransfer.files) }}><Camera aria-hidden="true" size={27} /><strong>Add photos</strong><span>Up to 5. JPG, PNG or WebP</span><input accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => { void selectPhotos(event.target.files); event.target.value = '' }} type="file" /></label><div className="post-photo-list">{existing.map((image) => <div className="post-photo-item" key={image.storage_path}>{existingUrls[image.storage_path] ? <button aria-label={`Preview photo ${image.sort_order + 1}`} className="post-photo-item__preview" onClick={() => setPreviewPhoto({ src: existingUrls[image.storage_path], alt: `Existing post photo ${image.sort_order + 1}` })} type="button"><img alt="" onError={() => setExistingUrls((current) => ({ ...current, [image.storage_path]: null }))} src={existingUrls[image.storage_path]} /><span>Preview</span></button> : null}<div className="post-photo-item__details"><strong>Photo {image.sort_order + 1}</strong><button aria-label={`Remove photo ${image.sort_order + 1}`} className="post-photo-item__remove" disabled={saving} onClick={() => void removeExistingPhoto(image).catch(() => setError('Could not remove this photo. Try again.'))} type="button"><X size={18} /></button></div></div>)}{photos.map((photo, index) => <div className="post-photo-item" key={photo.url}><button aria-label={`Preview selected photo ${index + 1}`} className="post-photo-item__preview" onClick={() => setPreviewPhoto({ src: photo.url, alt: `Selected post photo ${index + 1}` })} type="button"><img alt="" src={photo.url} /><span>Preview</span></button><div className="post-photo-item__details"><strong>{photo.name}</strong><button aria-label={`Remove photo ${index + 1}`} className="post-photo-item__remove" onClick={() => void removePhoto(index)} type="button"><X size={18} /></button></div></div>)}</div>{!editing && <small className="post-photo-hint">Photos are not saved in drafts. Avoid faces, documents, or valuables.</small>}</>}
         {step === 2 && <><SelectField id="post-category" label="Service category" onChange={(event) => set('category_id', event.target.value)} value={values.category_id}><option value="">Choose a category</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</SelectField><label className="ui-field" htmlFor="post-description"><span className="ui-field__label">Description</span><textarea className="post-form-description" id="post-description" maxLength={2500} onChange={(event) => set('description', event.target.value)} placeholder="Describe what needs fixing, where it is, and any helpful details…" rows={7} value={values.description} /><small className="ui-field__hint">{values.description.length}/2,500</small></label></>}
-        {step === 3 && <><SegmentedControl label="Budget type" onChange={(value) => set('budget_type', value)} options={budgetOptions} value={values.budget_type} />{values.budget_type !== 'open_to_quotes' && <div className="post-form-budget"><InputField id="post-min" inputMode="numeric" label={values.budget_type === 'range' ? 'Minimum (₦)' : 'Amount (₦)'} onChange={(event) => set('min', event.target.value.replace(/\D/g, ''))} value={values.min} /><output>{values.min ? new Intl.NumberFormat('en-NG').format(Number(values.min)) : ''}</output>{values.budget_type === 'range' && <InputField id="post-max" inputMode="numeric" label="Maximum (₦)" onChange={(event) => set('max', event.target.value.replace(/\D/g, ''))} value={values.max} />}</div>}<label className="post-form-switch"><input checked={values.negotiable} onChange={(event) => set('negotiable', event.target.checked)} type="checkbox" />Budget is negotiable</label><InputField id="post-region" label="State or region" onChange={(event) => set('region', event.target.value)} placeholder="e.g. Lagos State" value={values.region} /><InputField id="post-city" label="City or area" onChange={(event) => set('city', event.target.value)} placeholder="e.g. Ikeja" value={values.city} /><fieldset className="post-form-options"><legend>When do you need the work?</legend>{timings.map(([value, label]) => <Chip key={value} onClick={() => set('timing', value)} selected={values.timing === value}>{label}</Chip>)}</fieldset>{values.timing === 'specific_date' && <InputField id="post-date" label="Date" onChange={(event) => set('target_date', event.target.value)} type="date" value={values.target_date} />}<fieldset className="post-form-options"><legend>Type of work</legend>{jobTypes.map(([value, label]) => <Chip key={value} onClick={() => set('job_type', value)} selected={values.job_type === value}>{label}</Chip>)}</fieldset></>}
+        {step === 3 && <>
+          <SegmentedControl label="Budget type" onChange={(value) => set('budget_type', value)} options={budgetOptions} value={values.budget_type} />
+          {values.budget_type !== 'open_to_quotes' && <div className="post-form-budget"><InputField id="post-min" inputMode="numeric" label={values.budget_type === 'range' ? 'Minimum (₦)' : 'Amount (₦)'} onChange={(event) => set('min', event.target.value.replace(/\D/g, ''))} value={values.min} /><output>{values.min ? new Intl.NumberFormat('en-NG').format(Number(values.min)) : ''}</output>{values.budget_type === 'range' && <InputField id="post-max" inputMode="numeric" label="Maximum (₦)" onChange={(event) => set('max', event.target.value.replace(/\D/g, ''))} value={values.max} />}</div>}
+          <label className="post-form-switch"><input checked={values.negotiable} onChange={(event) => set('negotiable', event.target.checked)} type="checkbox" />Budget is negotiable</label>
+          <InputField id="post-region" label="State or region" onChange={(event) => set('region', event.target.value)} placeholder="e.g. Lagos State" value={values.region} />
+          <InputField id="post-city" label="City or area" onChange={(event) => set('city', event.target.value)} placeholder="e.g. Ikeja" value={values.city} />
+          <fieldset className="post-form-options"><legend>When do you need the work?</legend>{timings.map(([value, label]) => <Chip key={value} onClick={() => set('timing', value)} selected={values.timing === value}>{label}</Chip>)}</fieldset>
+          {values.timing === 'specific_date' && <InputField id="post-date" label="Target date" onChange={(event) => set('target_date', event.target.value)} type="date" value={values.target_date} />}
+          <fieldset className="post-form-options post-form-schedule"><legend>Work schedule</legend><p>Providers can only be hired when the work window is confirmed. Times use West Africa Time (WAT).</p><SegmentedControl label="Work schedule certainty" onChange={(value) => set('schedule_mode', value)} options={[{ value: 'flexible', label: 'Flexible for now' }, { value: 'confirmed', label: 'Confirm a time' }]} value={values.schedule_mode} />
+            {values.schedule_mode === 'confirmed' ? <div className="post-form-schedule__times"><InputField id="post-schedule-start" label="Start (WAT)" onChange={(event) => set('scheduled_start_at', event.target.value)} type="datetime-local" value={values.scheduled_start_at} /><InputField id="post-schedule-end" label="End (WAT)" onChange={(event) => set('scheduled_end_at', event.target.value)} type="datetime-local" value={values.scheduled_end_at} /></div> : <small>Agree on a specific start and end time before choosing an applicant.</small>}
+          </fieldset>
+          <fieldset className="post-form-options"><legend>Type of work</legend>{jobTypes.map(([value, label]) => <Chip key={value} onClick={() => set('job_type', value)} selected={values.job_type === value}>{label}</Chip>)}</fieldset>
+        </>}
         {step === 4 && <div className="post-form-review">
           {previewImages.length > 0 ? <div aria-label="Post photo preview" className="post-form-review__gallery">
             {previewImages.map((image, index) => <button aria-label={`View photo ${index + 1}`} className={index === 0 ? `post-form-review__cover${previewImages.length === 1 ? ' post-form-review__cover--single' : ''}` : 'post-form-review__thumbnail'} key={image.key} onClick={() => setPreviewPhoto(image)} type="button"><img alt={image.alt} src={image.src} /></button>)}
@@ -261,10 +296,11 @@ function PostFormPage({ editing = false }) {
             {(values.city || values.region) && <p className="post-form-review__location"><MapPin aria-hidden="true" size={17} />{[values.city, values.region].filter(Boolean).join(', ')}</p>}
             <p className="post-form-review__description">{values.description.trim() || 'Your description will appear here.'}</p>
             <p className="post-form-review__budget">{values.budget_type === 'open_to_quotes' ? 'Open to quotes' : `₦${values.min ? new Intl.NumberFormat('en-NG').format(Number(values.min)) : '—'}${values.budget_type === 'range' ? ` – ₦${values.max ? new Intl.NumberFormat('en-NG').format(Number(values.max)) : '—'}` : ' · Fixed'}`}{values.negotiable && <span>Negotiable</span>}</p>
+            <p className="post-form-review__schedule">{values.schedule_mode === 'confirmed' && fromLagosInput(values.scheduled_start_at) && fromLagosInput(values.scheduled_end_at) ? `Scheduled ${new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Lagos' }).format(new Date(fromLagosInput(values.scheduled_start_at)))} – ${new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Lagos' }).format(new Date(fromLagosInput(values.scheduled_end_at)))} WAT` : values.schedule_mode === 'confirmed' ? 'Add a confirmed start and end time' : 'Flexible schedule · a confirmed time is required before hiring'}</p>
           </div>
           <p className="post-form-review__note">Your photos are visible to anyone with their link. Avoid sensitive images.</p>
         </div>}
-        <footer className="post-form-actions">{step > 1 && <Button disabled={saving} onClick={() => setStep((current) => current - 1)} variant="secondary">Back</Button>}{step < 4 ? <Button onClick={() => { const problem = step === 1 && (!values.title.trim() || values.title.length > 120) ? 'Add a title between 1 and 120 characters.' : step === 2 && (!values.category_id || !values.description.trim()) ? 'Choose a category and describe the work.' : step === 3 && (!values.region.trim() || !values.city.trim()) ? 'Choose a state and city or area before continuing.' : ''; if (problem) setError(problem); else { setError(''); setStep((current) => current + 1) } }}>Next</Button> : <Button loading={saving} onClick={() => void publish()}>{editing ? 'Save changes' : 'Publish post'}</Button>}</footer>
+        <footer className="post-form-actions">{step > 1 && <Button disabled={saving} onClick={() => setStep((current) => current - 1)} variant="secondary">Back</Button>}{step < 4 ? <Button onClick={() => { const problem = step === 1 && (!values.title.trim() || values.title.length > 120) ? 'Add a title between 1 and 120 characters.' : step === 2 && (!values.category_id || !values.description.trim()) ? 'Choose a category and describe the work.' : step === 3 && (!values.region.trim() || !values.city.trim()) ? 'Choose a state and city or area before continuing.' : step === 3 ? validateSchedule() : ''; if (problem) setError(problem); else { setError(''); setStep((current) => current + 1) } }}>Next</Button> : <Button loading={saving} onClick={() => void publish()}>{editing ? 'Save changes' : 'Publish post'}</Button>}</footer>
       </section>
       <aside aria-label="Request guidance" className="post-form-aside">
         <MarketplaceDoodle />
@@ -275,6 +311,7 @@ function PostFormPage({ editing = false }) {
           <span>Request title</span><strong>{values.title.trim() || 'Add a short title'}</strong>
           <span>Service</span><strong>{selectedCategory?.name || 'Not chosen yet'}</strong>
           <span>Area</span><strong>{[values.city, values.region].filter(Boolean).join(', ') || 'Not chosen yet'}</strong>
+          <span>Schedule</span><strong>{values.schedule_mode === 'confirmed' && values.scheduled_start_at ? 'Confirmed · WAT' : 'Flexible'}</strong>
         </div>
       </aside>
       </div>

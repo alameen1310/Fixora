@@ -2,6 +2,7 @@ import { Briefcase, CalendarBlank, CaretRight, Drop, Hammer, Lightning, MapPin, 
 import { Link } from 'react-router-dom'
 import { Avatar, Badge, Skeleton } from './UiPrimitives.jsx'
 import { formatPostBudget, formatRelativeTime } from '../lib/postQueries.js'
+import { avatarUrl } from '../lib/avatarImages.js'
 import { useState } from 'react'
 import './Posts.css'
 
@@ -29,7 +30,7 @@ export function PostCardSkeleton() {
   )
 }
 
-export default function PostCard({ authorName, coverUrl = '', onCoverError, post, priority = false, showOwnerBadge = false }) {
+export default function PostCard({ authorName, authorAvatarPath, coverUrl = '', onCoverError, post, priority = false, showOwnerBadge = false }) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageRetryAttempted, setImageRetryAttempted] = useState(false)
   const [hideImage, setHideImage] = useState(false)
@@ -71,10 +72,11 @@ export default function PostCard({ authorName, coverUrl = '', onCoverError, post
         <div className="post-card__meta">
           {location && <span><MapPin aria-hidden="true" size={15} />{location}</span>}
           <span><CalendarBlank aria-hidden="true" size={15} />{postTiming(post)}</span>
+          {post.schedule_mode === 'confirmed' && <span><CalendarBlank aria-hidden="true" size={15} />Scheduled</span>}
         </div>
         <div className="post-card__byline">
           <span className="post-card__author">
-            <Avatar name={authorName || 'Fixora member'} size={28} />
+            <Avatar name={authorName || 'Fixora member'} size={28} src={avatarUrl(authorAvatarPath)} />
             <span>{authorName || 'Fixora member'}</span>
           </span>
           <span className="post-card__time">{formatRelativeTime(post.created_at)}</span>

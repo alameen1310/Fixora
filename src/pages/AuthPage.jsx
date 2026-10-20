@@ -47,8 +47,11 @@ export default function AuthPage({ mode = 'login' }) {
   const navigate = useNavigate()
   const { authConfigured: configured, user, loading, profileLoading, retrySession } = useAuth()
   const { showToast } = useToast()
+  const signedOut = (() => {
+    try { return window.sessionStorage.getItem('fixora.signedOut') === '1' } catch { return false }
+  })()
 
-  if (mode === 'login' && !loading && user && !profileLoading) {
+  if (mode === 'login' && !loading && user && !profileLoading && !signedOut) {
     return <Navigate replace state={{ returnTo: safeReturnTo(location.state?.returnTo) }} to="/auth/callback" />
   }
 
@@ -80,6 +83,7 @@ export default function AuthPage({ mode = 'login' }) {
     setBusyAction('email')
     try {
       if (mode === 'login') {
+        try { window.sessionStorage.removeItem('fixora.signedOut') } catch { /* Best effort cleanup. */ }
         const { error: authError } = await supabase.auth.signInWithPassword({
           email: email.trim(),
           password,
@@ -133,9 +137,13 @@ export default function AuthPage({ mode = 'login' }) {
     }
     setBusyAction('google')
     try {
+      try { window.sessionStorage.removeItem('fixora.signedOut') } catch { /* Best effort cleanup. */ }
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: { prompt: 'select_account' },
+        },
       })
       if (authError) throw authError
     } catch (authError) {

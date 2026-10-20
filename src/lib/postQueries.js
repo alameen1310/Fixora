@@ -1,8 +1,8 @@
 import { supabase } from './supabase.js'
 
 export const POST_PAGE_SIZE = 10
-export const POST_COLUMNS = 'id, author_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, job_type, status, created_at, published_at, hired_professional_id, hired_at, completed_at, final_price_naira, service_categories(name, slug), problem_post_images(storage_path, sort_order, kind)'
-export const POST_DETAIL_COLUMNS = 'id, author_id, category_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, job_type, status, created_at, published_at, closed_at, hired_professional_id, hired_at, completed_at, final_price_naira, service_categories(name, slug), problem_post_images(storage_path, sort_order, kind)'
+export const POST_COLUMNS = 'id, author_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, schedule_mode, scheduled_start_at, scheduled_end_at, job_type, status, created_at, published_at, hired_professional_id, hired_at, completed_at, final_price_naira, service_categories(name, slug), problem_post_images(storage_path, sort_order, kind)'
+export const POST_DETAIL_COLUMNS = 'id, author_id, category_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, schedule_mode, scheduled_start_at, scheduled_end_at, job_type, status, created_at, published_at, closed_at, hired_professional_id, hired_at, completed_at, final_price_naira, service_categories(name, slug), problem_post_images(storage_path, sort_order, kind)'
 
 
 function applyCursor(query, cursor) {
@@ -66,7 +66,7 @@ export async function fetchCompletedPosts({ cursor, limit = POST_PAGE_SIZE } = {
   if (!posts.length) return posts
   const providerIds = [...new Set(posts.map(({ hired_professional_id }) => hired_professional_id).filter(Boolean))]
   const [providerResult, ratingResult] = await Promise.all([
-    supabase.from('provider_profiles').select('profile_id, display_name').in('profile_id', providerIds),
+    supabase.from('provider_profiles').select('profile_id, display_name, provider_type, avatar_path, availability').in('profile_id', providerIds),
     supabase.from('provider_rating_summary').select('provider_id, review_count, average_rating').in('provider_id', providerIds),
   ])
   if (providerResult.error) throw providerResult.error
@@ -115,7 +115,7 @@ export async function fetchProblemPost(postId) {
     .maybeSingle()
   if (error) throw error
   if (!data) return null
-  const { data: authorRows, error: authorError } = await supabase.rpc('get_problem_post_author_cards', {
+  const { data: authorRows, error: authorError } = await supabase.rpc('get_problem_post_author_cards_v2', {
     requested_post_ids: [postId],
   })
   if (authorError) throw authorError
@@ -123,16 +123,23 @@ export async function fetchProblemPost(postId) {
     ...data,
     images: [...(data.problem_post_images ?? [])].sort((first, second) => (first.kind === second.kind ? first.sort_order - second.sort_order : first.kind === 'before' ? -1 : 1)),
     authorName: authorRows?.find((row) => row.post_id === postId)?.display_name ?? null,
+    authorAvatarPath: authorRows?.find((row) => row.post_id === postId)?.avatar_path ?? null,
+    authorProviderType: authorRows?.find((row) => row.post_id === postId)?.provider_type ?? null,
   }
 }
 
 export async function fetchAuthorNames(posts) {
+  const cards = await fetchAuthorCards(posts)
+  return Object.fromEntries(cards.map(({ post_id, display_name }) => [post_id, display_name]))
+}
+
+export async function fetchAuthorCards(posts) {
   const ids = [...new Set((posts ?? []).map(({ id }) => id).filter(Boolean))]
-  if (!ids.length) return {}
+  if (!ids.length) return []
   if (!supabase) throw new Error('Post services are unavailable.')
-  const { data, error } = await supabase.rpc('get_problem_post_author_cards', { requested_post_ids: ids })
+  const { data, error } = await supabase.rpc('get_problem_post_author_cards_v2', { requested_post_ids: ids })
   if (error) throw error
-  return Object.fromEntries((data ?? []).map(({ post_id, display_name }) => [post_id, display_name]))
+  return data ?? []
 }
 
 export function postCursor(post) {

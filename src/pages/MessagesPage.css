@@ -201,6 +201,10 @@
 .message-swipe-icon { display:none; position:absolute; top:50%; left:-30px; color:var(--color-primary); transform:translateY(-50%); }
 .message-bubble-wrap.is-swipe-reply .message-swipe-icon { display:block; }
 .message-bubble { display: grid; gap: 7px; padding: 10px 13px; border-radius: 18px 18px 18px 4px; background: #fff; box-shadow: none; }
+.message-bubble.is-deleted { display: inline-flex; min-height: 32px; align-items: center; padding: 5px 9px; border: 1px solid var(--color-separator); border-radius: 12px; color: var(--color-text-secondary); background: transparent; box-shadow: none; }
+.message-deleted { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-style: italic; }
+.message-group.is-mine .message-bubble.is-deleted { border-color: var(--color-separator); color: var(--color-text-secondary); background: transparent; }
+.message-bubble.is-deleted .message-bubble__state,.message-bubble-wrap:has(.message-bubble.is-deleted) .message-bubble-toolbar { display: none; }
 .message-group.is-mine .message-bubble { border-radius: 18px 18px 4px 18px; background: linear-gradient(145deg,#3572ef,#2457d6); }
 .message-bubble.is-sending { opacity: .64; }
 .message-group time { display: flex; align-items: center; gap: 4px; font-size: 10px; }
@@ -304,6 +308,26 @@
   .message-bubble-menu__reactions button { width:36px; height:40px; font-size:21px; }
 }
 @media (max-width: 400px) { .messages-composer { grid-template-columns: auto minmax(0,1fr) 44px; gap: 4px; } .messages-composer__tools > button { width: 32px; } .messages-thread__actions .ui-button { padding-inline: 5px; } }
+
+@media (max-width: 899px) {
+  html.is-chat-thread-open .messages-shell.is-thread-open {
+    position: fixed;
+    z-index: 70;
+    inset: 0 0 auto;
+    width: 100%;
+    height: var(--vv-height, 100dvh);
+    min-height: 0;
+    transform: translateY(var(--vv-offset-top, 0px));
+  }
+  html.is-chat-thread-open .messages-shell.is-thread-open .messages-main,
+  html.is-chat-thread-open .messages-shell.is-thread-open .messages-thread {
+    height: var(--vv-height, 100dvh);
+    min-height: 0;
+  }
+  html.is-chat-thread-open .messages-thread { grid-template-rows: 62px auto minmax(0, 1fr) auto; }
+  html.is-chat-thread-open .messages-thread__scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  html.is-chat-thread-open .messages-composer { padding-bottom: max(8px, calc(env(safe-area-inset-bottom) - var(--kb-inset, 0px))); }
+}
 @media (prefers-reduced-motion: reduce) {
   .messages-bubble-wrap.is-flashing .message-bubble,.messages-typing i { animation: none; }
   .message-bubble-toolbar,.messages-list__item,.message-bubble,.messages-new-pill { transition: none; }

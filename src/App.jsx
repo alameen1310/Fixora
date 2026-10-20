@@ -9,6 +9,7 @@ import LandingPage from './pages/LandingPage.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import PostRoleGuard from './components/PostRoleGuard.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
+import { PresenceProvider } from './components/PresenceProvider.jsx'
 
 const CustomerSignupPage = lazy(() => import('./pages/CustomerSignupPage.jsx'))
 const ProviderSignupPage = lazy(() => import('./pages/ProviderSignupPage.jsx'))
@@ -20,6 +21,7 @@ const AccountHomePage = lazy(() => import('./pages/AccountHomePage.jsx'))
 const DiscoverPage = lazy(() => import('./pages/DiscoverPage.jsx'))
 const ActivityPage = lazy(() => import('./pages/ActivityPage.jsx'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'))
+const EditProfilePage = lazy(() => import('./pages/EditProfilePage.jsx'))
 const ProfessionalProfilePage = lazy(() => import('./pages/ProfessionalProfilePage.jsx'))
 const MyPostsPage = lazy(() => import('./pages/MyPostsPage.jsx'))
 const PostDetailPage = lazy(() => import('./pages/PostDetailPage.jsx'))
@@ -52,7 +54,7 @@ export default function App() {
             <Route element={<ProtectedRoute onboarding><AccountTypePage /></ProtectedRoute>} path="/onboarding/account-type" />
             <Route element={<ProtectedRoute onboarding><OnboardingPage audience="customer" /></ProtectedRoute>} path="/onboarding/customer" />
             <Route element={<ProtectedRoute onboarding><OnboardingPage audience="provider" /></ProtectedRoute>} path="/onboarding/provider" />
-            <Route element={<ProtectedRoute><AuthenticatedRouteBoundary><AuthenticatedAppShell /></AuthenticatedRouteBoundary></ProtectedRoute>} path="/app">
+            <Route element={<ProtectedRoute><AuthenticatedRouteBoundary><PresenceProvider><AuthenticatedAppShell /></PresenceProvider></AuthenticatedRouteBoundary></ProtectedRoute>} path="/app">
               <Route element={<AccountHomePage />} index />
               <Route element={<DiscoverPage />} path="discover" />
               <Route element={<ActivityPage />} path="activity" />
@@ -61,6 +63,7 @@ export default function App() {
                 <Route element={<MessagesConversationPage />} path=":conversationId" />
               </Route>
               <Route element={<ProfilePage />} path="profile" />
+              <Route element={<EditProfilePage />} path="profile/edit" />
               <Route element={<ProfessionalProfilePage />} path="professionals/:professionalId" />
               <Route element={<PostRoleGuard customersOnly><MyPostsPage /></PostRoleGuard>} path="my-posts" />
               <Route element={<PostRoleGuard customersOnly><CreatePostPage /></PostRoleGuard>} path="posts/new" />

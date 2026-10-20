@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowBendUpLeft, ArrowLeft, Camera, ChatCircleDots, Check, DotsThree, PaperPlaneRight, Smiley, UserCircle, WarningCircle, Wrench, X } from '@phosphor-icons/react'
+import { ArrowBendUpLeft, ArrowLeft, Camera, ChatCircleDots, Check, DotsThree, PaperPlaneRight, Smiley, TrashSimple, UserCircle, WarningCircle, Wrench, X } from '@phosphor-icons/react'
 import { Link, NavLink, Outlet, useLocation, useNavigate, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
-import { Avatar, Button, Skeleton } from '../components/UiPrimitives.jsx'
+import { Avatar, Button, ProviderTypeBadge, Skeleton } from '../components/UiPrimitives.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { fetchConversationMessages, fetchEarlierMessages, fetchMessageReactions, fetchMyConversations, markConversationRead, sendConversationMessage, setMessageReaction, unsendConversationMessage } from '../lib/chatQueries.js'
 import { formatRelativeTime } from '../lib/postQueries.js'
 import { getPostImageUrl, preparePostPhoto } from '../lib/postImages.js'
 import { supabase } from '../lib/supabase.js'
+import { useDismissable } from '../hooks/useDismissable.js'
+import { avatarUrl } from '../lib/avatarImages.js'
+import { usePresence } from '../components/PresenceProvider.jsx'
+import { appQueryCache } from '../lib/postListCache.js'
 import './MessagesPage.css'
 
 function formatClock(value) {
@@ -44,8 +48,8 @@ function MessageList({ conversations, loading, error, onRetry, userId, isProvide
           : visible.length === 0 ? <div className="messages-list__empty"><ChatCircleDots aria-hidden="true" size={30} /><p>{conversations.length ? 'No messages match your search.' : 'Messages appear once you hire or get hired.'}</p>{!conversations.length && <Link to={isProvider ? '/app/discover' : '/app/my-posts'}>{isProvider ? 'Find work' : 'My Posts'}</Link>}</div>
             : <nav aria-label="Your conversations" className="messages-list__items">{visible.map((conversation) => (
               <NavLink className={({ isActive }) => 'messages-list__item' + (isActive ? ' is-active' : '')} key={conversation.conversation_id} to={'/app/messages/' + conversation.conversation_id}>
-                <span className="messages-list__avatar"><Avatar name={conversation.other_display_name} size={48} />{onlineUsers?.has(conversation.other_user_id) && <i aria-label="Active now" />}</span>
-                <span className="messages-list__copy"><span className="messages-list__item-top"><strong className={conversation.unread_count ? 'is-unread' : ''}>{conversation.other_display_name}</strong><time>{formatRelativeTime(conversation.last_message_at)}</time></span><span className="messages-list__preview">{conversation.last_sender_id === userId ? 'You: ' : ''}{conversation.last_message_preview}</span><span className="messages-list__post-chip">{conversation.post_title}</span></span>
+                <span className="messages-list__avatar"><Avatar name={conversation.other_display_name} size={48} src={avatarUrl(conversation.other_avatar_path)} presence={onlineUsers?.has(conversation.other_user_id)} /></span>
+                <span className="messages-list__copy"><span className="messages-list__item-top"><strong className={conversation.unread_count ? 'is-unread' : ''}>{conversation.other_display_name}</strong>{conversation.other_provider_type && <ProviderTypeBadge compact type={conversation.other_provider_type} />}<time>{formatRelativeTime(conversation.last_message_at)}</time></span><span className="messages-list__preview">{conversation.last_sender_id === userId ? 'You: ' : ''}{conversation.last_message_preview}</span><span className="messages-list__post-chip">{conversation.post_title}</span></span>
                 {conversation.unread_count > 0 && <span aria-label={conversation.unread_count + ' unread messages'} className="messages-list__unread">{conversation.unread_count > 99 ? '99+' : conversation.unread_count}</span>}
               </NavLink>
             ))}</nav>}
@@ -62,17 +66,25 @@ function MessagesWelcome() {
 function MessageGroup({ group, mine, userId, otherName, replies, reactions, onReply, onReact, onUnsend, onCopy, onMore, onImage, onQuote }) {
   const touchTimer = useRef(null)
   const touchStartX = useRef(null)
-  return <div className={'message-group' + (mine ? ' is-mine' : '')}>
+  const boundaryRef = useRef(null)
+  const anyMenuOpen = group.items.some((message) => message.showMenu || message.showReactions)
+  const closeMenus = useCallback(() => {
+    group.items.forEach((message) => {
+      if (message.showMenu || message.showReactions) onMore({ ...message, closeOnly: true })
+    })
+  }, [group.items, onMore])
+  useDismissable({ boundaryRef, open: anyMenuOpen, onDismiss: closeMenus })
+  return <div ref={boundaryRef} className={'message-group' + (mine ? ' is-mine' : '')}>
     {group.items.map((message) => {
       const grouped = Object.values((reactions ?? []).filter((reaction) => reaction.message_id === message.id).reduce((result, reaction) => { result[reaction.emoji] ??= { emoji: reaction.emoji, users: [] }; result[reaction.emoji].users.push(reaction.user_id); return result }, {}))
       const reply = replies.get(message.reply_to_id)
-      return <div className={'message-bubble-wrap' + (message.showMenu ? ' is-menu-open' : '') + (message.flash ? ' is-flashing' : '')} id={`message-${message.id}`} key={message.id} onContextMenu={(event) => { event.preventDefault(); onMore(message) }} onTouchStart={(event) => { touchStartX.current = event.changedTouches[0]?.clientX; touchTimer.current = setTimeout(() => onMore(message), 520) }} onTouchEnd={(event) => { clearTimeout(touchTimer.current); const delta = event.changedTouches[0]?.clientX - touchStartX.current; const target = event.currentTarget; if (delta >= 56) { target.classList.add('is-swipe-reply'); onReply(message); setTimeout(() => target.classList.remove('is-swipe-reply'), 220) } }}>
+      return <div className={'message-bubble-wrap' + (message.showMenu ? ' is-menu-open' : '') + (message.showReactions ? ' is-reaction-open' : '') + (message.flash ? ' is-flashing' : '')} id={`message-${message.id}`} key={message.id} onContextMenu={(event) => { event.preventDefault(); onMore(message) }} onTouchStart={(event) => { touchStartX.current = event.changedTouches[0]?.clientX; touchTimer.current = setTimeout(() => onMore(message), 520) }} onTouchEnd={(event) => { clearTimeout(touchTimer.current); const delta = event.changedTouches[0]?.clientX - touchStartX.current; const target = event.currentTarget; if (delta >= 56) { target.classList.add('is-swipe-reply'); onReply(message); setTimeout(() => target.classList.remove('is-swipe-reply'), 220) } }}>
         <ArrowBendUpLeft aria-hidden="true" className="message-swipe-icon" size={18} />
         <div className="message-bubble-toolbar"><button aria-label="React to message" onClick={() => onReact(message)} type="button"><Smiley size={17} /></button><button aria-label="Reply to message" onClick={() => onReply(message)} type="button"><ArrowBendUpLeft size={17} /></button><button aria-label="More message actions" onClick={() => onMore(message)} type="button"><DotsThree size={19} /></button></div>
-        <div className={'message-bubble' + (message.failed ? ' is-failed' : '') + (message.sending ? ' is-sending' : '')}>
-          {message.deleted_at ? <em>Message deleted</em> : <>{reply && <button className="message-inline-reply" onClick={() => onQuote(reply.id)} type="button"><strong>{reply.sender_id === userId ? 'You' : otherName}</strong><span>{reply.deleted_at ? 'Message deleted' : reply.body || (reply.image_path ? 'Photo' : '')}</span></button>}{message.image_path && <button className="message-image-button" onClick={() => onImage(getPostImageUrl(message.image_path))} type="button"><img alt="Photo shared in chat" src={getPostImageUrl(message.image_path)} /></button>}{message.body && <span>{message.body}</span>}</>}
+        <div className={'message-bubble' + (message.failed ? ' is-failed' : '') + (message.sending ? ' is-sending' : '') + (message.deleted_at ? ' is-deleted' : '')}>
+          {message.deleted_at ? <em className="message-deleted"><TrashSimple aria-hidden="true" size={15} />{mine ? 'You deleted this message' : 'This message was deleted'}</em> : <>{reply && <button className="message-inline-reply" onClick={() => onQuote(reply.id)} type="button"><strong>{reply.sender_id === userId ? 'You' : otherName}</strong><span>{reply.deleted_at ? 'Message deleted' : reply.body || (reply.image_path ? 'Photo' : '')}</span></button>}{message.image_path && <button className="message-image-button" onClick={() => onImage(getPostImageUrl(message.image_path))} type="button"><img alt="Photo shared in chat" src={getPostImageUrl(message.image_path)} /></button>}{message.body && <span>{message.body}</span>}</>}
           {message.sending && <span className="message-bubble__state">Sending…</span>}{message.failed && <span className="message-bubble__state">Not sent. Retry</span>}
-          <div className="message-bubble-menu"><div className="message-bubble-menu__reactions">{REACTIONS.map((emoji) => <button aria-label={`React with ${emoji}`} key={emoji} onClick={() => onReact(message, emoji)} type="button">{emoji}</button>)}</div><button onClick={() => onReply(message)} type="button">Reply</button><button onClick={() => onCopy(message)} type="button">Copy</button>{mine && !message.deleted_at && <button onClick={() => onUnsend(message)} type="button">Delete</button>}</div>
+          {!message.deleted_at && <div aria-label="Message actions" className="message-bubble-menu" role="group"><div className="message-bubble-menu__reactions">{REACTIONS.map((emoji) => <button aria-label={`React with ${emoji}`} key={emoji} onClick={() => onReact(message, emoji)} type="button">{emoji}</button>)}</div><button onClick={() => onReply(message)} type="button">Reply</button><button onClick={() => onCopy(message)} type="button">Copy</button>{mine && <button onClick={() => onUnsend(message)} type="button">Delete</button>}</div>}
           {message.showReactions && <div className="message-reaction-picker">{REACTIONS.map((emoji) => <button aria-label={`React with ${emoji}`} key={emoji} onClick={() => onReact(message, emoji)} type="button">{emoji}</button>)}</div>}
         </div>
         {grouped.length > 0 && <div className="message-reactions">{grouped.map(({ emoji, users }) => <button aria-pressed={users.includes(userId)} key={emoji} onClick={() => onReact(message, emoji)} type="button">{emoji} {users.length}</button>)}</div>}
@@ -84,7 +96,8 @@ function MessageGroup({ group, mine, userId, otherName, replies, reactions, onRe
 
 function ConversationThread() {
   const { conversationId } = useParams()
-  const { conversations, loading: conversationsLoading, setOnlineUsers } = useOutletContext()
+  const { conversations, loading: conversationsLoading } = useOutletContext()
+  const { isOnline } = usePresence()
   const { user, profile } = useAuth()
   const [messages, setMessages] = useState([])
   const [reactions, setReactions] = useState([])
@@ -100,7 +113,6 @@ function ConversationThread() {
   const [newMessages, setNewMessages] = useState(0)
   const [polling, setPolling] = useState(false)
   const [typing, setTyping] = useState(false)
-  const [online, setOnline] = useState(false)
   const nearBottom = useRef(true)
   const scrollNode = useRef(null)
   const channelRef = useRef(null)
@@ -111,8 +123,15 @@ function ConversationThread() {
   const messagesRef = useRef([])
   const isProvider = profile?.account_type === 'provider'
   const conversation = conversations.find((item) => item.conversation_id === conversationId)
+  const online = conversation ? isOnline(conversation.other_user_id) : false
   const hasConversation = Boolean(conversation)
   const postHref = conversation ? '/app/posts/' + conversation.post_id : '/app/messages'
+  useEffect(() => {
+    setMessages([])
+    setReplyTo(null)
+    setPhoto(null)
+    setEmojiOpen(false)
+  }, [conversationId])
   const replyMap = useMemo(() => new Map(messages.map((message) => [message.id, message])), [messages])
   const draftKey = `fixora.chatDraft.${conversationId}`
   useEffect(() => { messagesRef.current = messages }, [messages])
@@ -151,9 +170,8 @@ function ConversationThread() {
     if (!supabase || !conversationId || conversationsLoading || !hasConversation) return undefined
     let active = true
     let timer
-    setOnline(false)
     setTyping(false)
-    const channel = supabase.channel(`conversation-${conversationId}`, { config: { presence: { key: user.id }, broadcast: { self: false } } })
+    const channel = supabase.channel(`conversation-${conversationId}`, { config: { broadcast: { self: false } } })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, async ({ eventType, new: message }) => {
         if (!active) return
         if (eventType === 'INSERT') {
@@ -179,19 +197,15 @@ function ConversationThread() {
           .on('broadcast', { event: 'typing' }, ({ payload }) => {
         if (payload?.senderId !== user.id) { setTyping(true); clearTimeout(remoteTypingTimer.current); remoteTypingTimer.current = setTimeout(() => setTyping(false), 4000) }
       })
-      .on('presence', { event: 'sync' }, () => { const present = Object.keys(channel.presenceState()).some((key) => key !== user.id); setOnline(present); setOnlineUsers?.((current) => { const next = new Set(current); if (present) next.add(conversation.other_user_id); else next.delete(conversation.other_user_id); return next }) })
-      .on('presence', { event: 'join' }, ({ key }) => { if (key !== user.id) { setOnline(true); setOnlineUsers?.((current) => new Set(current).add(conversation.other_user_id)) } })
-      .on('presence', { event: 'leave' }, ({ key }) => { if (key !== user.id) { setOnline(false); setOnlineUsers?.((current) => { const next = new Set(current); next.delete(conversation.other_user_id); return next }) } })
       .subscribe(async (status) => {
         const shouldPoll = ['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(status)
         setPolling(shouldPoll)
-        if (status === 'SUBSCRIBED') await channel.track({ userId: user.id, onlineAt: new Date().toISOString() })
         if (shouldPoll && !timer) timer = window.setInterval(() => { void fetchConversationMessages(conversationId).then((rows) => setMessages((current) => [...rows, ...current.filter((message) => message.optimistic || message.failed)])).catch(() => {}) }, 8000)
         if (!shouldPoll && timer) { window.clearInterval(timer); timer = null }
       })
     channelRef.current = channel
-    return () => { active = false; if (timer) window.clearInterval(timer); clearTimeout(remoteTypingTimer.current); setOnlineUsers?.((current) => { const next = new Set(current); next.delete(conversation.other_user_id); return next }); void supabase.removeChannel(channel) }
-  }, [conversationId, conversationsLoading, hasConversation, user.id, conversation?.other_user_id, setOnlineUsers])
+    return () => { active = false; if (timer) window.clearInterval(timer); clearTimeout(remoteTypingTimer.current); void supabase.removeChannel(channel) }
+  }, [conversationId, conversationsLoading, hasConversation, user.id])
 
   useEffect(() => { const textarea = document.querySelector('.messages-composer textarea'); if (textarea) { textarea.style.height = 'auto'; textarea.style.height = Math.min(textarea.scrollHeight, 104) + 'px' } }, [draft])
 
@@ -222,18 +236,18 @@ function ConversationThread() {
     setMessages((current) => [...earlier, ...current])
     requestAnimationFrame(() => { if (scrollNode.current) scrollNode.current.scrollTop += scrollNode.current.scrollHeight - oldHeight })
   }
-  function onReply(message) { setReplyTo(message); document.querySelector('.messages-composer textarea')?.focus() }
-  function onMore(message) { setMessages((current) => current.map((item) => ({ ...item, showMenu: item.id === message.id ? !item.showMenu : false }))) }
+  function onReply(message) { setReplyTo(message); setMessages((current) => current.map((item) => ({ ...item, showMenu: false, showReactions: false }))); document.querySelector('.messages-composer textarea')?.focus() }
+  function onMore(message) { setMessages((current) => current.map((item) => ({ ...item, showMenu: !message.closeOnly && item.id === message.id ? !item.showMenu : false, showReactions: false }))) }
   async function onReact(message, emoji) {
     if (!emoji) { setMessages((current) => current.map((item) => ({ ...item, showReactions: item.id === message.id ? !item.showReactions : false }))); return }
     try {
       const saved = await setMessageReaction(message.id, user.id, emoji)
       setReactions((current) => [...current.filter((row) => !(row.message_id === message.id && row.user_id === user.id)), ...(saved ? [saved] : [])])
-      setMessages((current) => current.map((item) => item.id === message.id ? { ...item, showReactions: false } : item))
+      setMessages((current) => current.map((item) => item.id === message.id ? { ...item, showMenu: false, showReactions: false } : item))
     } catch (reactionError) { console.error('[chat-reaction]', { code: reactionError.code, message: reactionError.message }) }
   }
   async function onUnsend(message) {
-    try { await unsendConversationMessage(message.id); setMessages((current) => current.map((item) => item.id === message.id ? { ...item, deleted_at: new Date().toISOString() } : item)) }
+    try { await unsendConversationMessage(message.id); setMessages((current) => current.map((item) => item.id === message.id ? { ...item, deleted_at: new Date().toISOString(), showMenu: false, showReactions: false } : item)) }
     catch (unsendError) { console.error('[chat-unsend]', { code: unsendError.code, message: unsendError.message }) }
   }
   async function onCopy(message) { const value = message.body || (message.image_path ? 'Photo' : 'Message deleted'); try { await navigator.clipboard.writeText(value) } catch { /* clipboard access is browser controlled */ } setMessages((current) => current.map((item) => ({ ...item, showMenu: false }))) }
@@ -282,8 +296,8 @@ function ConversationThread() {
 
   const quickReplies = isProvider ? ['Hello, I’m ready to start', 'What time works for you?', 'Thanks for choosing me'] : ['Hi, when can you start?', 'Can you share your quote?', 'Thanks for applying']
   return <section aria-label={'Conversation with ' + conversation.other_display_name} className="messages-thread">
-    <header className="messages-thread__header"><Link aria-label="Back to messages" className="messages-thread__back" to="/app/messages"><ArrowLeft aria-hidden="true" size={21} /></Link><span className={'messages-thread__avatar' + (online ? ' is-online' : '')}><Avatar name={conversation.other_display_name} size={42} /></span><div><strong>{conversation.other_display_name}</strong><span>{typing ? 'Typing…' : online ? 'Active now' : conversation.post_title}</span></div><div className="messages-thread__actions"><Button as={Link} to={postHref} variant="secondary">View job</Button>{!isProvider && <Button aria-label="View professional profile" as={Link} to={`/app/professionals/${conversation.other_user_id}`} variant="ghost"><UserCircle aria-hidden="true" size={19} /></Button>}</div></header>
-    <div className="messages-job-context"><span className="messages-job-context__image">{conversation.cover_path ? <img alt="" src={getPostImageUrl(conversation.cover_path)} /> : <Wrench aria-hidden="true" size={20} />}</span><div><strong>{conversation.post_title}</strong><span>{conversation.post_status === 'completed' ? 'Completed' : conversation.post_status === 'closed' ? 'In progress' : 'Request'}</span></div>{!isProvider && conversation.post_status === 'closed' && <Button as={Link} to={`${postHref}/complete`} variant="secondary">Mark as completed</Button>}</div>
+    <header className="messages-thread__header"><Link aria-label="Back to messages" className="messages-thread__back" to="/app/messages"><ArrowLeft aria-hidden="true" size={21} /></Link><span className={'messages-thread__avatar' + (online ? ' is-online' : '')}><Avatar name={conversation.other_display_name} size={42} src={avatarUrl(conversation.other_avatar_path)} presence={online} /></span><div><strong>{conversation.other_display_name}</strong>{!isProvider && conversation.other_provider_type && <ProviderTypeBadge compact type={conversation.other_provider_type} />}<span>{typing ? 'Typing…' : online ? 'Active now' : conversation.post_title}</span></div><div className="messages-thread__actions"><Button as={Link} to={postHref} variant="secondary">View job</Button>{!isProvider && <Button aria-label="View professional profile" as={Link} to={`/app/professionals/${conversation.other_user_id}`} variant="ghost"><UserCircle aria-hidden="true" size={19} /></Button>}</div></header>
+    <div className="messages-job-context"><span className="messages-job-context__image">{conversation.cover_path ? <img alt="" src={getPostImageUrl(conversation.cover_path)} /> : <Wrench aria-hidden="true" size={20} />}</span><div><strong>{conversation.post_title}</strong><span>{conversation.post_status === 'completed' ? 'Completed' : conversation.post_status === 'closed' ? 'In progress' : 'Request'}</span></div>{!(window.matchMedia('(min-width: 1440px)').matches && !isProvider) && !isProvider && conversation.post_status === 'closed' && <Button as={Link} to={`${postHref}/complete`} variant="secondary">Mark as completed</Button>}</div>
     {error ? <div className="messages-thread__error" role="alert"><p>Messages couldn’t load.</p><Button onClick={() => void load()} variant="secondary">Retry</Button></div> : <>
       <div aria-live="polite" className="messages-thread__scroll" onScroll={onScroll} ref={scrollNode}>
         {loading && <div className="messages-thread__skeletons" role="status" aria-label="Loading messages"><Skeleton /><Skeleton /><Skeleton /></div>}
@@ -297,7 +311,7 @@ function ConversationThread() {
         {replyTo && <div className="messages-composer__reply"><div><strong>Replying to {replyTo.sender_id === user.id ? 'yourself' : conversation.other_display_name}</strong><span>{replyTo.deleted_at ? 'Message deleted' : replyTo.body || (replyTo.image_path ? 'Photo' : '')}</span></div><button aria-label="Cancel reply" onClick={() => setReplyTo(null)} type="button"><X size={18} /></button></div>}
         {photo && <div className="messages-composer__photo"><img alt="Photo preview" src={photo.preview} /><span>Ready to send</span><button aria-label="Remove photo" onClick={() => { URL.revokeObjectURL(photo.preview); setPhoto(null) }} type="button"><X size={18} /></button></div>}
         <div className="messages-composer__tools"><button aria-label="Attach an image" onClick={() => document.getElementById('chat-photo')?.click()} type="button"><Camera size={20} /></button><button aria-label="Choose emoji" onClick={() => setEmojiOpen((open) => !open)} type="button"><Smiley size={20} /></button>{emojiOpen && <div className="messages-emoji-tray">{EMOJI_TRAY.map((emoji, index) => <button key={`${emoji}-${index}`} onClick={() => setDraft((value) => value + emoji)} type="button">{emoji}</button>)}</div>}<input accept="image/*" hidden id="chat-photo" onChange={(event) => { void choosePhoto(event.target.files?.[0]); event.target.value = '' }} type="file" /><span>{photoBusy ? 'Preparing photo…' : ''}</span></div>
-        <textarea aria-label="Write a message" maxLength={2000} onChange={(event) => handleDraftChange(event.target.value)} onKeyDown={handleKeyDown} onPaste={(event) => { const image = [...(event.clipboardData?.items ?? [])].find((item) => item.type.startsWith('image/')); if (image) { event.preventDefault(); void choosePhoto(image.getAsFile()) } }} placeholder={conversation.post_status === 'removed' ? 'Messaging is unavailable for this request' : 'Write a message…'} readOnly={conversation.post_status === 'removed'} rows={1} value={draft} />
+        <textarea aria-label="Write a message" maxLength={2000} onBlur={() => window.scrollTo(0, 0)} onChange={(event) => handleDraftChange(event.target.value)} onFocus={() => window.scrollTo(0, 0)} onKeyDown={handleKeyDown} onPaste={(event) => { const image = [...(event.clipboardData?.items ?? [])].find((item) => item.type.startsWith('image/')); if (image) { event.preventDefault(); void choosePhoto(image.getAsFile()) } }} placeholder={conversation.post_status === 'removed' ? 'Messaging is unavailable for this request' : 'Write a message…'} readOnly={conversation.post_status === 'removed'} rows={1} value={draft} />
         <button aria-label="Send message" className="messages-composer__send" disabled={(!draft.trim() && !photo) || photoBusy || conversation.post_status === 'removed'} type="submit"><PaperPlaneRight aria-hidden="true" size={21} weight="fill" /></button>
       </form>
     </>}
@@ -310,28 +324,40 @@ export function MessagesLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const [conversations, setConversations] = useState([])
-  const [loading, setLoading] = useState(true)
+  const cacheKey = `${user?.id}:messages:list`
+  const cached = appQueryCache.get(cacheKey)
+  const [conversations, setConversations] = useState(() => cached?.conversations ?? [])
+  const [loading, setLoading] = useState(() => !cached)
   const [error, setError] = useState(false)
   const [polling, setPolling] = useState(false)
-  const [onlineUsers, setOnlineUsers] = useState(() => new Set())
+  const lastRefreshAt = useRef(cached?.lastRefreshAt || 0)
+  const { isOnline, refreshPresence } = usePresence()
+  const onlineUsers = useMemo(() => new Set(conversations.filter((conversation) => isOnline(conversation.other_user_id)).map((conversation) => conversation.other_user_id)), [conversations, isOnline])
   const threadOpen = location.pathname !== '/app/messages' && location.pathname !== '/app/messages/'
   const selectedConversation = conversations.find((item) => item.conversation_id === location.pathname.split('/').at(-1))
 
-  const reload = useCallback(async () => {
+  const reload = useCallback(async ({ silent = false } = {}) => {
     try {
       const rows = await fetchMyConversations()
       setConversations(rows)
+      lastRefreshAt.current = Date.now()
+      appQueryCache.set(cacheKey, { conversations: rows, lastRefreshAt: lastRefreshAt.current })
       setError(false)
       return rows
     } catch (loadError) {
       console.error('[chat-read]', { step: 'load-conversations', code: loadError.code, message: loadError.message })
       setError(true)
       return []
-    } finally { setLoading(false) }
-  }, [])
+    } finally { if (!silent) setLoading(false); else setLoading(false) }
+  }, [cacheKey])
 
-  useEffect(() => { void reload() }, [reload])
+  useEffect(() => { if (!cached) void reload(); else if (Date.now() - lastRefreshAt.current >= 60_000) void reload({ silent: true }) }, [cacheKey, cached, reload])
+  useEffect(() => {
+    const refresh = () => { if (document.visibilityState === 'visible' && Date.now() - lastRefreshAt.current >= 60_000) void reload({ silent: true }) }
+    document.addEventListener('visibilitychange', refresh)
+    return () => document.removeEventListener('visibilitychange', refresh)
+  }, [reload])
+  useEffect(() => { void refreshPresence(conversations.map((conversation) => conversation.other_user_id)) }, [conversations, refreshPresence])
 
   useEffect(() => {
     if (!user?.id || !supabase) return undefined
@@ -339,7 +365,8 @@ export function MessagesLayout() {
     const channel = supabase.channel('conversation-list-' + user.id)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, ({ eventType, new: message }) => {
         if (eventType === 'UPDATE' && message.deleted_at) { void reload(); return }
-        setConversations((current) => current.map((row) => {
+        setConversations((current) => {
+          const updated = current.map((row) => {
           if (row.conversation_id !== message.conversation_id) return row
           if (eventType === 'INSERT') return {
             ...row,
@@ -350,7 +377,10 @@ export function MessagesLayout() {
           }
           if (eventType === 'UPDATE' && message.read_at && message.sender_id !== user.id) return { ...row, unread_count: Math.max(0, row.unread_count - 1) }
           return row
-        }).sort((left, right) => new Date(right.last_message_at) - new Date(left.last_message_at)))
+          }).sort((left, right) => new Date(right.last_message_at) - new Date(left.last_message_at))
+          appQueryCache.set(cacheKey, { conversations: updated, lastRefreshAt: lastRefreshAt.current })
+          return updated
+        })
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations' }, ({ new: row }) => {
         if (row.customer_id === user.id || row.provider_id === user.id) void reload()
@@ -358,11 +388,11 @@ export function MessagesLayout() {
       .subscribe((status) => {
         const shouldPoll = ['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(status)
         setPolling(shouldPoll)
-        if (shouldPoll && !timer) timer = window.setInterval(() => { void reload() }, 8000)
+      if (shouldPoll && !timer) timer = window.setInterval(() => { void reload({ silent: true }) }, 8000)
         if (!shouldPoll && timer) { window.clearInterval(timer); timer = null }
       })
     return () => { if (timer) window.clearInterval(timer); void supabase.removeChannel(channel) }
-  }, [user?.id, reload])
+  }, [cacheKey, user?.id, reload])
 
   useEffect(() => {
     const postId = searchParams.get('postId')
@@ -372,7 +402,7 @@ export function MessagesLayout() {
     else navigate('/app/messages', { replace: true })
   }, [conversations, loading, navigate, searchParams])
 
-  const context = useMemo(() => ({ conversations, loading, reload, setOnlineUsers }), [conversations, loading, reload])
+  const context = useMemo(() => ({ conversations, loading, reload }), [conversations, loading, reload])
   return <main className={'messages-shell' + (threadOpen ? ' is-thread-open' : '') + (selectedConversation ? ' has-selection' : '') + (polling ? ' is-polling' : '')}>
     <MessageList conversations={conversations} error={error} isProvider={profile?.account_type === 'provider'} loading={loading} onRetry={() => void reload()} onlineUsers={onlineUsers} userId={user.id} />
     <section className="messages-main"><Outlet context={context} /></section>
@@ -382,6 +412,7 @@ export function MessagesLayout() {
 
 function MessageInfoPane({ conversation, isProvider }) {
   const [photos, setPhotos] = useState([])
+  const { isOnline } = usePresence()
   useEffect(() => {
     let active = true
     supabase.from('messages').select('id, image_path, created_at').eq('conversation_id', conversation.conversation_id).not('image_path', 'is', null).order('created_at', { ascending: false }).limit(12)
@@ -389,7 +420,7 @@ function MessageInfoPane({ conversation, isProvider }) {
     return () => { active = false }
   }, [conversation.conversation_id])
   return <aside className="messages-info-pane">
-    <div className="messages-info-pane__person"><Avatar name={conversation.other_display_name} size={64} /><strong>{conversation.other_display_name}</strong>{!isProvider && <Link to={`/app/professionals/${conversation.other_user_id}`}>View profile</Link>}</div>
+    <div className="messages-info-pane__person"><Avatar name={conversation.other_display_name} size={64} src={avatarUrl(conversation.other_avatar_path)} presence={isOnline(conversation.other_user_id)} /><strong>{conversation.other_display_name}</strong>{!isProvider && conversation.other_provider_type && <ProviderTypeBadge compact type={conversation.other_provider_type} />}{isOnline(conversation.other_user_id) && <span className="messages-info-pane__online">Active now</span>}{!isProvider && <Link to={`/app/professionals/${conversation.other_user_id}`}>View profile</Link>}</div>
       <section><h2>Job</h2><Link className="messages-info-pane__job" to={`/app/posts/${conversation.post_id}`}>{conversation.cover_path && <img alt="" src={getPostImageUrl(conversation.cover_path)} />}<strong>{conversation.post_title}</strong><span>{conversation.post_status === 'completed' ? 'Completed' : conversation.post_status === 'closed' ? 'In progress' : 'Request'}</span></Link>{!isProvider && conversation.post_status === 'closed' && <Button as={Link} to={`/app/posts/${conversation.post_id}/complete`} variant="primary">Mark as completed</Button>}</section>
     <section><h2>Shared photos</h2>{photos.length ? <div className="messages-info-pane__photos">{photos.map((photo) => <Link aria-label="Open conversation" key={photo.id} to={`/app/messages/${conversation.conversation_id}`}><img alt="Shared in conversation" src={getPostImageUrl(photo.image_path)} /></Link>)}</div> : <p className="messages-info-pane__empty">Photos shared in chat will appear here.</p>}</section>
   </aside>

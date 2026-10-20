@@ -147,6 +147,7 @@ export default function DiscoverPage() {
           categorySlug={selectedCategory}
           onCountChange={handleResultCountChange}
           query={query}
+          userId={user?.id || 'public'}
         />
 
         {!resultsLoading && !resultsError && (selectedCategory || query) && resultCount === 0 && (

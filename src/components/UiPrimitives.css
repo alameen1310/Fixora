@@ -414,6 +414,9 @@
 
 /* Avatar */
 .ui-avatar {
+  position: relative;
+  overflow: hidden;
+  flex: 0 0 auto;
   display: inline-grid;
   width: 44px;
   min-width: 44px;
@@ -428,6 +431,9 @@
   -webkit-user-select: none;
   user-select: none;
 }
+.ui-avatar img { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ui-avatar > span { position: relative; z-index: 0; }
+.ui-avatar__presence { position: absolute; z-index: 2; right: 0; bottom: 0; width: 11px; height: 11px; border: 2px solid #fff; border-radius: 50%; background: #1f9d63; }
 
 .ui-avatar--1 {
   color: #1f5e41;
@@ -667,6 +673,12 @@
     animation-duration: 1.4s;
   }
 }
+
+.provider-type-badge { display:inline-flex; width:fit-content; min-height:24px; align-items:center; gap:5px; padding:3px 8px; border:1px solid transparent; border-radius:8px; font-size:12px; font-weight:650; line-height:1.15; white-space:nowrap; }
+.provider-type-badge.is-individual { color:#234eab; border-color:#dbe6ff; background:#edf3ff; }
+.provider-type-badge.is-business { color:#fff; border-color:#243567; background:#182958; }
+.provider-type-badge.is-compact { min-height:22px; padding:2px 6px; font-size:11px; }
+.provider-type-badge:focus-visible { outline:2px solid var(--color-primary); outline-offset:2px; }
 
 /* Shared design tokens: controls are consistent and labels never stretch in grids. */
 .ui-button { min-height: 52px; border-radius: var(--radius-sm); transition: transform var(--motion-fast) var(--ease-standard), opacity var(--motion-fast) var(--ease-standard); }

@@ -9,7 +9,7 @@ const benefits = [
   { icon: LockKey, text: 'Your phone number stays private' },
 ]
 
-export default function AuthLayout({ children }) {
+export default function AuthLayout({ children, wide = false }) {
   return (
     <main className="auth-layout">
       <aside aria-label="About Fixora" className="auth-layout__brand-panel">
@@ -28,12 +28,12 @@ export default function AuthLayout({ children }) {
           </figure>
         </div>
       </aside>
-      <div className="auth-layout__form-side">
+      <div className={`auth-layout__form-side${wide ? ' is-wide' : ''}`}>
         <div className="auth-layout__mobile-brand">
           <img alt="" aria-hidden="true" className="auth-layout__mobile-photo" decoding="async" fetchPriority="high" height="1200" src={heroPhoto} width="1600" />
           <AuthHeader className="auth-layout__mobile-header" /><p>The right professional for every home fix.</p>
         </div>
-        <div className="auth-layout__content">
+        <div className={`auth-layout__content${wide ? ' auth-layout__content--wide' : ''}`}>
           <AuthHeader className="auth-layout__header" />
           {children}
         </div>

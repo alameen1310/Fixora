@@ -3,8 +3,10 @@ import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, MapPin } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { publishedProviderSelection } from '../lib/providerQueries.js'
-import { Avatar, Badge, Button, Chip, ListGroup, ListRow, Skeleton } from '../components/UiPrimitives.jsx'
+import { avatarUrl } from '../lib/avatarImages.js'
+import { Avatar, Badge, Button, Chip, ListGroup, ListRow, ProviderTypeBadge, Skeleton } from '../components/UiPrimitives.jsx'
 import ProviderWorkSummary from '../components/ProviderWorkSummary.jsx'
+import { usePresence } from '../components/PresenceProvider.jsx'
 import './AuthenticatedPages.css'
 
 export default function ProfessionalProfilePage() {
@@ -13,6 +15,7 @@ export default function ProfessionalProfilePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [attempt, setAttempt] = useState(0)
+  const { isOnline, refreshPresence } = usePresence()
 
   const loadProfile = useCallback(async () => {
     setLoading(true)
@@ -26,12 +29,13 @@ export default function ProfessionalProfilePage() {
         .maybeSingle()
       if (queryError) throw queryError
       setProvider(data)
+      if (data?.profile_id) void refreshPresence([data.profile_id])
     } catch {
       setError(true)
     } finally {
       setLoading(false)
     }
-  }, [professionalId])
+  }, [professionalId, refreshPresence])
 
   useEffect(() => {
     loadProfile()
@@ -79,12 +83,12 @@ export default function ProfessionalProfilePage() {
       ) : (
         <article className="app-public-profile">
           <header className="app-public-profile__header">
-            <Avatar name={provider.display_name} size={64} />
+            <Avatar name={provider.display_name} size={96} src={avatarUrl(provider.avatar_path)} presence={isOnline(provider.profile_id)} />
             <div className="app-public-profile__titles">
-              <Badge tone="neutral">
-                {provider.provider_type === 'business' ? 'Service business' : 'Independent professional'}
-              </Badge>
               <h1>{provider.display_name}</h1>
+              <ProviderTypeBadge type={provider.provider_type} />
+              <Badge tone={provider.availability === 'busy' ? 'neutral' : 'success'}>{provider.availability === 'busy' ? 'Busy' : 'Available'}</Badge>
+              {isOnline(provider.profile_id) && <span className="app-public-profile__online">Online now</span>}
             </div>
           </header>
 
@@ -123,7 +127,7 @@ export default function ProfessionalProfilePage() {
             )}
           </div>
 
-          <ProviderWorkSummary displayName={provider.display_name} profileId={provider.profile_id} />
+          <ProviderWorkSummary avatarPath={provider.avatar_path} displayName={provider.display_name} profileId={provider.profile_id} providerType={provider.provider_type} />
         </article>
       )}
     </main>

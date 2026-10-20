@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
-import { ArrowRight, Bell, CheckCircle, ClockCounterClockwise } from '@phosphor-icons/react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { ArrowRight, Bell, ClockCounterClockwise, Star } from '@phosphor-icons/react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Avatar, Badge, Button, EmptyState, Skeleton } from '../components/UiPrimitives.jsx'
+import { Avatar, Badge, Button, EmptyState, ProviderTypeBadge, Skeleton } from '../components/UiPrimitives.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import MarketplaceRail from '../components/MarketplaceRail.jsx'
 import { fetchMarketplaceActivities, fetchProviderApplications, markMarketplaceActivityRead } from '../lib/applicationQueries.js'
@@ -10,6 +10,9 @@ import { getPostImageUrl } from '../lib/postImages.js'
 import { FEATURES } from '../config/features.js'
 import './ActivityPage.css'
 import './AuthenticatedPages.css'
+import { avatarUrl } from '../lib/avatarImages.js'
+import { appQueryCache } from '../lib/postListCache.js'
+import { usePresence } from '../components/PresenceProvider.jsx'
 
 function activityMessage(activity) {
   const title = activity.problem_posts?.title || 'your request'
@@ -30,24 +33,46 @@ const predicatesFor = (userId) => ({
 export default function ActivityPage() {
   const { user, profile } = useAuth()
   const isProvider = profile?.account_type === 'provider'
+  const { isOnline, refreshPresence } = usePresence()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [items, setItems] = useState([])
-  const [loading, setLoading] = useState(true)
+  const cacheKey = `${user.id}:activity:${isProvider ? 'provider' : 'customer'}`
+  const cached = appQueryCache.get(cacheKey)
+  const [items, setItems] = useState(() => cached?.items ?? [])
+  const [loading, setLoading] = useState(() => !cached)
   const [error, setError] = useState(false)
+  const lastRefreshAt = useRef(cached?.lastRefreshAt || 0)
+  const loadInFlight = useRef(false)
   const [segment, setSegment] = useState(() => ['applied', 'selected', 'declined'].includes(searchParams.get('segment')) ? searchParams.get('segment') : 'applied')
   const predicates = predicatesFor(user.id)
 
-  const load = useCallback(async () => {
-    setLoading(true); setError(false)
-    try { setItems(isProvider ? await fetchProviderApplications(user.id) : await fetchMarketplaceActivities(user.id)) }
-    catch { setError(true) }
-    finally { setLoading(false) }
-  }, [isProvider, user.id])
-  useEffect(() => { void load() }, [load])
+  const load = useCallback(async ({ silent = false } = {}) => {
+    if (loadInFlight.current) return
+    loadInFlight.current = true
+    if (!silent) { setLoading(true); setError(false) }
+    const startedAt = performance.now()
+    try {
+      const nextItems = isProvider ? await fetchProviderApplications(user.id) : await fetchMarketplaceActivities(user.id)
+      setItems(nextItems)
+      lastRefreshAt.current = Date.now()
+      appQueryCache.set(cacheKey, { items: nextItems, lastRefreshAt: lastRefreshAt.current })
+      setError(false)
+      if (import.meta.env.DEV) console.info('[query-timing] Activity', { role: isProvider ? 'provider' : 'customer', durationMs: Math.round(performance.now() - startedAt), rows: nextItems.length })
+    } catch (loadError) {
+      console.error('[activity-load]', { code: loadError?.code, message: loadError?.message })
+      setError(true)
+    } finally { loadInFlight.current = false; setLoading(false) }
+  }, [cacheKey, isProvider, user.id])
+  useEffect(() => { if (!cached) void load(); else if (Date.now() - lastRefreshAt.current >= 60_000) void load({ silent: true }) }, [cacheKey, cached, load])
+  useEffect(() => {
+    const refresh = () => { if (document.visibilityState === 'visible' && Date.now() - lastRefreshAt.current >= 60_000) void load({ silent: true }) }
+    document.addEventListener('visibilitychange', refresh)
+    return () => document.removeEventListener('visibilitychange', refresh)
+  }, [load])
+  useEffect(() => { void refreshPresence(items.map((item) => item.actor_id).filter(Boolean)) }, [items, refreshPresence])
 
   async function markRead(item) {
     if (item.read_at) return
-    try { await markMarketplaceActivityRead(item.id, user.id); setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, read_at: new Date().toISOString() } : entry)) }
+    try { await markMarketplaceActivityRead(item.id, user.id); setItems((current) => { const next = current.map((entry) => entry.id === item.id ? { ...entry, read_at: new Date().toISOString() } : entry); appQueryCache.set(cacheKey, { items: next, lastRefreshAt: lastRefreshAt.current }); return next }) }
     catch { setError(true) }
   }
   function selectSegment(next) { setSegment(next); const params = new URLSearchParams(searchParams); params.set('segment', next); setSearchParams(params, { replace: true }) }
@@ -96,7 +121,25 @@ export default function ActivityPage() {
         : items.length === 0 ? <section className="activity-empty"><EmptyState action={<Button as={Link} to="/app/discover" variant="secondary">Discover professionals <ArrowRight aria-hidden="true" size={16} /></Button>} icon={Bell} message="When a professional applies or a customer makes a decision, updates will appear here." title="No activity yet" /></section>
           : <div className="activity-layout"><section aria-label="Recent activity" className="activity-list">{groups.map(([group, groupedItems]) => !groupedItems.length ? null : <div className="activity-group" key={group}><h2>{group}</h2><div className="activity-group__surface">{groupedItems.map((item) => {
             const target = item.kind === 'application_received' && item.problem_posts?.id ? `/app/posts/${item.post_id}/applicants` : `/app/posts/${item.post_id}`
-            return <article className={`activity-item${item.read_at ? '' : ' is-unread'}`} key={item.id}><span className="activity-item__icon">{item.kind === 'application_received' ? <ClockCounterClockwise aria-hidden="true" size={19} /> : <CheckCircle aria-hidden="true" size={19} />}</span>{item.kind === 'application_received' && <Avatar name={item.actorName || 'Professional'} size={40} />}<div className="activity-item__body"><p>{activityMessage(item)}</p><time>{new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.created_at))}</time></div><div className="activity-item__actions">{FEATURES.chat && ['post_hired', 'post_completed'].includes(item.kind) && <Link aria-label="Message the hired professional" className="activity-message-action" to={`/app/messages?postId=${item.post_id}`}><span>Message</span></Link>}{!item.read_at && <button aria-label="Mark as read" className="activity-read-button" onClick={() => void markRead(item)} title="Mark as read" type="button"><span /></button>}<Link aria-label="Open related request" to={target}><ArrowRight aria-hidden="true" size={19} /></Link></div></article>
+            const post = item.problem_posts
+            const activityStatus = item.kind === 'application_received' ? 'New application' : item.kind === 'post_hired' ? 'In progress' : item.kind === 'post_completed' ? 'Completed' : null
+            return <article className={`activity-item${item.read_at ? '' : ' is-unread'}`} key={item.id} onClick={() => void markRead(item)}>
+              {post?.coverPath && <Link aria-label={`Open ${post.title}`} className="activity-item__thumbnail" to={target}><img alt="" loading="lazy" src={getPostImageUrl(post.coverPath)} /></Link>}
+              <div className="activity-item__body">
+                <div className="activity-item__heading">
+                  {item.actor_id && <Avatar name={item.actorName || 'Professional'} size={40} src={avatarUrl(item.actorAvatarPath)} presence={isOnline(item.actor_id)} />}
+                  <div className="activity-item__identity"><strong>{item.actorName || (item.kind === 'application_received' ? 'A professional' : 'Fixora')}</strong>{item.actorProviderType && <ProviderTypeBadge compact type={item.actorProviderType} />}</div>
+                  {activityStatus && <Badge tone={activityStatus === 'Completed' ? 'neutral' : activityStatus === 'In progress' ? 'success' : 'info'}>{activityStatus}</Badge>}
+                  {!item.read_at && <span className="activity-item__new">New</span>}
+                </div>
+                <p>{activityMessage(item)}</p>
+                {post && <div className="activity-item__request"><span>{post.service_categories?.name || 'Service request'}</span><strong>{post.title}</strong><small>{formatPostBudget(post)}{post.city || post.region ? ` · ${[post.city, post.region].filter(Boolean).join(', ')}` : ''}</small></div>}
+                {item.problem_post_applications?.message && <p className="activity-item__note">Application note: {item.problem_post_applications.message}</p>}
+                {Number.isFinite(Number(item.actorRating?.review_count)) && Number(item.actorRating.review_count) > 0 && <small className="activity-item__reputation"><Star aria-hidden="true" size={14} weight="fill" /> {Number(item.actorRating.average_rating).toFixed(1)} ({item.actorRating.review_count}) · {item.actorCompletedJobs} completed {item.actorCompletedJobs === 1 ? 'job' : 'jobs'}</small>}
+                <time>{new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.created_at))}</time>
+              </div>
+              <div className="activity-item__actions">{FEATURES.chat && ['post_hired', 'post_completed'].includes(item.kind) && <Link aria-label="Message the hired professional" className="activity-message-action" onClick={(event) => event.stopPropagation()} to={`/app/messages?postId=${item.post_id}`}><span>Message</span></Link>}{!item.read_at && <button aria-label="Mark as read" className="activity-read-button" onClick={(event) => { event.stopPropagation(); void markRead(item) }} title="Mark as read" type="button"><span /></button>}<Link aria-label="Open related request" onClick={() => void markRead(item)} to={target}><ArrowRight aria-hidden="true" size={19} /></Link></div>
+            </article>
           })}</div></div>)}</section><MarketplaceRail userId={user.id} /></div>}
   </main>
 }
