@@ -146,7 +146,8 @@
 
 .fixora-app__route-stage { animation: app-route-enter 220ms var(--ease-standard) both; }
 .fixora-app__route-stage--tab { animation-name: app-tab-enter; }
-@keyframes app-route-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+/* Keep transforms off the route wrapper so fixed form actions stay viewport-fixed. */
+@keyframes app-route-enter { from { opacity: 0; } to { opacity: 1; } }
 @keyframes app-tab-enter { from { opacity: 0; } to { opacity: 1; } }
 .app-home--enter .home-hero { animation: app-route-enter 230ms var(--ease-standard) both; }
 .app-home--enter .app-section { animation: app-route-enter 230ms var(--ease-standard) both; }

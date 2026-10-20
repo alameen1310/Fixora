@@ -1,5 +1,5 @@
-const SHELL_CACHE = 'fixora-shell-v2'
-const ASSET_CACHE = 'fixora-assets-v2'
+const SHELL_CACHE = 'fixora-shell-v3'
+const ASSET_CACHE = 'fixora-assets-v3'
 const APP_ROOT = new URL('./', self.registration.scope)
 const APP_BASE_PATH = APP_ROOT.pathname
 const appUrl = (path) => new URL(path, APP_ROOT).href
@@ -23,6 +23,7 @@ self.addEventListener('install', (event) => {
       .filter((url) => url.origin === self.location.origin && url.pathname.startsWith(`${APP_BASE_PATH}assets/`))
       .map((url) => url.href)
     await cache.addAll([...APP_SHELL.slice(1), ...shellAssets])
+    await self.skipWaiting()
   })())
 })
 
@@ -62,13 +63,16 @@ self.addEventListener('fetch', (event) => {
   const isAppAsset = ['assets/', 'icons/'].some((path) => url.pathname.startsWith(`${APP_BASE_PATH}${path}`))
   if (!isAppAsset && url.pathname !== new URL(MANIFEST_URL).pathname) return
 
-  event.respondWith(
-    caches.open(ASSET_CACHE).then(async (cache) => {
+  event.respondWith((async () => {
+    const cache = await caches.open(ASSET_CACHE)
+    try {
+      const response = await fetch(request)
+      if (response.ok && response.type === 'basic') await cache.put(request, response.clone())
+      return response
+    } catch {
       const cached = await cache.match(request)
       if (cached) return cached
-      const response = await fetch(request)
-      if (response.ok && response.type === 'basic') cache.put(request, response.clone())
-      return response
-    }),
-  )
+      throw new Error('This Fixora resource is not available offline.')
+    }
+  })())
 })

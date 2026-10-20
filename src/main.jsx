@@ -4,6 +4,12 @@ import App from './App.jsx'
 import './index.css'
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  let reloadingForWorker = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloadingForWorker) return
+    reloadingForWorker = true
+    window.location.reload()
+  })
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register(`${import.meta.env.BASE_URL}sw.js`, { scope: import.meta.env.BASE_URL })
