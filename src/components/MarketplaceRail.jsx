@@ -4,19 +4,21 @@ import { Link } from 'react-router-dom'
 import { fetchLatestMyPosts } from '../lib/postQueries.js'
 import { supabase } from '../lib/supabase.js'
 
-export default function MarketplaceRail({ userId }) {
+export default function MarketplaceRail({ categories: suppliedCategories, userId }) {
   const [posts, setPosts] = useState([])
-  const [categories, setCategories] = useState([])
+  const [loadedCategories, setLoadedCategories] = useState([])
   useEffect(() => {
     let active = true
-    Promise.all([
-      fetchLatestMyPosts(userId, 3).catch(() => []),
-      supabase.from('service_categories').select('name, slug').order('name').then(({ data }) => data ?? []).catch(() => []),
-    ]).then(([nextPosts, nextCategories]) => {
-      if (active) { setPosts(nextPosts); setCategories(nextCategories) }
-    })
+    fetchLatestMyPosts(userId, 3).then((rows) => { if (active) setPosts(rows) }).catch(() => { if (active) setPosts([]) })
     return () => { active = false }
   }, [userId])
+  useEffect(() => {
+    if (suppliedCategories) return undefined
+    let active = true
+    supabase.from('service_categories').select('name, slug').order('name').then(({ data }) => { if (active) setLoadedCategories(data ?? []) })
+    return () => { active = false }
+  }, [suppliedCategories])
+  const categories = suppliedCategories ?? loadedCategories
 
   return <aside aria-label="Marketplace shortcuts" className="marketplace-rail">
     <section className="marketplace-rail__card">

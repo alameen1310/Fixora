@@ -68,7 +68,7 @@ export default function ProviderHome() {
         const reviewActivity = (reviews ?? []).map((review) => ({ id: `review-${review.id}`, created_at: review.created_at, text: `Received a ${review.rating}-star review` }))
         if (!active) return
         const earned = (completedResult.data ?? []).reduce((sum, post) => sum + Number(post.final_price_naira || 0), 0)
-        setData({ provider, matched, applications, activeJobs, activeCount: activeResult.count ?? 0, authorNames, pendingCount: pendingResult.count ?? 0, completedCount: completedResult.count ?? 0, earned, rating: ratingResult.data, latestReview: reviews?.[0] ?? null, activity: [...applicationActivity.filter((item) => !item.text.startsWith('Applied to ')), ...reviewActivity].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 6) })
+        setData({ provider, matched, applications, activeJobs, activeCount: activeResult.count ?? 0, authorNames, pendingCount: pendingResult.count ?? 0, completedCount: completedResult.count ?? 0, earned, rating: ratingResult.data, latestReview: reviews?.[0] ?? null, activity: [...applicationActivity, ...reviewActivity].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 6) })
       } catch (loadError) {
         console.error('[provider-home]', { code: loadError?.code, message: loadError?.message })
         if (active) setError(true)
@@ -81,6 +81,7 @@ export default function ProviderHome() {
   const provider = data?.provider
   const services = (provider?.provider_service_categories ?? []).map(({ category }) => category?.name).filter(Boolean)
   const profileReady = Boolean(provider?.is_published && provider.provider_service_categories?.length && provider.provider_service_areas?.length)
+  const hasRailContent = Boolean(data?.activity.length || data?.latestReview || provider?.is_published || !provider)
   const setupMessage = !provider ? 'Create your professional profile to appear in public search.' : !provider.provider_service_categories?.length ? 'Add the services you offer so requests can match your profile.' : !provider.provider_service_areas?.length ? 'Add the states where you work to match nearby requests.' : 'Publish your profile to appear in public search.'
 
   if (loading) return <main className="provider-home app-page"><header className="provider-home__header"><Skeleton style={{ width: 280, height: 38 }} /></header><div className="provider-home__stats"><Skeleton /><Skeleton /><Skeleton /><Skeleton /></div><Skeleton style={{ height: 300 }} /></main>
@@ -94,7 +95,7 @@ export default function ProviderHome() {
     { label: 'Rating', value: ratingCount ? <><Star aria-hidden="true" size={18} weight="fill" /> {Number(data.rating.average_rating).toFixed(1)}</> : '–', to: `/app/professionals/${user.id}#reviews`, hint: ratingCount ? `${ratingCount} ${ratingCount === 1 ? 'review' : 'reviews'}` : 'No reviews yet' },
   ]
 
-  return <div className="provider-home-layout">
+  return <div className={`provider-home-layout${hasRailContent ? ' has-rail' : ''}`}>
     <main className="provider-home app-page">
       <header className="provider-home__header"><div><h1>{greeting()}, {name}</h1></div><Link className={`provider-home__live${profileReady ? '' : ' is-draft'}`} to={profileReady ? `/app/professionals/${user.id}` : '/onboarding/provider'}><span />{profileReady ? 'Profile live' : 'Complete profile'}<ArrowRight aria-hidden="true" size={15} /></Link></header>
       {!profileReady && <aside className="provider-home__setup"><div><strong>Your profile needs one more step</strong><span>{setupMessage}</span></div><Button as={Link} to="/onboarding/provider" variant="secondary">Finish profile</Button></aside>}
@@ -108,11 +109,11 @@ export default function ProviderHome() {
       </section>
       {data?.activeJobs.length > 0 && <section className="provider-home__section"><div className="provider-home__section-head"><h2>Active jobs</h2><Link to="/app/activity?segment=selected">View all <ArrowRight aria-hidden="true" size={15} /></Link></div><div className="provider-job-list">{data.activeJobs.map((post) => <article className="provider-job-row" key={post.id}><Avatar name={data.authorNames[post.id] || 'Customer'} size={42} /><div className="provider-job-row__copy"><strong>{data.authorNames[post.id] || 'Customer'}</strong><Link to={`/app/posts/${post.id}`}>{post.title}</Link></div><Badge tone="success">In progress</Badge><Button as={Link} to={`/app/messages?postId=${post.id}`} variant="secondary">Message</Button><Button as={Link} to={`/app/posts/${post.id}`} variant="ghost">View</Button></article>)}</div></section>}
     </main>
-    <aside className="provider-home__rail">
+    {hasRailContent && <aside className="provider-home__rail">
       {data?.activity.length > 0 && <section className="provider-rail-block"><h2>Recent activity</h2>{data.activity.map((item) => <div className="provider-activity-line" key={item.id}><span>{item.text}</span><time>{formatRelativeTime(item.created_at)}</time></div>)}</section>}
       {data?.latestReview && <section className="provider-rail-block provider-latest-review"><h2>Latest review</h2><div className="provider-latest-review__stars"><Star aria-hidden="true" size={15} weight="fill" /> {data.latestReview.rating}/5</div>{data.latestReview.comment && <p>{data.latestReview.comment}</p>}<span>{data.latestReview.customer_display_name}</span></section>}
       {provider?.is_published && <section className="provider-public-mini"><span className="provider-public-mini__label">Your public profile</span><div><Avatar name={provider.display_name} size={44} /><div><strong>{provider.display_name}</strong><span>{services.slice(0, 2).join(' · ') || 'Services not listed'}</span></div></div><Link to={`/app/professionals/${user.id}`}>View as customer <ArrowRight aria-hidden="true" size={15} /></Link></section>}
       {!provider && <section className="provider-rail-block"><h2>Get started</h2><p>Set up your professional profile to find requests that match your services.</p><Button as={Link} to="/onboarding/provider" variant="primary"><Briefcase aria-hidden="true" size={16} />Complete profile</Button></section>}
-    </aside>
+    </aside>}
   </div>
 }

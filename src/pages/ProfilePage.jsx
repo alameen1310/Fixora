@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Briefcase, MapPin, Star } from '@phosphor-icons/react'
+import { ArrowLeft, Briefcase, MapPin, Star } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
@@ -35,7 +35,7 @@ export default function ProfilePage() {
   const areas = (provider?.provider_service_areas ?? []).map((area) => [area.city, area.region].filter(Boolean).join(', ')).filter(Boolean)
 
   if (isProvider) return <main className="app-page app-page--profile provider-profile-page">
-    <header className="app-page__heading"><h1 className="text-large-title">Profile</h1></header>
+    <ProfileNavigation />
     {loading ? <div className="provider-profile-layout"><section><Skeleton style={{ height: 160 }} /><Skeleton style={{ height: 280, marginTop: 20 }} /></section><Skeleton style={{ height: 360 }} /></div>
       : error ? <section className="posts-feed__error" role="alert"><h2>Profile didn’t load</h2><ButtonRetry onRetry={() => setAttempt((value) => value + 1)} /></section>
         : provider ? <div className="provider-profile-layout">
@@ -53,12 +53,14 @@ export default function ProfilePage() {
   </main>
 
   return <main className="app-page app-page--profile">
-    <header className="app-page__heading"><h1 className="text-large-title">Profile</h1></header>
+    <ProfileNavigation />
     <header className="profile-hero"><Avatar name={displayName} size={72} /><div className="profile-hero__meta"><h2 className="profile-hero__name">{displayName}</h2><p className="profile-hero__email">{user?.email || 'Authenticated account'}</p></div></header>
     <section className="app-profile-section"><h2 className="app-group-title">Account</h2><ListGroup><ListRow icon={Briefcase} value="Customer">Account type</ListRow></ListGroup></section>
     <section className="app-profile-section"><h2 className="app-group-title">About Fixora</h2><ListGroup><ListRow value="v0.1.0">App version</ListRow></ListGroup></section>
     <section className="app-profile-section app-profile-section--danger"><h2 className="app-group-title">Session</h2><ListGroup><SignOutAction location="profile" /></ListGroup></section>
   </main>
 }
+
+function ProfileNavigation() { return <header className="mobile-subpage-nav"><Link aria-label="Back to Home" to="/app"><ArrowLeft aria-hidden="true" size={20} /><span>Home</span></Link><h1>Profile</h1><span aria-hidden="true" /> </header> }
 
 function ButtonRetry({ onRetry }) { return <button className="ui-button ui-button--secondary" onClick={onRetry} type="button">Try again</button> }

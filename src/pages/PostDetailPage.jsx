@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ArrowLeft, CalendarBlank, MapPin, Wrench } from '@phosphor-icons/react'
+import { ArrowLeft, CalendarBlank, DotsThree, MapPin, Wrench } from '@phosphor-icons/react'
 import { Star } from '@phosphor-icons/react'
 import { Link, useParams } from 'react-router-dom'
 import { ActionSheet, Avatar, Badge, Button, Skeleton } from '../components/UiPrimitives.jsx'
@@ -115,10 +115,8 @@ export default function PostDetailPage() {
         ? 'You have already applied to this request.'
         : applyError.code === '42501'
           ? 'Your application could not be accepted. Confirm your professional profile is published and the request is still open.'
-          : applyError.code === '42P17'
-            ? 'A server permission check blocked this application. Please try again; the issue has been logged.'
-            : applyError.message || 'The server could not save your application.'
-      showToast({ type: 'error', message: `Could not submit your application: ${message}${applyError.code ? ` (${applyError.code})` : ''}` })
+          : 'Check your connection and try again. Your application has not been submitted.'
+      showToast({ type: 'error', message: `Could not submit your application: ${message}` })
       return
     }
     setApplication(data)
@@ -144,7 +142,7 @@ export default function PostDetailPage() {
 
   return (
     <main className="app-page post-detail">
-      <Link className="app-back-link post-detail__back" to="/app"><ArrowLeft aria-hidden="true" size={19} />Back to posts</Link>
+      <nav aria-label="Request navigation" className="post-detail__navigation"><Link className="app-back-link post-detail__back" to="/app"><ArrowLeft aria-hidden="true" size={19} /><span>Back</span></Link><strong>Request</strong>{post.author_id === user?.id && post.status !== 'removed' && post.status !== 'completed' && <details className="post-detail__owner-menu"><summary aria-label="Request actions"><DotsThree aria-hidden="true" size={22} /></summary><div><Link to={`/app/posts/${post.id}/edit`}>Edit request</Link>{post.hired_professional_id ? null : <button disabled={actionBusy} onClick={() => void changeStatus(post.status === 'closed' ? 'open' : 'closed')} type="button">{post.status === 'closed' ? 'Reopen request' : 'Close request'}</button>}{!post.hired_professional_id && <button onClick={() => setRemoveOpen(true)} type="button">Remove request</button>}</div></details>}</nav>
       <div className={`post-detail__layout${post.images.length ? ' has-gallery' : ''}`}>
       {post.images.length === 0 && <section aria-label="No photos added to this request" className="post-detail__no-gallery"><div><Wrench aria-hidden="true" weight="light" /><span>{post.service_categories?.name || 'Service request'}</span></div></section>}
       {post.status === 'completed' && <section aria-label="Before and after completed work" className="post-gallery post-gallery--comparison"><BeforeAfterSlider after={post.images.filter((image) => image.kind === 'after').map((image) => ({ ...image, url: imageUrls[image.storage_path] }))} before={post.images.filter((image) => image.kind === 'before').map((image) => ({ ...image, url: imageUrls[image.storage_path] }))} title={post.title} /></section>}
@@ -207,6 +205,12 @@ export default function PostDetailPage() {
           </> : post.status === 'open' && post.published_at ? <><h2>Publish your professional profile to apply</h2><p>Customers need to see your services and service areas before they can review an application.</p></> : <><h2>Applications closed</h2><p>This request is no longer accepting applications.</p></>}
         </section>}
       </article>
+      </div>
+      <div className="post-detail__mobile-action">
+        {post.author_id === user?.id && post.status === 'closed' && post.hired_professional_id && <Button as={Link} to={`/app/posts/${post.id}/complete`}>Mark as completed</Button>}
+        {post.author_id === user?.id && post.status === 'open' && <Button as={Link} to={`/app/posts/${post.id}/applicants`}>View applicants ({applicationCount})</Button>}
+        {post.author_id !== user?.id && profile?.account_type === 'provider' && post.status === 'open' && post.published_at && providerPublished && !application && <Button onClick={() => document.querySelector('.post-application-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>Apply</Button>}
+        {FEATURES.chat && post.hired_professional_id && post.status !== 'removed' && (post.author_id === user?.id || post.hired_professional_id === user?.id) && <Button as={Link} to={`/app/messages?postId=${post.id}`} variant={post.author_id === user?.id && post.status === 'closed' ? 'secondary' : 'primary'}>Message</Button>}
       </div>
       <ActionSheet busy={actionBusy} confirmLabel="Remove post" description="This removes the post from Fixora. Its photos remain stored." onCancel={() => setRemoveOpen(false)} onConfirm={() => { setRemoveOpen(false); void changeStatus('removed') }} open={removeOpen} title="Remove this post?" />
     </main>

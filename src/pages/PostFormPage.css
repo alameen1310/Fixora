@@ -40,6 +40,11 @@
   .post-form-content--step-2 .ui-field textarea { min-height: 220px; }
 }
 @media (min-width: 1024px) { .post-form-actions { right: max(32px, calc((100vw - 264px - 1040px) / 2)); left: calc(264px + max(32px, (100vw - 264px - 1040px) / 2)); padding-inline: 32px; } }
+@media (max-width: 1023px) {
+  .post-form-actions { bottom: var(--kb-inset, var(--keyboard-offset, 0px)); display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--color-border); background: #fff; box-shadow: 0 -8px 24px rgba(16,32,96,.09); }
+  .post-form-actions .ui-button { width: 100%; min-width: 0; }
+  .post-form-actions > :only-child { grid-column: 1 / -1; }
+}
 @media (prefers-reduced-motion: reduce) { .post-form-content, .post-form-progress span { animation: none; transition: none; } }
 
 .post-form-page { width: min(100%, 1200px) !important; max-width: 1200px !important; }
@@ -200,4 +205,10 @@
   .post-form-review__cover { grid-column: 1 / -1; aspect-ratio: 4 / 3; }
   .post-photo-lightbox { padding: 12px; }
   .post-photo-lightbox__panel { padding: 8px; border-radius: 16px; }
+}
+
+@media (max-width: 1023px) {
+  .post-form-actions { bottom: var(--kb-inset, var(--keyboard-offset, 0px)); display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--color-border); background: #fff; box-shadow: 0 -8px 24px rgba(16,32,96,.09); }
+  .post-form-actions .ui-button { width: 100%; min-width: 0; }
+  .post-form-actions > :only-child { grid-column: 1 / -1; }
 }

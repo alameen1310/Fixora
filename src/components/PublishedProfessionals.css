@@ -226,3 +226,6 @@
   .professional-feed { animation: none; }
 }
 .professional-card__rating { display:inline-flex; align-items:center; gap:4px; margin-top:3px; color:#956600; font-size:13px; font-weight:650; }
+.professional-card { min-height: 256px; border: 1px solid rgba(18,38,110,.07); border-radius: 14px; box-shadow: var(--shadow-card); }
+.professional-card__description { min-height: 3em; }
+@media (max-width: 639px) { .professional-card { min-height: 220px; } }
