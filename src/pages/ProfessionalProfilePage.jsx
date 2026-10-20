@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, MapPin, Wrench } from '@phosphor-icons/react'
+import { ArrowLeft, MapPin } from '@phosphor-icons/react'
 import { supabase } from '../lib/supabase.js'
 import { publishedProviderSelection } from '../lib/providerQueries.js'
 import { Avatar, Badge, Button, Chip, ListGroup, ListRow, Skeleton } from '../components/UiPrimitives.jsx'
@@ -121,16 +121,6 @@ export default function ProfessionalProfilePage() {
             ) : (
               <p className="app-muted">No specific areas listed yet.</p>
             )}
-          </div>
-
-          <div className="app-public-profile__contact-card">
-            <div className="app-contact-notice">
-              <Wrench aria-hidden="true" size={20} />
-              <div>
-                <strong>Direct contact is coming soon</strong>
-                <span>Job requests and contact tools are coming in an upcoming release.</span>
-              </div>
-            </div>
           </div>
 
           <ProviderWorkSummary displayName={provider.display_name} profileId={provider.profile_id} />

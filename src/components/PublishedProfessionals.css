@@ -93,14 +93,11 @@
   cursor: pointer;
   -webkit-user-select: none;
   user-select: none;
-  transition:
-    transform var(--motion-fast) var(--ease-standard),
-    box-shadow var(--motion-standard) var(--ease-standard),
-    border-color var(--motion-standard) var(--ease-standard);
+  transition: transform var(--motion-fast) var(--ease-standard), opacity var(--motion-fast) var(--ease-standard);
 }
 
 .professional-card:hover {
-  box-shadow: 0 12px 30px rgb(25 70 184 / 12%), 0 3px 8px rgb(23 25 29 / 6%);
+  transform: translateY(-2px);
 }
 
 .professional-card:active {
@@ -147,7 +144,7 @@
 .professional-card__chevron {
   flex: 0 0 auto;
   color: var(--color-text-secondary);
-  transition: transform var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard);
+  transition: transform var(--motion-fast) var(--ease-standard);
 }
 
 .professional-card:hover .professional-card__chevron {

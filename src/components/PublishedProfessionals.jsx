@@ -149,7 +149,7 @@ export default function PublishedProfessionals({ categorySlug = '', limit = 12, 
                   {remainingServices > 0 && <span className="professional-service-chip">+{remainingServices}</span>}
                 </div>
               )}
-              {provider.service_description && <p className="professional-card__description">{provider.service_description}</p>}
+              <p className="professional-card__description">{provider.service_description?.trim() || 'Service details not provided.'}</p>
               {areas.length > 0 && (
                 <div className="professional-card__areas">
                   <MapPin aria-hidden="true" size={15} />

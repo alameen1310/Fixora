@@ -62,7 +62,7 @@ export async function fetchProviderApplications(userId) {
   const postIds = [...new Set(rows.map(({ post_id }) => post_id))]
   const [{ data: posts, error: postsError }, { data: activities, error: activitiesError }] = await Promise.all([
     supabase.from('problem_posts')
-      .select('id, title, category_id, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, status, hired_professional_id, hired_at, created_at, service_categories(name)')
+      .select('id, title, category_id, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, status, hired_professional_id, hired_at, created_at, service_categories(name), problem_post_images(storage_path, sort_order, kind)')
       .in('id', postIds),
     supabase.from('marketplace_activities')
       .select('id, application_id, kind, read_at, created_at')
@@ -81,7 +81,7 @@ export async function fetchProviderApplications(userId) {
   const nameByPost = Object.fromEntries(nameRows.map((row) => [row.post_id, row.display_name]))
   return rows.map((application) => ({
     ...application,
-    post: postById[application.post_id] ?? null,
+    post: postById[application.post_id] ? { ...postById[application.post_id], coverPath: [...(postById[application.post_id].problem_post_images ?? []).filter((image) => image.kind === 'before')].sort((a, b) => a.sort_order - b.sort_order)[0]?.storage_path ?? null } : null,
     customerName: nameByPost[application.post_id] ?? 'Fixora customer',
     activity: activityByApplication[application.id] ?? null,
   })).filter(({ post }) => post)
