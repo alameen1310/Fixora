@@ -1,5 +1,6 @@
-import { CheckCircle, Circle } from '@phosphor-icons/react'
+import { CheckCircle, Circle, X } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
+import { useState } from 'react'
 import './ProfileCompleteness.css'
 
 const checks = [
@@ -11,12 +12,21 @@ const checks = [
   { key: 'availability', label: 'Set your availability', hash: '#provider-availability', done: (provider) => Boolean(provider?.availability) },
 ]
 
-export default function ProfileCompleteness({ profile, provider }) {
+export default function ProfileCompleteness({ profile, provider, userId }) {
+  const dismissalKey = userId ? `fixora-profile-completeness-dismissed:${userId}` : null
+  const [dismissed, setDismissed] = useState(() => {
+    try { return dismissalKey ? localStorage.getItem(dismissalKey) === 'true' : false } catch { return false }
+  })
   const items = checks.map((check) => ({ ...check, complete: check.done(provider, profile) }))
   const completed = items.filter((item) => item.complete).length
   const percent = Math.round(completed / items.length * 100)
-  if (percent === 100) return null
+  if (percent === 100 || dismissed) return null
+  function dismiss() {
+    try { if (dismissalKey) localStorage.setItem(dismissalKey, 'true') } catch { /* Dismissal still applies for this render. */ }
+    setDismissed(true)
+  }
   return <section aria-label={`Profile ${percent}% complete`} className="profile-completeness">
+    <button aria-label="Dismiss profile completion card" className="profile-completeness__dismiss" onClick={dismiss} type="button"><X aria-hidden="true" size={18} /></button>
     <div className="profile-completeness__top"><div className="profile-completeness__ring" style={{ '--progress': `${percent}%` }}><span>{percent}%</span></div><div><h2>Complete your profile</h2><p>A few details help customers choose you with confidence.</p></div></div>
     <ul>{items.map((item) => <li key={item.key}>{item.complete ? <CheckCircle aria-hidden="true" weight="fill" /> : <Circle aria-hidden="true" />}<Link aria-current={item.complete ? undefined : 'step'} className={item.complete ? 'is-complete' : ''} to={`/app/profile/edit${item.hash}`}>{item.label}</Link></li>)}</ul>
   </section>

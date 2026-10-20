@@ -126,7 +126,7 @@ export default function ProviderHome() {
     <main className="provider-home app-page">
       <header className="provider-home__header"><div><h1>{greeting()}, {name}</h1></div><Link className={`provider-home__live${profileReady ? '' : ' is-draft'}`} to={profileReady ? `/app/professionals/${user.id}` : '/onboarding/provider'}><span />{profileReady ? 'Profile live' : 'Complete profile'}<ArrowRight aria-hidden="true" size={15} /></Link></header>
       {!profileReady && <aside className="provider-home__setup"><div><strong>Your profile needs one more step</strong><span>{setupMessage}</span></div><Button as={Link} to="/onboarding/provider" variant="secondary">Finish profile</Button></aside>}
-      {provider && <ProfileCompleteness profile={profile} provider={provider} />}
+      {provider && <ProfileCompleteness profile={profile} provider={provider} userId={user.id} />}
       <section aria-label="Your work summary" className="provider-home__stats">{stats.map((stat) => <Link className="provider-stat" key={stat.label} to={stat.to}><span>{stat.label}</span><strong>{stat.value}</strong><small>{stat.hint}</small></Link>)}</section>
       <section className="provider-home__section"><div className="provider-home__section-head"><h2>Matched to your services</h2><Link to="/app/discover">See all <ArrowRight aria-hidden="true" size={15} /></Link></div>
         {data?.matched.length ? <div className="provider-request-list">{data.matched.map((post) => {

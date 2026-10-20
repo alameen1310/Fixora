@@ -46,7 +46,7 @@ export default function ProfilePage() {
       : error ? <section className="posts-feed__error" role="alert"><h2>Profile didn’t load</h2><ButtonRetry onRetry={() => setAttempt((value) => value + 1)} /></section>
         : provider ? <div className="provider-profile-layout">
           <section className="provider-profile-main">
-            <ProfileCompleteness profile={profile} provider={provider} />
+            <ProfileCompleteness profile={profile} provider={provider} userId={user?.id} />
             <header className="provider-profile-identity"><Avatar name={provider.display_name} size={68} src={avatarUrl(provider.avatar_path || profile?.avatar_path)} /><div><div className="provider-profile-identity__heading"><h2>{provider.display_name}</h2><Badge tone={provider.is_published ? 'success' : 'neutral'}>{provider.is_published ? 'Live' : 'Draft'}</Badge></div><p>{provider?.availability === 'busy' ? 'Busy' : 'Available'}<span>·</span>{user?.email}</p><Link className="app-text-link" to="/app/profile/edit">Edit profile</Link></div></header>
             <section className="provider-profile-details"><div><strong>Services</strong><div className="provider-profile-chips">{services.length ? services.map((service) => <Chip key={service}>{service}</Chip>) : <span>Services not added yet</span>}</div></div><div><strong>Areas</strong><div className="provider-profile-chips">{areas.length ? areas.map((area) => <Chip key={area}><MapPin aria-hidden="true" size={14} />{area}</Chip>) : <span>Areas not added yet</span>}</div></div></section>
             <ProviderWorkSummary avatarPath={provider.avatar_path} displayName={provider.display_name} onSummaryChange={setProviderStats} profileId={provider.profile_id} showReputation={false} />
