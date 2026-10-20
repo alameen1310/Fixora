@@ -13,39 +13,28 @@
 .auth-phone-field .auth-phone-control {
   display: grid;
   grid-template-columns: minmax(128px, 38%) minmax(0, 1fr);
+  gap: 8px;
   min-width: 0;
-  min-height: 46px;
-  overflow: hidden;
-  border: 1px solid var(--color-border, #dfe5f1);
-  border-radius: 10px;
-  background: #f7f9fd;
-  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
-}
-
-.auth-phone-field .auth-phone-control:focus-within {
-  border-color: var(--color-primary, #2457d6);
-  background: #fff;
-  box-shadow: 0 0 0 3px rgb(36 87 214 / 14%);
 }
 
 .auth-phone-field .auth-phone-control select,
 .auth-phone-field .auth-phone-control input {
   width: 100%;
   min-width: 0;
-  min-height: 44px;
+  min-height: 46px;
   margin: 0;
-  border: 0;
-  border-radius: 0;
+  border: 1px solid var(--color-border, #dfe5f1);
+  border-radius: 10px;
   outline: 0;
   color: var(--color-text-primary, #14203f);
-  background: transparent;
+  background: #f7f9fd;
   font: inherit;
   font-size: 16px;
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
 }
 
 .auth-phone-field .auth-phone-control select {
   padding: 0 9px 0 12px;
-  border-right: 1px solid var(--color-border, #dfe5f1);
   font-size: 14px;
   font-weight: 550;
   cursor: pointer;
@@ -55,12 +44,24 @@
   padding: 0 12px;
 }
 
+.auth-phone-field .auth-phone-control select:focus,
+.auth-phone-field .auth-phone-control input:focus {
+  border-color: var(--color-primary, #2457d6);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgb(36 87 214 / 14%);
+}
+
 .auth-phone-field .auth-phone-control input::placeholder {
   color: var(--color-text-tertiary, #818ba1);
   opacity: 1;
 }
 
 .auth-phone-field.has-error .auth-phone-control {
+  color: var(--color-danger, #bd3434);
+}
+
+.auth-phone-field.has-error .auth-phone-control select,
+.auth-phone-field.has-error .auth-phone-control input {
   border-color: var(--color-danger, #bd3434);
 }
 
