@@ -63,7 +63,10 @@ function MessageList({ conversations, loading, error, onRetry, userId, isProvide
 function MessagesWelcome() {
   const { conversations } = useOutletContext()
   if (!conversations.length) return null
-  return <div className="messages-welcome"><ChatCircleDots aria-hidden="true" size={38} /><h2>Select a conversation</h2><p>Your messages about a hired request will appear here.</p></div>
+  return <div className="messages-welcome">
+    <div aria-hidden="true" className="messages-welcome__art"><span><Wrench size={27} weight="regular" /></span><span><ChatCircleDots size={35} weight="regular" /></span></div>
+    <div className="messages-welcome__copy"><span>FIXORA MESSAGES</span><h2>Good work starts with a conversation</h2><p>Select a conversation to coordinate details, timing and progress for a hired request.</p></div>
+  </div>
 }
 
 function MessageGroup({ group, mine, userId, otherName, replies, reactions, onReply, onReact, onUnsend, onCopy, onMore, onImage, onQuote }) {
@@ -451,7 +454,7 @@ export function MessagesLayout() {
   return <main className={'messages-shell' + (threadOpen ? ' is-thread-open' : '') + (selectedConversation ? ' has-selection' : '') + (polling ? ' is-polling' : '')} ref={pullRefresh.containerRef}>
     {pullRefresh.indicator}
     <MessageList conversations={conversations} error={error} isProvider={profile?.account_type === 'provider'} loading={loading} onRetry={() => void reload()} onlineUsers={onlineUsers} userId={user.id} />
-    <section className="messages-main"><Outlet context={context} /></section>
+    <section className="messages-main" style={{ '--chat-wallpaper': `url("${appDoodles}")` }}><Outlet context={context} /></section>
     {detailsOpen && selectedConversation && <MessageInfoPane conversation={selectedConversation} isProvider={profile?.account_type === 'provider'} onClose={closeDetails} />}
   </main>
 }

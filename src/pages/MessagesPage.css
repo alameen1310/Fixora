@@ -418,6 +418,43 @@
 .messages-thread__overflow > div { position:absolute; z-index:12; top:calc(100% + 6px); right:0; display:grid; min-width:170px; padding:5px; border:1px solid var(--color-separator); border-radius:12px; background:#fff; box-shadow:0 10px 30px rgb(16 32 96 / 15%); }
 .messages-thread__overflow > div > a,.messages-thread__overflow > div > button { display:flex; min-height:44px; align-items:center; gap:8px; padding:0 11px; border:0; border-radius:8px; color:var(--color-text-primary); background:transparent; font:inherit; font-size:13px; text-align:left; text-decoration:none; white-space:nowrap; }
 .messages-thread__overflow > div > a:hover,.messages-thread__overflow > div > button:hover { color:var(--color-primary); background:#f2f5fb; }
+
+/* Softer inbox surfaces with a Fixora-specific welcome state. */
+.messages-list-pane { border-right-color: #e5eaf4; background: #f8faff; }
+.messages-list__header { border-bottom-color: #e8edf6; }
+.messages-list__search { min-height: 46px; margin-inline: 16px; border-color: #e5eaf4; border-radius: 15px; background: #fff; box-shadow: 0 2px 8px rgb(26 49 101 / 3%); }
+.messages-list__search:focus-within { border-color: #9bb5f4; box-shadow: 0 0 0 3px rgb(36 87 214 / 9%); }
+.messages-list__segments { width: fit-content; gap: 3px; margin: 4px 16px 10px; padding: 4px; border: 0; border-radius: 999px; background: #edf1f9; }
+.messages-list__segments button { min-height: 44px; padding: 0 15px; border: 0; border-radius: 999px; }
+.messages-list__segments button[aria-pressed="true"] { color: var(--color-primary-dark); background: #fff; box-shadow: 0 1px 4px rgb(21 42 91 / 10%); }
+.messages-list__items { padding: 2px 9px 12px; }
+.messages-list__item { min-height: 82px !important; margin: 3px 0; padding: 12px 11px; border: 1px solid transparent; border-radius: 17px; transition: transform 160ms ease; }
+.messages-list__item:hover { border-color: #e7ecf6; background: #fff; transform: translateY(-1px); }
+.messages-list__item.is-active { border-color: #dce5fb; background: #fff; box-shadow: 0 3px 12px rgb(28 54 110 / 6%); }
+.messages-list__post-chip { padding: 3px 9px; border-radius: 999px; }
+.messages-list__empty { flex: 1; }
+.messages-list__empty > svg { color: var(--color-primary); }
+.messages-main { position: relative; overflow: hidden; background: #f5f8fe; }
+.messages-main::before { position: absolute; inset: 0; background-image: var(--chat-wallpaper); background-position: center; background-repeat: repeat; background-size: 260px auto; opacity: .035; content: ''; pointer-events: none; }
+.messages-welcome { position: relative; align-content: center; justify-items: center; gap: 22px; width: min(100%, 480px); min-height: 100%; margin-inline: auto; padding: 40px 32px; }
+.messages-welcome__art { position: relative; width: 110px; height: 96px; }
+.messages-welcome__art::before { position: absolute; inset: 7px 13px 0; border-radius: 38px; background: #e9efff; content: ''; transform: rotate(-7deg); }
+.messages-welcome__art > span { position: absolute; display: grid; place-items: center; border: 1px solid #fff; border-radius: 20px; box-shadow: 0 9px 22px rgb(31 65 133 / 9%); }
+.messages-welcome__art > span:first-child { right: 2px; bottom: 2px; width: 54px; height: 54px; color: #5674b7; background: #fff; transform: rotate(7deg); }
+.messages-welcome__art > span:last-child { top: 0; left: 2px; width: 70px; height: 70px; color: #fff; background: var(--color-primary); }
+.messages-welcome__copy { display: grid; justify-items: center; gap: 10px; text-align: center; }
+.messages-welcome__copy > span { color: var(--color-primary); font-size: 11px; font-weight: 750; letter-spacing: .09em; }
+.messages-welcome__copy h2 { max-width: 390px; margin: 0; color: var(--color-text-primary); font-size: clamp(22px, 2vw, 28px); font-weight: 700; letter-spacing: -.04em; line-height: 1.15; }
+.messages-welcome__copy p { max-width: 360px; margin: 0; color: #66738f; font-size: 15px; line-height: 1.6; }
+@media (max-width: 899px) {
+  .messages-list-pane { background: #fff; }
+  .messages-main { background: #f5f8fe; }
+  .messages-welcome { min-height: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .messages-list__item { transition: none; }
+  .messages-list__item:hover { transform: none; }
+}
 .messages-thread__overflow:focus-within { outline:3px solid rgb(36 87 214 / 30%); outline-offset:2px; border-radius:10px; }
 .messages-thread__overflow:not([open]) > div { display:none; }
 @media (max-width:899px) { .messages-thread__view-job,.messages-thread__details { display:none !important; } .messages-thread__overflow summary { width:40px; } .messages-thread__overflow > div { position:fixed; top:auto; right:8px; bottom:calc(var(--visual-viewport-height,100dvh) - 112px); } }
