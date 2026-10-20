@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, ChatCircleDots, PaperPlaneRight, WarningCircle } from '@phosphor-icons/react'
+import { ArrowBendUpLeft, ArrowLeft, Camera, ChatCircleDots, Check, DotsThree, PaperPlaneRight, Smiley, UserCircle, WarningCircle, Wrench, X } from '@phosphor-icons/react'
 import { Link, NavLink, Outlet, useLocation, useNavigate, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
 import { Avatar, Button, Skeleton } from '../components/UiPrimitives.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
-import { fetchConversationMessages, fetchMyConversations, markConversationRead, sendConversationMessage } from '../lib/chatQueries.js'
+import { fetchConversationMessages, fetchEarlierMessages, fetchMessageReactions, fetchMyConversations, markConversationRead, sendConversationMessage, setMessageReaction, unsendConversationMessage } from '../lib/chatQueries.js'
 import { formatRelativeTime } from '../lib/postQueries.js'
+import { getPostImageUrl, preparePostPhoto } from '../lib/postImages.js'
 import { supabase } from '../lib/supabase.js'
 import './MessagesPage.css'
 
@@ -22,17 +23,29 @@ function formatDay(value) {
   return new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium' }).format(date)
 }
 
-function MessageList({ conversations, loading, error, onRetry }) {
+const REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏']
+const EMOJI_TRAY = '😀 😃 😄 😁 😆 😅 😂 🙂 🙃 😉 😊 😇 🥰 😍 😘 😋 😎 🤔 🫡 🤗 🤝 🙏 👏 👍 👎 ❤️ 🧡 💛 💚 💙 💜 ✨ 🔥 🎉 💯 ✅ 🙌 💪 🤦 🤷 😭 😮 😴 ☀️ 🏠 🔧 🛠️ 📍'.split(' ')
+
+function MessageList({ conversations, loading, error, onRetry, userId, isProvider, onlineUsers }) {
+  const [search, setSearch] = useState('')
+  const [segment, setSegment] = useState('all')
+  const visible = conversations.filter((conversation) => {
+    const needle = search.trim().toLowerCase()
+    return (segment !== 'unread' || conversation.unread_count > 0)
+      && (!needle || `${conversation.other_display_name} ${conversation.post_title}`.toLowerCase().includes(needle))
+  })
   return (
     <aside aria-label="Conversations" className="messages-list-pane">
-      <header className="messages-list__header"><div><span className="messages-eyebrow">Your conversations</span><h1>Messages</h1></div><ChatCircleDots aria-hidden="true" size={25} /></header>
+      <header className="messages-list__header"><div><h1>Messages</h1></div><ChatCircleDots aria-hidden="true" size={23} /></header>
+      <label className="messages-list__search"><span className="visually-hidden">Search messages</span><input onChange={(event) => setSearch(event.target.value)} placeholder="Search people or jobs" value={search} /></label>
+      <div aria-label="Filter messages" className="messages-list__segments" role="group"><button aria-pressed={segment === 'all'} onClick={() => setSegment('all')} type="button">All</button><button aria-pressed={segment === 'unread'} onClick={() => setSegment('unread')} type="button">Unread</button></div>
       {loading ? <div className="messages-list__skeletons" role="status" aria-label="Loading conversations">{[0, 1, 2].map((item) => <Skeleton className="messages-list__skeleton" key={item} />)}</div>
         : error ? <div className="messages-list__empty" role="alert"><WarningCircle aria-hidden="true" size={28} /><p>Messages couldn’t load.</p><Button onClick={onRetry} variant="secondary">Try again</Button></div>
-          : conversations.length === 0 ? <div className="messages-list__empty"><ChatCircleDots aria-hidden="true" size={30} /><p>Messages appear here once you hire or get hired.</p></div>
-            : <nav aria-label="Your conversations" className="messages-list__items">{conversations.map((conversation) => (
+          : visible.length === 0 ? <div className="messages-list__empty"><ChatCircleDots aria-hidden="true" size={30} /><p>{conversations.length ? 'No messages match your search.' : 'Messages appear once you hire or get hired.'}</p>{!conversations.length && <Link to={isProvider ? '/app/discover' : '/app/my-posts'}>{isProvider ? 'Find work' : 'My Posts'}</Link>}</div>
+            : <nav aria-label="Your conversations" className="messages-list__items">{visible.map((conversation) => (
               <NavLink className={({ isActive }) => 'messages-list__item' + (isActive ? ' is-active' : '')} key={conversation.conversation_id} to={'/app/messages/' + conversation.conversation_id}>
-                <Avatar name={conversation.other_display_name} size={46} />
-                <span className="messages-list__copy"><span className="messages-list__item-top"><strong>{conversation.other_display_name}</strong><time>{formatRelativeTime(conversation.last_message_at)}</time></span><span className="messages-list__post-chip">{conversation.post_title}</span><span className="messages-list__preview">{conversation.last_message_preview}</span></span>
+                <span className="messages-list__avatar"><Avatar name={conversation.other_display_name} size={48} />{onlineUsers?.has(conversation.other_user_id) && <i aria-label="Active now" />}</span>
+                <span className="messages-list__copy"><span className="messages-list__item-top"><strong className={conversation.unread_count ? 'is-unread' : ''}>{conversation.other_display_name}</strong><time>{formatRelativeTime(conversation.last_message_at)}</time></span><span className="messages-list__preview">{conversation.last_sender_id === userId ? 'You: ' : ''}{conversation.last_message_preview}</span><span className="messages-list__post-chip">{conversation.post_title}</span></span>
                 {conversation.unread_count > 0 && <span aria-label={conversation.unread_count + ' unread messages'} className="messages-list__unread">{conversation.unread_count > 99 ? '99+' : conversation.unread_count}</span>}
               </NavLink>
             ))}</nav>}
@@ -46,111 +59,146 @@ function MessagesWelcome() {
   return <div className="messages-welcome"><ChatCircleDots aria-hidden="true" size={38} /><h2>Select a conversation</h2><p>Your messages about a hired request will appear here.</p></div>
 }
 
-function MessageGroup({ group, mine }) {
+function MessageGroup({ group, mine, userId, otherName, replies, reactions, onReply, onReact, onUnsend, onCopy, onMore, onImage, onQuote }) {
+  const touchTimer = useRef(null)
+  const touchStartX = useRef(null)
   return <div className={'message-group' + (mine ? ' is-mine' : '')}>
-    {group.items.map((message) => <p className={'message-bubble' + (message.failed ? ' is-failed' : '')} key={message.id}>{message.body}{message.sending && <span className="message-bubble__state">Sending…</span>}{message.failed && <span className="message-bubble__state">Not sent</span>}</p>)}
-    <time>{formatClock(group.items[group.items.length - 1].created_at)}</time>
+    {group.items.map((message) => {
+      const grouped = Object.values((reactions ?? []).filter((reaction) => reaction.message_id === message.id).reduce((result, reaction) => { result[reaction.emoji] ??= { emoji: reaction.emoji, users: [] }; result[reaction.emoji].users.push(reaction.user_id); return result }, {}))
+      const reply = replies.get(message.reply_to_id)
+      return <div className={'message-bubble-wrap' + (message.showMenu ? ' is-menu-open' : '') + (message.flash ? ' is-flashing' : '')} id={`message-${message.id}`} key={message.id} onContextMenu={(event) => { event.preventDefault(); onMore(message) }} onTouchStart={(event) => { touchStartX.current = event.changedTouches[0]?.clientX; touchTimer.current = setTimeout(() => onMore(message), 520) }} onTouchEnd={(event) => { clearTimeout(touchTimer.current); const delta = event.changedTouches[0]?.clientX - touchStartX.current; const target = event.currentTarget; if (delta >= 56) { target.classList.add('is-swipe-reply'); onReply(message); setTimeout(() => target.classList.remove('is-swipe-reply'), 220) } }}>
+        <ArrowBendUpLeft aria-hidden="true" className="message-swipe-icon" size={18} />
+        <div className="message-bubble-toolbar"><button aria-label="React to message" onClick={() => onReact(message)} type="button"><Smiley size={17} /></button><button aria-label="Reply to message" onClick={() => onReply(message)} type="button"><ArrowBendUpLeft size={17} /></button><button aria-label="More message actions" onClick={() => onMore(message)} type="button"><DotsThree size={19} /></button></div>
+        <div className={'message-bubble' + (message.failed ? ' is-failed' : '') + (message.sending ? ' is-sending' : '')}>
+          {message.deleted_at ? <em>Message deleted</em> : <>{reply && <button className="message-inline-reply" onClick={() => onQuote(reply.id)} type="button"><strong>{reply.sender_id === userId ? 'You' : otherName}</strong><span>{reply.deleted_at ? 'Message deleted' : reply.body || (reply.image_path ? 'Photo' : '')}</span></button>}{message.image_path && <button className="message-image-button" onClick={() => onImage(getPostImageUrl(message.image_path))} type="button"><img alt="Photo shared in chat" src={getPostImageUrl(message.image_path)} /></button>}{message.body && <span>{message.body}</span>}</>}
+          {message.sending && <span className="message-bubble__state">Sending…</span>}{message.failed && <span className="message-bubble__state">Not sent. Retry</span>}
+          <div className="message-bubble-menu"><div className="message-bubble-menu__reactions">{REACTIONS.map((emoji) => <button aria-label={`React with ${emoji}`} key={emoji} onClick={() => onReact(message, emoji)} type="button">{emoji}</button>)}</div><button onClick={() => onReply(message)} type="button">Reply</button><button onClick={() => onCopy(message)} type="button">Copy</button>{mine && !message.deleted_at && <button onClick={() => onUnsend(message)} type="button">Delete</button>}</div>
+          {message.showReactions && <div className="message-reaction-picker">{REACTIONS.map((emoji) => <button aria-label={`React with ${emoji}`} key={emoji} onClick={() => onReact(message, emoji)} type="button">{emoji}</button>)}</div>}
+        </div>
+        {grouped.length > 0 && <div className="message-reactions">{grouped.map(({ emoji, users }) => <button aria-pressed={users.includes(userId)} key={emoji} onClick={() => onReact(message, emoji)} type="button">{emoji} {users.length}</button>)}</div>}
+      </div>
+    })}
+    <time>{formatClock(group.items[group.items.length - 1].created_at)}{mine && (group.items.at(-1).read_at ? <span aria-label="Read" className="message-read-ticks is-read"><Check size={15} /><Check size={15} /></span> : <Check aria-label="Sent" className="message-read-tick" size={15} />)}</time>
   </div>
 }
 
 function ConversationThread() {
   const { conversationId } = useParams()
-  const { conversations, loading: conversationsLoading } = useOutletContext()
-  const { user } = useAuth()
+  const { conversations, loading: conversationsLoading, setOnlineUsers } = useOutletContext()
+  const { user, profile } = useAuth()
   const [messages, setMessages] = useState([])
+  const [reactions, setReactions] = useState([])
   const [draft, setDraft] = useState('')
+  const [replyTo, setReplyTo] = useState(null)
+  const [photo, setPhoto] = useState(null)
+  const [photoBusy, setPhotoBusy] = useState(false)
+  const [emojiOpen, setEmojiOpen] = useState(false)
+  const [lightbox, setLightbox] = useState('')
   const [loading, setLoading] = useState(true)
+  const [hasEarlier, setHasEarlier] = useState(false)
   const [error, setError] = useState('')
-  const [newMessages, setNewMessages] = useState(false)
+  const [newMessages, setNewMessages] = useState(0)
   const [polling, setPolling] = useState(false)
+  const [typing, setTyping] = useState(false)
+  const [online, setOnline] = useState(false)
   const nearBottom = useRef(true)
   const scrollNode = useRef(null)
+  const channelRef = useRef(null)
+  const typingTimer = useRef(null)
+  const remoteTypingTimer = useRef(null)
+  const pendingUnread = useRef(null)
+  const messageNodes = useRef(new Map())
+  const messagesRef = useRef([])
+  const isProvider = profile?.account_type === 'provider'
   const conversation = conversations.find((item) => item.conversation_id === conversationId)
   const hasConversation = Boolean(conversation)
   const postHref = conversation ? '/app/posts/' + conversation.post_id : '/app/messages'
+  const replyMap = useMemo(() => new Map(messages.map((message) => [message.id, message])), [messages])
+  const draftKey = `fixora.chatDraft.${conversationId}`
+  useEffect(() => { messagesRef.current = messages }, [messages])
 
   const load = useCallback(async () => {
     if (conversationsLoading || !hasConversation) return
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
     try {
       const rows = await fetchConversationMessages(conversationId)
-      setMessages(rows)
-      if (document.visibilityState === 'visible') {
-        await markConversationRead(conversationId, user.id)
-      }
-    } catch (loadError) {
-      setError(loadError.message || 'Could not load this conversation.')
-    } finally {
-      setLoading(false)
-    }
+      const reactionRows = await fetchMessageReactions(rows.map(({ id }) => id))
+      setMessages(rows); setReactions(reactionRows); setHasEarlier(rows.length === 30)
+      pendingUnread.current = rows.find((message) => message.sender_id !== user.id && !message.read_at)?.id ?? null
+      if (document.visibilityState === 'visible') await markConversationRead(conversationId)
+    } catch (loadError) { setError(loadError.message || 'Could not load this conversation.') }
+    finally { setLoading(false) }
   }, [conversationId, conversationsLoading, hasConversation, user.id])
 
-  useEffect(() => { void load() }, [load])
-
+  useEffect(() => { setDraft(window.localStorage.getItem(draftKey) || ''); setReplyTo(null); setPhoto(null); void load() }, [draftKey, load])
+  useEffect(() => { window.localStorage.setItem(draftKey, draft) }, [draftKey, draft])
   useEffect(() => {
-    if (nearBottom.current && scrollNode.current) scrollNode.current.scrollTop = scrollNode.current.scrollHeight
+    const onVisibility = () => { if (document.visibilityState === 'visible' && nearBottom.current && hasConversation) void markConversationRead(conversationId).catch(() => {}) }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [conversationId, hasConversation])
+  useEffect(() => {
+    if (!scrollNode.current || loading) return
+    if (pendingUnread.current) { messageNodes.current.get(pendingUnread.current)?.scrollIntoView({ block: 'start' }); pendingUnread.current = null }
+    else if (nearBottom.current) scrollNode.current.scrollTop = scrollNode.current.scrollHeight
   }, [messages, loading])
+  useEffect(() => () => { if (photo?.preview) URL.revokeObjectURL(photo.preview); clearTimeout(typingTimer.current); clearTimeout(remoteTypingTimer.current) }, [photo])
 
   useEffect(() => {
     if (!supabase || !conversationId || conversationsLoading || !hasConversation) return undefined
     let active = true
     let timer
-    const channel = supabase.channel('conversation-' + conversationId)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'conversation_id=eq.' + conversationId }, async ({ new: message }) => {
+    setOnline(false)
+    setTyping(false)
+    const channel = supabase.channel(`conversation-${conversationId}`, { config: { presence: { key: user.id }, broadcast: { self: false } } })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conversationId}` }, async ({ eventType, new: message }) => {
         if (!active) return
-        setMessages((current) => {
-          if (current.some((item) => item.id === message.id)) return current
-          const optimisticIndex = current.findIndex((item) => item.optimistic && item.sending
-            && item.body === message.body && item.sender_id === message.sender_id)
-          return optimisticIndex < 0
-            ? [...current, message]
-            : [...current.slice(0, optimisticIndex), ...current.slice(optimisticIndex + 1), message]
-        })
-        if (message.sender_id !== user.id) {
-          const visible = document.visibilityState === 'visible'
-          const scroll = document.querySelector('.messages-thread__scroll')
-          const closeToBottom = scroll && scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 120
-          if (visible && (nearBottom.current || closeToBottom)) {
-            await markConversationRead(conversationId, user.id).catch(() => {})
-          } else setNewMessages(true)
-        }
+        if (eventType === 'INSERT') {
+          setMessages((current) => {
+            if (current.some((item) => item.id === message.id)) return current
+            const index = current.findIndex((item) => item.optimistic && item.sending && item.body === message.body && item.sender_id === message.sender_id)
+            return index < 0 ? [...current, message] : [...current.slice(0, index), ...current.slice(index + 1), message]
+          })
+          if (message.sender_id !== user.id) {
+            if (document.visibilityState === 'visible' && nearBottom.current) await markConversationRead(conversationId).catch(() => {})
+            else setNewMessages((count) => count + 1)
+          }
+        } else if (eventType === 'UPDATE') setMessages((current) => current.map((item) => item.id === message.id ? { ...item, ...message } : item))
       })
-      .subscribe((status) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'message_reactions' }, ({ eventType, new: row, old }) => {
+        const changed = row?.message_id ? row : old
+        if (!changed || !messagesRef.current.some((message) => message.id === changed.message_id)) return
+        setReactions((current) => {
+          const without = current.filter((reaction) => !(reaction.message_id === changed.message_id && reaction.user_id === changed.user_id))
+          return eventType === 'DELETE' ? without : [...without, row]
+        })
+      })
+          .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (payload?.senderId !== user.id) { setTyping(true); clearTimeout(remoteTypingTimer.current); remoteTypingTimer.current = setTimeout(() => setTyping(false), 4000) }
+      })
+      .on('presence', { event: 'sync' }, () => { const present = Object.keys(channel.presenceState()).some((key) => key !== user.id); setOnline(present); setOnlineUsers?.((current) => { const next = new Set(current); if (present) next.add(conversation.other_user_id); else next.delete(conversation.other_user_id); return next }) })
+      .on('presence', { event: 'join' }, ({ key }) => { if (key !== user.id) { setOnline(true); setOnlineUsers?.((current) => new Set(current).add(conversation.other_user_id)) } })
+      .on('presence', { event: 'leave' }, ({ key }) => { if (key !== user.id) { setOnline(false); setOnlineUsers?.((current) => { const next = new Set(current); next.delete(conversation.other_user_id); return next }) } })
+      .subscribe(async (status) => {
         const shouldPoll = ['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(status)
         setPolling(shouldPoll)
-        if (shouldPoll && !timer) timer = window.setInterval(() => {
-          void fetchConversationMessages(conversationId).then((rows) => setMessages((current) => [
-            ...rows,
-            ...current.filter((message) => message.optimistic || message.failed),
-          ])).then(() => {
-            if (document.visibilityState === 'visible') return markConversationRead(conversationId, user.id).catch(() => {})
-            return undefined
-          }).catch(() => {})
-        }, 8000)
+        if (status === 'SUBSCRIBED') await channel.track({ userId: user.id, onlineAt: new Date().toISOString() })
+        if (shouldPoll && !timer) timer = window.setInterval(() => { void fetchConversationMessages(conversationId).then((rows) => setMessages((current) => [...rows, ...current.filter((message) => message.optimistic || message.failed)])).catch(() => {}) }, 8000)
         if (!shouldPoll && timer) { window.clearInterval(timer); timer = null }
       })
-    return () => {
-      active = false
-      if (timer) window.clearInterval(timer)
-      void supabase.removeChannel(channel)
-    }
-  }, [conversationId, conversationsLoading, hasConversation, load, user.id])
+    channelRef.current = channel
+    return () => { active = false; if (timer) window.clearInterval(timer); clearTimeout(remoteTypingTimer.current); setOnlineUsers?.((current) => { const next = new Set(current); next.delete(conversation.other_user_id); return next }); void supabase.removeChannel(channel) }
+  }, [conversationId, conversationsLoading, hasConversation, user.id, conversation?.other_user_id, setOnlineUsers])
 
-  useEffect(() => {
-    const textarea = document.querySelector('.messages-composer textarea')
-    if (textarea) { textarea.style.height = 'auto'; textarea.style.height = Math.min(textarea.scrollHeight, 104) + 'px' }
-  }, [draft])
+  useEffect(() => { const textarea = document.querySelector('.messages-composer textarea'); if (textarea) { textarea.style.height = 'auto'; textarea.style.height = Math.min(textarea.scrollHeight, 104) + 'px' } }, [draft])
 
   const groups = useMemo(() => {
     const result = []
     messages.forEach((message) => {
-      const previous = result[result.length - 1]
-      const last = previous?.items[previous.items.length - 1]
-      const sameGroup = previous && previous.senderId === message.sender_id
-        && new Date(message.created_at).toDateString() === new Date(last.created_at).toDateString()
-        && new Date(message.created_at) - new Date(last.created_at) < 5 * 60 * 1000
-      if (sameGroup) previous.items.push(message)
+      const previous = result.at(-1)
+      const last = previous?.items.at(-1)
+      const same = previous && previous.senderId === message.sender_id && new Date(message.created_at).toDateString() === new Date(last.created_at).toDateString() && new Date(message.created_at) - new Date(last.created_at) < 5 * 60 * 1000
+      if (same) previous.items.push(message)
       else result.push({ senderId: message.sender_id, day: new Date(message.created_at).toDateString(), items: [message] })
     })
     return result
@@ -158,72 +206,101 @@ function ConversationThread() {
 
   function onScroll(event) {
     const node = event.currentTarget
-    const atBottom = node.scrollHeight - node.scrollTop - node.clientHeight < 120
-    const wasNearBottom = nearBottom.current
+    const atBottom = node.scrollHeight - node.scrollTop - node.clientHeight < 100
     nearBottom.current = atBottom
-    if (atBottom) {
-      setNewMessages(false)
-      if (!wasNearBottom && document.visibilityState === 'visible') void markConversationRead(conversationId, user.id).catch(() => {})
-    }
+    if (atBottom) { setNewMessages(0); if (document.visibilityState === 'visible') void markConversationRead(conversationId).catch(() => {}) }
   }
-
-  async function send(text = draft, retryId = null) {
-    const body = text.trim()
-    if (!body || body.length > 2000) return
-    const optimisticId = retryId || 'local-' + crypto.randomUUID()
-    setDraft('')
-    nearBottom.current = true
-    setMessages((current) => retryId
-      ? current.map((message) => message.id === retryId ? { ...message, sending: true, failed: false } : message)
-      : [...current, { id: optimisticId, conversation_id: conversationId, sender_id: user.id, body, created_at: new Date().toISOString(), sending: true, optimistic: true }])
+  async function loadEarlier() {
+    const first = messages[0]
+    if (!first) return
+    const oldHeight = scrollNode.current?.scrollHeight || 0
+    const earlier = await fetchEarlierMessages(conversationId, first)
+    setHasEarlier(earlier.length === 30)
+    setMessages((current) => [...earlier, ...current])
+    requestAnimationFrame(() => { if (scrollNode.current) scrollNode.current.scrollTop += scrollNode.current.scrollHeight - oldHeight })
+  }
+  function onReply(message) { setReplyTo(message); document.querySelector('.messages-composer textarea')?.focus() }
+  function onMore(message) { setMessages((current) => current.map((item) => ({ ...item, showMenu: item.id === message.id ? !item.showMenu : false }))) }
+  async function onReact(message, emoji) {
+    if (!emoji) { setMessages((current) => current.map((item) => ({ ...item, showReactions: item.id === message.id ? !item.showReactions : false }))); return }
     try {
-      const saved = await sendConversationMessage(conversationId, user.id, body)
+      const saved = await setMessageReaction(message.id, user.id, emoji)
+      setReactions((current) => [...current.filter((row) => !(row.message_id === message.id && row.user_id === user.id)), ...(saved ? [saved] : [])])
+      setMessages((current) => current.map((item) => item.id === message.id ? { ...item, showReactions: false } : item))
+    } catch (reactionError) { console.error('[chat-reaction]', { code: reactionError.code, message: reactionError.message }) }
+  }
+  async function onUnsend(message) {
+    try { await unsendConversationMessage(message.id); setMessages((current) => current.map((item) => item.id === message.id ? { ...item, deleted_at: new Date().toISOString() } : item)) }
+    catch (unsendError) { console.error('[chat-unsend]', { code: unsendError.code, message: unsendError.message }) }
+  }
+  async function onCopy(message) { const value = message.body || (message.image_path ? 'Photo' : 'Message deleted'); try { await navigator.clipboard.writeText(value) } catch { /* clipboard access is browser controlled */ } setMessages((current) => current.map((item) => ({ ...item, showMenu: false }))) }
+  function onQuote(messageId) { const node = messageNodes.current.get(messageId); node?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }); node?.classList.add('is-flashing'); setTimeout(() => node?.classList.remove('is-flashing'), 950) }
+  async function choosePhoto(file) {
+    if (!file) return
+    setPhotoBusy(true)
+    try { const prepared = await preparePostPhoto(file); if (photo?.preview) URL.revokeObjectURL(photo.preview); setPhoto({ file: prepared, preview: URL.createObjectURL(prepared) }) }
+    catch (photoError) { setError(photoError.message) }
+    finally { setPhotoBusy(false) }
+  }
+  async function send(text = draft, retryMessage = null) {
+    const body = text.trim()
+    const file = retryMessage?.file || photo?.file
+    if ((!body && !file && !retryMessage?.image_path) || body.length > 2000 || conversation.post_status === 'removed') return
+    const optimisticId = retryMessage?.id || `local-${crypto.randomUUID()}`
+    const replyId = retryMessage?.reply_to_id || replyTo?.id || null
+    const existingPath = retryMessage?.image_path || null
+    setDraft(''); setReplyTo(null); setPhoto(null); nearBottom.current = true
+    setMessages((current) => retryMessage
+      ? current.map((message) => message.id === optimisticId ? { ...message, sending: true, failed: false } : message)
+      : [...current, { id: optimisticId, conversation_id: conversationId, sender_id: user.id, body, reply_to_id: replyId, image_path: existingPath, created_at: new Date().toISOString(), sending: true, optimistic: true }])
+    let imagePath = existingPath
+    let uploadComplete = Boolean(retryMessage?.uploadComplete)
+    try {
+      if (file && !uploadComplete) {
+        imagePath ||= `${user.id}/chat/${conversationId}/${crypto.randomUUID()}.jpg`
+        const { error: uploadError } = await supabase.storage.from('problem-post-photos').upload(imagePath, file, { contentType: 'image/jpeg', upsert: false })
+        if (uploadError) throw uploadError
+        uploadComplete = true
+      }
+      const saved = await sendConversationMessage(conversationId, user.id, body, { replyToId: replyId, imagePath })
       setMessages((current) => [...current.filter((message) => message.id !== optimisticId && message.id !== saved.id), saved])
     } catch (sendError) {
-      console.error('[chat-write]', { step: 'send-message', conversationId, code: sendError.code, message: sendError.message })
-      setMessages((current) => current.map((message) => message.id === optimisticId ? { ...message, sending: false, failed: true } : message))
+      console.error('[chat-write]', { step: imagePath ? 'send-photo-message' : 'send-message', conversationId, code: sendError.code, message: sendError.message })
+      setMessages((current) => current.map((message) => message.id === optimisticId ? { ...message, sending: false, failed: true, image_path: imagePath, file, uploadComplete, reply_to_id: replyId } : message))
     }
   }
+  function handleKeyDown(event) { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send() } }
+  function handleDraftChange(value) { setDraft(value); if (channelRef.current) { void channelRef.current.send({ type: 'broadcast', event: 'typing', payload: { senderId: user.id } }); clearTimeout(typingTimer.current); typingTimer.current = setTimeout(() => { setTyping(false) }, 900) } }
 
-  function handleKeyDown(event) {
-    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-      event.preventDefault()
-      void send()
-    }
-  }
+  if (!conversation) return conversationsLoading ? <div className="messages-welcome" role="status"><Skeleton style={{ width: '72%', height: 48 }} /><Skeleton style={{ width: '56%', height: 48 }} /></div> : <div className="messages-welcome" role="status"><p>This conversation is unavailable.</p><Button as={Link} to="/app/messages" variant="secondary">Back to messages</Button></div>
 
-  if (!conversation) return conversationsLoading
-    ? <div className="messages-welcome" role="status"><Skeleton style={{ width: '72%', height: 48 }} /><Skeleton style={{ width: '56%', height: 48 }} /></div>
-    : <div className="messages-welcome" role="status"><p>This conversation is unavailable.</p><Button as={Link} to="/app/messages" variant="secondary">Back to messages</Button></div>
-
+  const quickReplies = isProvider ? ['Hello, I’m ready to start', 'What time works for you?', 'Thanks for choosing me'] : ['Hi, when can you start?', 'Can you share your quote?', 'Thanks for applying']
   return <section aria-label={'Conversation with ' + conversation.other_display_name} className="messages-thread">
-    <header className="messages-thread__header">
-      <Link aria-label="Back to messages" className="messages-thread__back" to="/app/messages"><ArrowLeft aria-hidden="true" size={21} /></Link>
-      <Avatar name={conversation.other_display_name} size={42} />
-      <div><strong>{conversation.other_display_name}</strong><Link to={postHref}>{conversation.post_title}</Link></div>
-    </header>
+    <header className="messages-thread__header"><Link aria-label="Back to messages" className="messages-thread__back" to="/app/messages"><ArrowLeft aria-hidden="true" size={21} /></Link><span className={'messages-thread__avatar' + (online ? ' is-online' : '')}><Avatar name={conversation.other_display_name} size={42} /></span><div><strong>{conversation.other_display_name}</strong><span>{typing ? 'Typing…' : online ? 'Active now' : conversation.post_title}</span></div><div className="messages-thread__actions"><Button as={Link} to={postHref} variant="secondary">View job</Button>{!isProvider && <Button aria-label="View professional profile" as={Link} to={`/app/professionals/${conversation.other_user_id}`} variant="ghost"><UserCircle aria-hidden="true" size={19} /></Button>}</div></header>
+    <div className="messages-job-context"><span className="messages-job-context__image">{conversation.cover_path ? <img alt="" src={getPostImageUrl(conversation.cover_path)} /> : <Wrench aria-hidden="true" size={20} />}</span><div><strong>{conversation.post_title}</strong><span>{conversation.post_status === 'completed' ? 'Completed' : conversation.post_status === 'closed' ? 'In progress' : 'Request'}</span></div><Button as={Link} to={!isProvider && conversation.post_status === 'closed' ? `${postHref}/complete` : postHref} variant="secondary">{!isProvider && conversation.post_status === 'closed' ? 'Mark as completed' : isProvider ? 'View request' : 'View job'}</Button></div>
     {error ? <div className="messages-thread__error" role="alert"><p>Messages couldn’t load.</p><Button onClick={() => void load()} variant="secondary">Retry</Button></div> : <>
       <div aria-live="polite" className="messages-thread__scroll" onScroll={onScroll} ref={scrollNode}>
         {loading && <div className="messages-thread__skeletons" role="status" aria-label="Loading messages"><Skeleton /><Skeleton /><Skeleton /></div>}
-        {!loading && messages.length === 0 && <p className="messages-thread__first">You’re chatting about <Link to={postHref}>{conversation.post_title}</Link>. Say hello.</p>}
-        {groups.map((group, index) => <div className="messages-day-group" key={group.day + '-' + group.items[0].id}>
-          {(index === 0 || groups[index - 1].day !== group.day) && <time className="messages-day-separator">{formatDay(group.items[0].created_at)}</time>}
-          <MessageGroup group={group} mine={group.senderId === user.id} />
-          {group.items.some((item) => item.failed) && <div className="message-retry-row"><span>Message not sent.</span><button onClick={() => { const failed = group.items.find((item) => item.failed); void send(failed.body, failed.id) }} type="button">Retry</button></div>}
-        </div>)}
-        {polling && <span className="messages-thread__quiet-status">Reconnecting…</span>}
+        {!loading && hasEarlier && <button className="messages-load-earlier" onClick={() => void loadEarlier()} type="button">Load earlier messages</button>}
+        {!loading && messages.length === 0 && <div className="messages-thread__first"><p>Say hello to {conversation.other_display_name.split(' ')[0]}. You’re both on {conversation.post_title}.</p><div>{quickReplies.map((reply) => <button key={reply} onClick={() => setDraft(reply)} type="button">{reply}</button>)}</div></div>}
+        {groups.map((group, index) => <div className="messages-day-group" key={group.day + '-' + group.items[0].id}>{(index === 0 || groups[index - 1].day !== group.day) && <time className="messages-day-separator">{formatDay(group.items[0].created_at)}</time>}{group.items.some((item) => item.id === pendingUnread.current) && <div className="messages-unread-divider">Unread messages</div>}<div ref={(node) => group.items.forEach((item) => node && messageNodes.current.set(item.id, node))}><MessageGroup group={group} mine={group.senderId === user.id} otherName={conversation.other_display_name} onCopy={onCopy} onImage={setLightbox} onMore={onMore} onQuote={onQuote} onReact={onReact} onReply={onReply} onUnsend={onUnsend} reactions={reactions} replies={replyMap} userId={user.id} /></div>{group.items.some((item) => item.failed) && <div className="message-retry-row"><span>Not sent.</span><button onClick={() => { const failed = group.items.find((item) => item.failed); void send(failed.body, failed) }} type="button">Retry</button></div>}</div>)}
+        {typing && <div aria-label="Typing" className="messages-typing"><i /><i /><i /></div>}{polling && <span className="messages-thread__quiet-status">Reconnecting…</span>}
       </div>
-      {newMessages && <button className="messages-new-pill" onClick={() => { if (scrollNode.current) scrollNode.current.scrollTop = scrollNode.current.scrollHeight; nearBottom.current = true; setNewMessages(false); void markConversationRead(conversationId, user.id).catch(() => {}) }} type="button">New messages</button>}
+      {newMessages > 0 && <button className="messages-new-pill" onClick={() => { if (scrollNode.current) scrollNode.current.scrollTop = scrollNode.current.scrollHeight; nearBottom.current = true; setNewMessages(0); void markConversationRead(conversationId).catch(() => {}) }} type="button">{newMessages > 1 ? `${newMessages} new messages` : 'New messages'}</button>}
       <form className="messages-composer" onSubmit={(event) => { event.preventDefault(); void send() }}>
-        <textarea aria-label="Write a message" maxLength={2000} onChange={(event) => setDraft(event.target.value)} onKeyDown={handleKeyDown} placeholder="Write a message…" rows={1} value={draft} />
-        <button aria-label="Send message" className="messages-composer__send" disabled={!draft.trim()} type="submit"><PaperPlaneRight aria-hidden="true" size={21} weight="fill" /></button>
+        {replyTo && <div className="messages-composer__reply"><div><strong>Replying to {replyTo.sender_id === user.id ? 'yourself' : conversation.other_display_name}</strong><span>{replyTo.deleted_at ? 'Message deleted' : replyTo.body || (replyTo.image_path ? 'Photo' : '')}</span></div><button aria-label="Cancel reply" onClick={() => setReplyTo(null)} type="button"><X size={18} /></button></div>}
+        {photo && <div className="messages-composer__photo"><img alt="Photo preview" src={photo.preview} /><span>Ready to send</span><button aria-label="Remove photo" onClick={() => { URL.revokeObjectURL(photo.preview); setPhoto(null) }} type="button"><X size={18} /></button></div>}
+        <div className="messages-composer__tools"><button aria-label="Attach an image" onClick={() => document.getElementById('chat-photo')?.click()} type="button"><Camera size={20} /></button><button aria-label="Choose emoji" onClick={() => setEmojiOpen((open) => !open)} type="button"><Smiley size={20} /></button>{emojiOpen && <div className="messages-emoji-tray">{EMOJI_TRAY.map((emoji, index) => <button key={`${emoji}-${index}`} onClick={() => setDraft((value) => value + emoji)} type="button">{emoji}</button>)}</div>}<input accept="image/*" hidden id="chat-photo" onChange={(event) => { void choosePhoto(event.target.files?.[0]); event.target.value = '' }} type="file" /><span>{photoBusy ? 'Preparing photo…' : ''}</span></div>
+        <textarea aria-label="Write a message" maxLength={2000} onChange={(event) => handleDraftChange(event.target.value)} onKeyDown={handleKeyDown} onPaste={(event) => { const image = [...(event.clipboardData?.items ?? [])].find((item) => item.type.startsWith('image/')); if (image) { event.preventDefault(); void choosePhoto(image.getAsFile()) } }} placeholder={conversation.post_status === 'removed' ? 'Messaging is unavailable for this request' : 'Write a message…'} readOnly={conversation.post_status === 'removed'} rows={1} value={draft} />
+        <button aria-label="Send message" className="messages-composer__send" disabled={(!draft.trim() && !photo) || photoBusy || conversation.post_status === 'removed'} type="submit"><PaperPlaneRight aria-hidden="true" size={21} weight="fill" /></button>
       </form>
     </>}
+    {lightbox && <button aria-label="Close image" className="messages-lightbox" onClick={() => setLightbox('')} type="button"><img alt="Photo shared in chat" src={lightbox} /><span>Close</span></button>}
   </section>
 }
 
 export function MessagesLayout() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -231,7 +308,9 @@ export function MessagesLayout() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [polling, setPolling] = useState(false)
+  const [onlineUsers, setOnlineUsers] = useState(() => new Set())
   const threadOpen = location.pathname !== '/app/messages' && location.pathname !== '/app/messages/'
+  const selectedConversation = conversations.find((item) => item.conversation_id === location.pathname.split('/').at(-1))
 
   const reload = useCallback(async () => {
     try {
@@ -253,11 +332,13 @@ export function MessagesLayout() {
     let timer
     const channel = supabase.channel('conversation-list-' + user.id)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, ({ eventType, new: message }) => {
+        if (eventType === 'UPDATE' && message.deleted_at) { void reload(); return }
         setConversations((current) => current.map((row) => {
           if (row.conversation_id !== message.conversation_id) return row
           if (eventType === 'INSERT') return {
             ...row,
-            last_message_preview: message.body,
+            last_message_preview: message.deleted_at ? 'Message deleted' : message.image_path ? 'Photo' : message.body,
+            last_sender_id: message.sender_id,
             last_message_at: message.created_at,
             unread_count: row.unread_count + (message.sender_id === user.id ? 0 : 1),
           }
@@ -285,11 +366,27 @@ export function MessagesLayout() {
     else navigate('/app/messages', { replace: true })
   }, [conversations, loading, navigate, searchParams])
 
-  const context = useMemo(() => ({ conversations, loading, reload }), [conversations, loading, reload])
-  return <main className={'messages-shell' + (threadOpen ? ' is-thread-open' : '') + (polling ? ' is-polling' : '')}>
-    <MessageList conversations={conversations} error={error} loading={loading} onRetry={() => void reload()} />
+  const context = useMemo(() => ({ conversations, loading, reload, setOnlineUsers }), [conversations, loading, reload])
+  return <main className={'messages-shell' + (threadOpen ? ' is-thread-open' : '') + (selectedConversation ? ' has-selection' : '') + (polling ? ' is-polling' : '')}>
+    <MessageList conversations={conversations} error={error} isProvider={profile?.account_type === 'provider'} loading={loading} onRetry={() => void reload()} onlineUsers={onlineUsers} userId={user.id} />
     <section className="messages-main"><Outlet context={context} /></section>
+    {selectedConversation && <MessageInfoPane conversation={selectedConversation} isProvider={profile?.account_type === 'provider'} />}
   </main>
+}
+
+function MessageInfoPane({ conversation, isProvider }) {
+  const [photos, setPhotos] = useState([])
+  useEffect(() => {
+    let active = true
+    supabase.from('messages').select('id, image_path, created_at').eq('conversation_id', conversation.conversation_id).not('image_path', 'is', null).order('created_at', { ascending: false }).limit(12)
+      .then(({ data }) => { if (active) setPhotos(data ?? []) })
+    return () => { active = false }
+  }, [conversation.conversation_id])
+  return <aside className="messages-info-pane">
+    <div className="messages-info-pane__person"><Avatar name={conversation.other_display_name} size={64} /><strong>{conversation.other_display_name}</strong>{!isProvider && <Link to={`/app/professionals/${conversation.other_user_id}`}>View profile</Link>}</div>
+      <section><h2>Job</h2><Link className="messages-info-pane__job" to={`/app/posts/${conversation.post_id}`}>{conversation.cover_path && <img alt="" src={getPostImageUrl(conversation.cover_path)} />}<strong>{conversation.post_title}</strong><span>{conversation.post_status === 'completed' ? 'Completed' : conversation.post_status === 'closed' ? 'In progress' : 'Request'}</span></Link>{!isProvider && conversation.post_status === 'closed' && <Button as={Link} to={`/app/posts/${conversation.post_id}/complete`} variant="primary">Mark as completed</Button>}</section>
+    <section><h2>Shared photos</h2>{photos.length ? <div className="messages-info-pane__photos">{photos.map((photo) => <Link aria-label="Open conversation" key={photo.id} to={`/app/messages/${conversation.conversation_id}`}><img alt="Shared in conversation" src={getPostImageUrl(photo.image_path)} /></Link>)}</div> : <p className="messages-info-pane__empty">Photos shared in chat will appear here.</p>}</section>
+  </aside>
 }
 
 export function MessagesHome() { return <MessagesWelcome /> }
