@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowBendUpLeft, ArrowLeft, Camera, ChatCircleDots, Check, DotsThree, Flag, Info, PaperPlaneRight, Smiley, TrashSimple, WarningCircle, Wrench, X } from '@phosphor-icons/react'
+import { ArrowBendUpLeft, ArrowLeft, Camera, ChatCircleDots, Check, DotsThree, Flag, House, Info, PaperPlaneRight, Smiley, TrashSimple, WarningCircle, Wrench, X } from '@phosphor-icons/react'
 import { Link, NavLink, Outlet, useLocation, useNavigate, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
 import { Avatar, Button, Skeleton } from '../components/UiPrimitives.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -64,7 +64,7 @@ function MessagesWelcome() {
   const { conversations } = useOutletContext()
   if (!conversations.length) return null
   return <div className="messages-welcome">
-    <div aria-hidden="true" className="messages-welcome__art"><span><Wrench size={27} weight="regular" /></span><span><ChatCircleDots size={35} weight="regular" /></span></div>
+    <div aria-hidden="true" className="messages-welcome__art"><span><Wrench size={27} weight="regular" /></span><span><House size={36} weight="regular" /></span></div>
     <div className="messages-welcome__copy"><span>FIXORA MESSAGES</span><h2>Good work starts with a conversation</h2><p>Select a conversation to coordinate details, timing and progress for a hired request.</p></div>
   </div>
 }
