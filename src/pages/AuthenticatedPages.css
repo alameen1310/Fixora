@@ -1123,7 +1123,7 @@
 .fixora-app .page-container .marketplace-rail__card,
 .fixora-app .page-container .marketplace-rail__post { min-width: 0; max-width: 100%; }
 .fixora-app .page-container .marketplace-rail__post { width: 100%; }
-.fixora-app .page-container .marketplace-rail__post > span {
+.fixora-app .page-container .marketplace-rail__post > span:not(.ui-badge) {
   min-width: 0;
   flex: 1 1 0;
   overflow-wrap: anywhere;
@@ -1132,6 +1132,7 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
+.fixora-app .page-container .marketplace-rail__post > .ui-badge { flex: 0 0 auto; }
 @media (min-width: 1600px) {
   .fixora-app .page-container .app-home-layout {
     grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
