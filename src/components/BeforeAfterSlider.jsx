@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { MagnifyingGlass } from '@phosphor-icons/react'
+import { ArrowsLeftRight, MagnifyingGlass } from '@phosphor-icons/react'
 import PhotoLightbox from './PhotoLightbox.jsx'
 import { getPostImageUrl } from '../lib/postImages.js'
 import './BeforeAfterSlider.css'
@@ -39,7 +39,7 @@ export default function BeforeAfterSlider({ before = [], after = [], title = 'Co
       <div className="before-after-track__before" style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}><img alt={`${title}, before`} onClick={() => setLightboxIndex(beforeIndex)} onError={(event) => { event.currentTarget.hidden = true }} src={imageUrl(currentBefore)} /></div>
       <button aria-label="Open photos" className="before-after-track__lightbox" onClick={() => setLightboxIndex(beforeIndex)} type="button"><MagnifyingGlass size={19} /></button>
       <span className="before-after-track__label before-after-track__label--before">Before</span><span className="before-after-track__label before-after-track__label--after">After</span>
-      <button aria-label="Drag to compare before and after photos" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(position)} aria-valuetext={`${Math.round(position)}% of before photo visible`} className="before-after-track__handle" onKeyDown={keyAdjust} role="slider" style={{ left: `${position}%` }} type="button"><span /></button>
+      <button aria-label="Drag to compare before and after photos" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(position)} aria-valuetext={`${Math.round(position)}% of before photo visible`} className="before-after-track__handle" onKeyDown={keyAdjust} role="slider" style={{ left: `${position}%` }} type="button"><span><ArrowsLeftRight aria-hidden="true" size={14} weight="bold" /></span></button>
     </div>
     {(beforeImages.length > 1 || afterImages.length > 1) && <div className="before-after-thumbnails">
       {beforeImages.length > 1 && <div aria-label="Before photos" className="before-after-thumbnails__side">{beforeImages.map((image, index) => <button aria-label={`Show before photo ${index + 1}`} aria-pressed={index === beforeIndex} key={image.storage_path} onClick={() => setBeforeIndex(index)} type="button"><img alt="" src={imageUrl(image)} /></button>)}</div>}
