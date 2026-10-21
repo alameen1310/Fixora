@@ -177,7 +177,7 @@ export function Chip({ children, selected = false, ...props }) {
   )
 }
 
-export function Avatar({ name = '', size = 44 }) {
+export function Avatar({ name = '', size = 44, src = '', presence = false, className = '' }) {
   const words = name.trim().split(/\s+/).filter(Boolean)
   const initials = (words.length === 1 ? words[0].slice(0, 2) : words.slice(0, 2).map((word) => word[0]).join('')).toUpperCase() || 'F'
   const colorIndex = [...name].reduce((total, character) => total + character.charCodeAt(0), 0) % 4
@@ -185,10 +185,12 @@ export function Avatar({ name = '', size = 44 }) {
   return (
     <span
       aria-label={name || 'Fixora account'}
-      className={`ui-avatar ui-avatar--${colorIndex}`}
+      className={`ui-avatar ui-avatar--${colorIndex}${className ? ` ${className}` : ''}${src ? ' has-photo' : ''}`}
       style={sizeStyle}
     >
-      {initials}
+      {src && <img alt="" loading="lazy" onError={(event) => event.currentTarget.remove()} src={src} />}
+      <span aria-hidden={Boolean(src)}>{initials}</span>
+      {presence && <i aria-label="Online" className="ui-avatar__presence" />}
     </span>
   )
 }

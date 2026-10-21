@@ -1,21 +1,25 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Briefcase, Check, MapPin, SignOut, User, Wrench } from '@phosphor-icons/react'
+import { ArrowLeft, ArrowRight, Check, MapPin, SignOut, User, Wrench } from '@phosphor-icons/react'
 import PhoneNumberField, { countryOptions, getE164Phone } from '../components/PhoneNumberField.jsx'
 import LoadingIndicator from '../components/LoadingIndicator.jsx'
 import { useToast } from '../components/ToastProvider.jsx'
 import { Logo } from '../components/UiPrimitives.jsx'
+import AvatarUploader from '../components/AvatarUploader.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
+import { nigerianLocations } from '../lib/nigerianLocations.js'
 import { supabase } from '../lib/supabase.js'
 import './OnboardingPage.css'
 
-const steps = ['Contact details', 'Professional profile', 'Services', 'Service areas', 'Review']
+const providerSteps = ['Contact details', 'Professional profile', 'Services', 'Service areas', 'Review', 'Add a profile photo']
+const customerSteps = ['Contact details', 'Add a profile photo']
 const stepContext = [
   { title: 'The right people can reach you.', description: 'Your name and private contact number help Fixora prepare your account. Your phone is not verified or shown publicly.', Icon: User },
-  { title: 'Give your work a clear identity.', description: 'Choose an individual or business profile, then tell customers what they can expect from your work.', Icon: Briefcase },
+  { title: 'Give your work a clear identity.', description: 'Tell customers what you do and what they can expect from your work.', Icon: User },
   { title: 'Show the work you take on.', description: 'Select the services that best match your skills. Customers can use them to understand where you fit.', Icon: Wrench },
-  { title: 'Set the places you can serve.', description: 'Add the cities and regions that make sense for your business, one area at a time.', Icon: MapPin },
+  { title: 'Set the places you can serve.', description: 'Add the cities and regions where you take on work.', Icon: MapPin },
   { title: 'Review before you finish.', description: 'Check the information you have shared. Your profile is published only after the required setup is complete.', Icon: Check },
+  { title: 'Make your profile easier to recognise.', description: 'A profile photo is optional. You can add it now or skip and come back later.', Icon: User },
 ]
 
 async function requestWithTimeout(startRequest, timeoutMs = 20000) {
@@ -79,6 +83,8 @@ export default function OnboardingPage({ audience }) {
   const { user, profile, setProfile, signOut } = useAuth()
   const { showToast } = useToast()
   const [step, setStep] = useState(1)
+  const [photoPath, setPhotoPath] = useState(profile?.avatar_path || '')
+  const steps = isProvider ? providerSteps : customerSteps
   const [categories, setCategories] = useState([])
   const [busy, setBusy] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
@@ -92,10 +98,10 @@ export default function OnboardingPage({ audience }) {
     phone: profile?.phone_number ?? '',
     phoneCountry: 'NG',
     displayName: user?.user_metadata?.provider_display_name ?? user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? '',
-    providerType: user?.user_metadata?.provider_type === 'business' || getSessionValue('fixora.providerType') === 'business' ? 'business' : 'individual',
     description: '',
     categoryIds: [],
-    serviceAreas: [{ country_code: 'NG', region: '', city: '' }],
+    serviceAreas: [{ country_code: 'NG', region: '', city: '', state_code: '' }],
+    nationwide: false,
   })
 
   useEffect(() => {
@@ -112,13 +118,13 @@ export default function OnboardingPage({ audience }) {
           ? supabase.from('service_categories').select('id, slug, name').order('name').abortSignal(controller.signal)
           : Promise.resolve({ data: [], error: null }),
         isProvider
-          ? supabase.from('provider_profiles').select('display_name, provider_type, service_description').eq('profile_id', user.id).maybeSingle().abortSignal(controller.signal)
+          ? supabase.from('provider_profiles').select('display_name, service_description, avatar_path, is_nationwide').eq('profile_id', user.id).maybeSingle().abortSignal(controller.signal)
           : Promise.resolve({ data: null, error: null }),
         isProvider
           ? supabase.from('provider_service_categories').select('category_id').eq('provider_id', user.id).abortSignal(controller.signal)
           : Promise.resolve({ data: [], error: null }),
         isProvider
-          ? supabase.from('provider_service_areas').select('country_code, region, city').eq('provider_id', user.id).order('created_at').abortSignal(controller.signal)
+          ? supabase.from('provider_service_areas').select('country_code, region, city, state_code').eq('provider_id', user.id).order('created_at').abortSignal(controller.signal)
           : Promise.resolve({ data: [], error: null }),
       ])
         if (!alive) return
@@ -133,18 +139,19 @@ export default function OnboardingPage({ audience }) {
           .filter((item) => metadataCategories.some((name) => name.toLowerCase() === item.name.toLowerCase() || name.toLowerCase() === item.slug))
           .map((item) => item.id)
         const savedProvider = providerResult.data
+        setPhotoPath(savedProvider?.avatar_path || profile?.avatar_path || '')
         const savedAreas = areasResult.data?.length ? areasResult.data : null
         setValues((current) => ({
           ...current,
           fullName: profile?.full_name ?? current.fullName,
           phone: profile?.phone_number ?? current.phone,
           displayName: savedProvider?.display_name ?? current.displayName,
-          providerType: savedProvider?.provider_type ?? current.providerType,
           description: savedProvider?.service_description ?? current.description,
           categoryIds: selectedResult.data?.length
             ? selectedResult.data.map((item) => item.category_id)
             : preselected,
           serviceAreas: savedAreas ?? current.serviceAreas,
+          nationwide: Boolean(savedProvider?.is_nationwide),
         }))
         if (isProvider) {
           let resumeStep = 1
@@ -164,19 +171,12 @@ export default function OnboardingPage({ audience }) {
     return () => { alive = false; clearTimeout(timeout); controller.abort() }
   }, [user, isProvider, profile?.full_name, profile?.phone_number, loadAttempt])
 
-  const currentStep = isProvider ? step : 1
+  const currentStep = step
   const progress = useMemo(() => steps.map((label, index) => ({ label, number: index + 1, complete: index + 1 < currentStep })), [currentStep])
 
   function update(field, value) {
     setValues((current) => {
-      if (field !== 'providerType') return { ...current, [field]: value }
-      if (value === 'business' && current.displayName.trim() === current.fullName.trim()) {
-        return { ...current, providerType: value, displayName: '' }
-      }
-      if (value === 'individual' && !current.displayName.trim()) {
-        return { ...current, providerType: value, displayName: current.fullName }
-      }
-      return { ...current, providerType: value }
+      return { ...current, [field]: value }
     })
     setFieldErrors((current) => {
       const next = { ...current }
@@ -228,16 +228,19 @@ export default function OnboardingPage({ audience }) {
           showToast({ type: 'success', message: canReuseContact ? 'Your account contact details are ready.' : 'Contact details saved.' })
           setStep(2)
         } else {
-          await complete()
+          showToast({ type: 'success', message: canReuseContact ? 'Your account contact details are ready.' : 'Contact details saved.' })
+          setStep(2)
         }
-      } else if (currentStep === 2) {
+      } else if (!isProvider && currentStep === 2) {
+        await complete()
+      } else if (isProvider && currentStep === 2) {
         if (!values.displayName.trim()) {
           setFieldErrors({ displayName: 'Enter the name customers should see on your professional profile.' })
           return
         }
         await saveProviderProfile(user.id, {
           display_name: values.displayName.trim(),
-          provider_type: values.providerType,
+          provider_type: 'individual',
           service_description: values.description.trim(),
         })
         removeSessionValue('fixora.providerType')
@@ -257,13 +260,14 @@ export default function OnboardingPage({ audience }) {
           country_code: area.country_code,
           region: area.region.trim(),
           city: area.city.trim(),
+          state_code: area.state_code || nigerianLocations.find(([name]) => name.toLowerCase() === area.region.trim().toLowerCase())?.[1] || null,
         }))
         const areaErrors = {}
-        cleanAreas.forEach((area, index) => {
-          if (!area.region) areaErrors[`area-${index}-region`] = 'Enter a state or region.'
-          if (!area.city) areaErrors[`area-${index}-city`] = 'Enter a city.'
+        if (!values.nationwide) cleanAreas.forEach((area, index) => {
+          if (!area.region) areaErrors[`area-${index}-region`] = 'Choose a state or territory.'
+          if (!area.city) areaErrors[`area-${index}-city`] = 'Enter a city or area.'
         })
-        if (!cleanAreas.length) {
+        if (!values.nationwide && !cleanAreas.length) {
           setFieldErrors({ serviceAreas: 'Add at least one service area.' })
           return
         }
@@ -271,10 +275,12 @@ export default function OnboardingPage({ audience }) {
           setFieldErrors(areaErrors)
           return
         }
-        const { error: saveError } = await requestWithTimeout((signal) => supabase.rpc('replace_provider_service_areas', { requested_areas: cleanAreas }).abortSignal(signal))
+        const { error: saveError } = await requestWithTimeout((signal) => supabase.rpc('replace_provider_service_areas', { requested_areas: values.nationwide ? [] : cleanAreas, requested_nationwide: values.nationwide }).abortSignal(signal))
         if (saveError) throw saveError
         showToast({ type: 'success', message: 'Your service areas are saved.' })
         setStep(5)
+      } else if (isProvider && currentStep === 5) {
+        setStep(6)
       } else {
         await complete()
       }
@@ -308,7 +314,7 @@ export default function OnboardingPage({ audience }) {
     }
   }
 
-  const context = stepContext[currentStep - 1]
+  const context = !isProvider && currentStep === 2 ? stepContext[5] : stepContext[currentStep - 1]
   const ContextIcon = context.Icon
   const contactAlreadySaved = Boolean(profile?.full_name && profile?.phone_number)
   const contactIsComplete = Boolean(values.fullName.trim() && getE164Phone(values.phone, values.phoneCountry))
@@ -339,7 +345,7 @@ export default function OnboardingPage({ audience }) {
             <h2>{context.title}</h2>
             <p>{context.description}</p>
           </div>
-          <ol aria-label="Provider setup progress" className="onboarding-context__steps">
+          <ol aria-label={isProvider ? 'Provider setup progress' : 'Account setup progress'} className="onboarding-context__steps">
             {progress.map(({ label, number, complete: isComplete }) => (
               <li aria-current={number === currentStep ? 'step' : undefined} className={number === currentStep ? 'is-current' : isComplete ? 'is-complete' : ''} key={label}>
                 <span>{isComplete ? <Check aria-hidden="true" size={14} weight="bold" /> : number}</span>
@@ -350,9 +356,8 @@ export default function OnboardingPage({ audience }) {
         </aside>
 
         <section aria-labelledby="onboarding-title" aria-busy={busy || loadingData} className="onboarding-card">
-          {isProvider && (
-            <div className="onboarding-mobile-progress" aria-label={`Step ${currentStep} of 5: ${steps[currentStep - 1]}`}>
-              <div className="onboarding-step-bars">
+          <div className="onboarding-mobile-progress" aria-label={`Step ${currentStep} of ${steps.length}: ${steps[currentStep - 1]}`}>
+            <div className="onboarding-step-bars" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
                 {steps.map((_, i) => (
                   <span
                     key={i}
@@ -360,24 +365,25 @@ export default function OnboardingPage({ audience }) {
                   />
                 ))}
               </div>
-              <div className="onboarding-step-meta">
-                <span className="onboarding-step-count">Step {currentStep} of 5</span>
-                <span className="onboarding-step-name">{steps[currentStep - 1]}</span>
-              </div>
+            <div className="onboarding-step-meta">
+              <span className="onboarding-step-count">Step {currentStep} of {steps.length}</span>
+              <span className="onboarding-step-name">{steps[currentStep - 1]}</span>
             </div>
-          )}
+          </div>
 
-          <p className="onboarding-kicker">{isProvider ? `Step ${currentStep} of 5` : 'Finish your Fixora account'}</p>
-          <h1 id="onboarding-title">{isProvider ? steps[currentStep - 1] : 'Your contact details'}</h1>
+          <p className="onboarding-kicker">Step {currentStep} of {steps.length}</p>
+          <h1 id="onboarding-title">{steps[currentStep - 1]}</h1>
           <p className="onboarding-intro">{currentStep === 1
             ? 'Your name and contact number are saved with your account. Add or update them here if needed.'
-            : currentStep === 2
+            : currentStep === 2 && isProvider
               ? 'Create the professional profile customers will discover.'
               : currentStep === 3
                 ? 'Choose the services that best reflect the work you take on.'
                 : currentStep === 4
                   ? 'Add the cities and regions where you are available.'
-                  : 'Review the details you have shared before finishing setup.'}</p>
+                  : currentStep === 5
+                    ? 'Review the details you have shared before finishing setup.'
+                    : 'A profile photo is optional. You can add it now or skip and come back later.'}</p>
 
           {loadFailed ? (
             <div className="onboarding-load-error" role="alert">
@@ -413,24 +419,10 @@ export default function OnboardingPage({ audience }) {
                 )
               )}
 
-              {currentStep === 2 && (
+              {currentStep === 2 && isProvider && (
                 <>
-                  <fieldset className="onboarding-choice">
-                    <legend>Profile type</legend>
-                    <div className="onboarding-choice-grid">
-                      <label className={`onboarding-choice-pill ${values.providerType === 'individual' ? 'is-selected' : ''}`}>
-                        <input checked={values.providerType === 'individual'} name="providerType" onChange={() => update('providerType', 'individual')} type="radio" />
-                        <User size={18} weight="duotone" />
-                        <span>Individual</span>
-                      </label>
-                      <label className={`onboarding-choice-pill ${values.providerType === 'business' ? 'is-selected' : ''}`}>
-                        <input checked={values.providerType === 'business'} name="providerType" onChange={() => update('providerType', 'business')} type="radio" />
-                        <Briefcase size={18} weight="duotone" />
-                        <span>Business</span>
-                      </label>
-                    </div>
-                  </fieldset>
-                  <Field error={fieldErrors.displayName} id="provider-display-name" label={values.providerType === 'business' ? 'Business name' : 'Professional name'} onChange={(value) => update('displayName', value)} value={values.displayName} />
+                  <Field error={fieldErrors.displayName} id="provider-display-name" label="Display name" onChange={(value) => update('displayName', value)} value={values.displayName} />
+                  <p className="onboarding-hint">The name customers see. Your own name or the name you work under.</p>
                   <label className="onboarding-field" htmlFor="provider-description"><span>Short description <em>Optional</em></span><textarea id="provider-description" maxLength={1000} onChange={(event) => update('description', event.target.value)} placeholder="What kinds of projects do you take on?" rows={4} value={values.description} /></label>
                 </>
               )}
@@ -473,30 +465,33 @@ export default function OnboardingPage({ audience }) {
                           {countryOptions.map((country) => <option key={country.code} value={country.code}>{country.label}</option>)}
                         </select>
                       </label>
-                      <Field error={fieldErrors[`area-${index}-region`]} id={`area-region-${index}`} label="State or region" onChange={(value) => changeArea(index, 'region', value, values, update)} value={area.region} placeholder="e.g. Lagos State" />
+                      {area.country_code === 'NG' ? <label className="onboarding-field" htmlFor={`area-region-${index}`}><span>Nigerian state or territory</span><select id={`area-region-${index}`} onChange={(event) => changeStateArea(index, event.target.value, values, update)} value={area.state_code || nigerianLocations.find(([name]) => name.toLowerCase() === area.region.toLowerCase())?.[1] || (area.region ? `legacy:${area.region}` : '')}><option value="">Choose a state or territory</option>{nigerianLocations.map(([name, code]) => <option key={code} value={code}>{name}</option>)}{area.region && !nigerianLocations.some(([name]) => name.toLowerCase() === area.region.toLowerCase()) && <option value={`legacy:${area.region}`}>{area.region} (saved location)</option>}</select></label> : <Field error={fieldErrors[`area-${index}-region`]} id={`area-region-${index}`} label="State or region" onChange={(value) => changeArea(index, 'region', value, values, update)} value={area.region} placeholder="Enter a region" />}
                       <Field error={fieldErrors[`area-${index}-city`]} id={`area-city-${index}`} label="City" onChange={(value) => changeArea(index, 'city', value, values, update)} value={area.city} placeholder="e.g. Ikeja, Lekki, or Surulere" />
                     </div>
                   ))}
-                  <button className="onboarding-add-area" onClick={() => update('serviceAreas', [...values.serviceAreas, { country_code: 'NG', region: '', city: '' }])} type="button">
+                  {!values.nationwide && <button className="onboarding-add-area" onClick={() => update('serviceAreas', [...values.serviceAreas, { country_code: 'NG', region: '', city: '', state_code: '' }])} type="button">
                     + Add another service area
-                  </button>
+                  </button>}
+                  {values.nationwide && <p className="onboarding-hint">Your saved nationwide coverage is preserved. Add local areas only if you want to change it.</p>}
                   <p className="onboarding-hint">Only the country, region, and city are shown on your public professional profile.</p>
                 </div>
               )}
 
               {currentStep === 5 && <Review values={values} categories={categories} />}
+              {((!isProvider && currentStep === 2) || (isProvider && currentStep === 6)) && <AvatarUploader name={values.displayName || values.fullName} path={photoPath} provider={isProvider} onSaved={setPhotoPath} />}
 
               <div className="onboarding-actions">
-                {isProvider && currentStep > 1 && (
+                {isProvider && currentStep > 1 && currentStep <= 5 && (
                   <button className="onboarding-secondary" disabled={busy} onClick={() => setStep((current) => current - 1)} type="button">
                     <ArrowLeft aria-hidden="true" size={18} /> Back
                   </button>
                 )}
                 <button className="onboarding-primary" disabled={busy} type="submit">
-                  {busy ? <><LoadingIndicator /> {currentStep === (isProvider ? 5 : 1) ? 'Finishing setup…' : 'Saving step…'}</> : currentStep === (isProvider ? 5 : 1) ? 'Finish setup' : 'Save and continue'}
+                  {busy ? <><LoadingIndicator /> {currentStep === steps.length ? 'Finishing setup…' : 'Saving step…'}</> : currentStep === steps.length ? 'Finish setup' : 'Save and continue'}
                   {!busy && <ArrowRight aria-hidden="true" size={18} />}
                 </button>
               </div>
+              {currentStep === steps.length && <button className="onboarding-text-action onboarding-skip-photo" disabled={busy} onClick={() => void next()} type="button">Skip for now</button>}
             </form>
           )}
         </section>
@@ -542,12 +537,10 @@ function changeArea(index, field, value, values, update) {
   update('serviceAreas', values.serviceAreas.map((area, areaIndex) => areaIndex === index ? { ...area, [field]: value } : area))
 }
 
-function getSessionValue(key) {
-  try {
-    return sessionStorage.getItem(key)
-  } catch {
-    return null
-  }
+function changeStateArea(index, value, values, update) {
+  if (value.startsWith('legacy:')) return
+  const selected = nigerianLocations.find(([, code]) => code === value)
+  update('serviceAreas', values.serviceAreas.map((area, areaIndex) => areaIndex === index ? { ...area, state_code: value, region: selected?.[0] || '' } : area))
 }
 
 function removeSessionValue(key) {
@@ -574,7 +567,7 @@ function Review({ values, categories }) {
         </span>
       </div>
       <div className="onboarding-review-row">
-        <span className="onboarding-review-label">{values.providerType === 'business' ? 'Business name' : 'Professional name'}</span>
+        <span className="onboarding-review-label">Display name</span>
         <span className="onboarding-review-val">{values.displayName || 'Not added'}</span>
       </div>
       <div className="onboarding-review-row">

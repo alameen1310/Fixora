@@ -1,8 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { authConfigured, supabase } from '../lib/supabase.js'
+import { clearUserAppState } from '../lib/postListCache.js'
 
 const AuthContext = createContext(null)
-const profileColumns = 'id, full_name, phone_number, phone_verified_at, account_type, onboarding_completed_at'
+const profileColumns = 'id, full_name, phone_number, phone_verified_at, account_type, onboarding_completed_at, avatar_path, location_region, location_city, created_at'
 const SESSION_TIMEOUT_MS = 12000
 const PROFILE_TIMEOUT_MS = 12000
 
@@ -223,6 +224,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   const signOut = useCallback(async () => {
+    const userId = sessionRef.current?.user?.id
     let remoteError = null
     if (supabase) {
       try {
@@ -243,6 +245,9 @@ export function AuthProvider({ children }) {
       }
     }
 
+    clearUserAppState(userId)
+    try { window.sessionStorage.setItem('fixora.signedOut', '1') } catch { /* Best effort guard against callback races. */ }
+
     authRevision.current += 1
     profileRequest.current += 1
     sessionRef.current = null
@@ -252,13 +257,6 @@ export function AuthProvider({ children }) {
     setProfile(null)
     setProfileError('')
     setProfileLoading(false)
-
-    try {
-      window.sessionStorage.removeItem('fixora.signupType')
-      window.sessionStorage.removeItem('fixora.providerType')
-    } catch {
-      // Ignore storage restrictions
-    }
 
     if (remoteError && !/session|jwt|token|not found|missing|network|fetch|offline/i.test(remoteError?.message ?? '')) {
       return { error: remoteError }

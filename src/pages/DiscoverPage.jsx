@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { supabase } from '../lib/supabase.js'
 import './AuthenticatedPages.css'
 import ProviderFindWork from '../components/ProviderFindWork.jsx'
+import usePullToRefresh from '../hooks/usePullToRefresh.jsx'
 
 export default function DiscoverPage() {
   const { profile, user } = useAuth()
@@ -24,6 +25,7 @@ export default function DiscoverPage() {
   const [resultsLoading, setResultsLoading] = useState(true)
   const [resultsError, setResultsError] = useState(false)
   const searchInputRef = useRef(null)
+  const pullRefresh = usePullToRefresh(() => window.dispatchEvent(new CustomEvent('fixora:discover-refresh')))
   const handleResultCountChange = useCallback((count, loading, error) => {
     setResultCount(count)
     setResultsLoading(loading)
@@ -78,7 +80,8 @@ export default function DiscoverPage() {
   if (isProvider) return <ProviderFindWork />
 
   return (
-    <main className="app-page app-page--discover">
+    <main className="app-page app-page--discover" ref={pullRefresh.containerRef}>
+      {pullRefresh.indicator}
       <header className="app-page__heading">
         <h1 className="text-large-title">Discover professionals</h1>
       </header>
@@ -147,6 +150,7 @@ export default function DiscoverPage() {
           categorySlug={selectedCategory}
           onCountChange={handleResultCountChange}
           query={query}
+          userId={user?.id || 'public'}
         />
 
         {!resultsLoading && !resultsError && (selectedCategory || query) && resultCount === 0 && (

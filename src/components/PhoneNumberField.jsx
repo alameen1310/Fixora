@@ -1,4 +1,5 @@
 import { getCountries, getCountryCallingCode, parsePhoneNumberFromString } from 'libphonenumber-js/min'
+import './PhoneNumberField.css'
 
 const displayNames = new Intl.DisplayNames(['en'], { type: 'region' })
 export const countryOptions = getCountries()
@@ -27,7 +28,7 @@ export default function PhoneNumberField({
   const describedBy = [hintId, errorId].filter(Boolean).join(' ') || undefined
 
   return (
-    <div className={`auth-field${error ? ' has-error' : ''}${className ? ` ${className}` : ''}`}>
+    <div className={`auth-field auth-phone-field${error ? ' has-error' : ''}${className ? ` ${className}` : ''}`}>
       <label htmlFor={id}>Phone number</label>
       <div className="auth-phone-control">
         <select

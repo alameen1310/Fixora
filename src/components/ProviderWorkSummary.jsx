@@ -9,7 +9,7 @@ function Stars({ rating }) {
   return <span aria-label={`${rating} out of 5 stars`} className="provider-review-stars">{[1, 2, 3, 4, 5].map((value) => <Star aria-hidden="true" key={value} size={15} weight={Number(rating) >= value - .5 ? 'fill' : 'regular'} />)}</span>
 }
 
-export default function ProviderWorkSummary({ displayName, profileId, onSummaryChange, showReputation = true }) {
+export default function ProviderWorkSummary({ avatarPath, displayName, profileId, onSummaryChange, showReputation = true }) {
   const [summary, setSummary] = useState(null)
   const [posts, setPosts] = useState([])
   const [reviews, setReviews] = useState([])
@@ -36,7 +36,7 @@ export default function ProviderWorkSummary({ displayName, profileId, onSummaryC
         setSummary(ratingResult.data)
         setJobs(workResult.count ?? 0)
         const completedPosts = workResult.data ?? []
-        setPosts(completedPosts.slice(0, 12).map((post) => ({ ...post, images: post.problem_post_images ?? [], provider: null, rating: ratingResult.data })))
+        setPosts(completedPosts.slice(0, 12).map((post) => ({ ...post, images: post.problem_post_images ?? [], provider: { display_name: displayName, avatar_path: avatarPath }, rating: ratingResult.data })))
         setReviews(reviewResult.data ?? [])
         onSummaryChange?.({ summary: ratingResult.data, jobs: workResult.count ?? 0, earned: completedPosts.reduce((sum, post) => sum + Number(post.final_price_naira || 0), 0) })
       } catch {
@@ -45,7 +45,7 @@ export default function ProviderWorkSummary({ displayName, profileId, onSummaryC
     }
     void load()
     return () => { active = false }
-  }, [onSummaryChange, profileId, retry])
+  }, [avatarPath, displayName, onSummaryChange, profileId, retry])
 
   if (error) return <section className="provider-work-summary" role="alert"><p>Ratings and completed work couldn’t load.</p><Button onClick={() => setRetry((value) => value + 1)} variant="secondary">Try again</Button></section>
   if (loading) return <section aria-busy="true" className="provider-work-summary"><div className="provider-reputation-skeleton" /><div className="provider-work-summary__skeleton" /><div className="provider-work-summary__skeleton" /></section>

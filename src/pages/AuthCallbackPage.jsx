@@ -5,6 +5,7 @@ import { ReducedMotionConfig, blur, scale, shift, spring, transition, useShouldR
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Logo } from '../components/UiPrimitives.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useToast } from '../components/ToastProvider.jsx'
 import { authConfigured, supabase } from '../lib/supabase.js'
 import './AuthCallbackPage.css'
 
@@ -24,7 +25,8 @@ function callbackErrorMessage(params) {
 }
 
 function safeReturnTo(value) {
-  return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? value : null
+  if (typeof value !== 'string' || !value.startsWith('/app') || value.startsWith('//') || value.includes('\\')) return null
+  return value
 }
 
 function getDestination(profile, returnTo) {
@@ -52,6 +54,7 @@ function CallbackExperience() {
   const [failure, setFailure] = useState('')
   const [retryIndex, setRetryIndex] = useState(0)
   const { user, loading, sessionError, retrySession, profile, profileLoading, profileError, refreshProfile } = useAuth()
+  const { showToast } = useToast()
   const navigate = useNavigate()
   const location = useLocation()
   const reduceMotion = useShouldReduceMotion()
@@ -100,6 +103,7 @@ function CallbackExperience() {
 
     async function resolveDestination() {
       let accountType = profile.account_type
+      let requestedSignupType = null
       if (!accountType) {
         let signupType = user.user_metadata?.fixora_signup_type
         try {
@@ -108,12 +112,19 @@ function CallbackExperience() {
           // Signup intent may be unavailable in restricted storage environments.
         }
         if (signupType === 'customer' || signupType === 'provider') {
+          requestedSignupType = signupType
           setPhase('prepare')
           accountType = await chooseAccountType(signupType)
           const refreshed = await refreshProfile()
           if (refreshed.error || !refreshed.data) throw refreshed.error || new Error('Your account details are still being prepared.')
           accountType = refreshed.data.account_type || accountType
         }
+      } else {
+        try { requestedSignupType = window.sessionStorage.getItem('fixora.signupType') } catch { /* Storage may be unavailable. */ }
+      }
+
+      if (requestedSignupType && accountType && requestedSignupType !== accountType) {
+        showToast({ type: 'info', message: `You already have a ${accountType === 'provider' ? 'Professional' : 'Customer'} account on Fixora.` })
       }
 
       try {
@@ -133,7 +144,7 @@ function CallbackExperience() {
     })
 
     return () => { active = false }
-  }, [loading, sessionError, user?.id, user?.user_metadata?.fixora_signup_type, profileLoading, profileError, profile?.id, profile?.account_type, profile?.onboarding_completed_at, retryIndex, navigate, refreshProfile, location.state?.returnTo])
+  }, [loading, sessionError, user?.id, user?.user_metadata?.fixora_signup_type, profileLoading, profileError, profile?.id, profile?.account_type, profile?.onboarding_completed_at, retryIndex, navigate, refreshProfile, location.state?.returnTo, showToast])
 
   async function retry() {
     setFailure('')

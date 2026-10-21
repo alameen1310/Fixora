@@ -3,7 +3,7 @@ import { supabase } from './supabase.js'
 export const MESSAGE_COLUMNS = 'id, conversation_id, sender_id, body, created_at, read_at, reply_to_id, deleted_at, image_path'
 
 export async function fetchMyConversations() {
-  const { data, error } = await supabase.rpc('get_my_conversations')
+  const { data, error } = await supabase.rpc('get_my_conversations_with_profiles')
   if (error) throw error
   return data ?? []
 }

@@ -137,10 +137,14 @@ export default function SignupForm({ audience }) {
     requestInFlight.current = true
     setBusy(true)
     try {
+      sessionStorage.removeItem('fixora.signedOut')
       sessionStorage.setItem('fixora.signupType', audience)
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: { prompt: 'select_account' },
+        },
       })
       if (error) throw error
     } catch {

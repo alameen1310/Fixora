@@ -19,7 +19,7 @@ export default function SignOutAction({ className = '', location = 'profile' }) 
     setBusy(false)
     if (error) {
       showToast({ type: 'error', message: 'We couldn’t complete sign-out on the server, but have cleared your local session.' })
-    }
+    } else showToast({ type: 'success', message: 'Signed out.' })
     setOpen(false)
     try { window.sessionStorage.removeItem('fixora.signingOut') } catch { /* Best effort cleanup. */ }
     navigate('/auth/login', { replace: true })
