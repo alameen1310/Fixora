@@ -1064,9 +1064,15 @@
     height: auto;
     min-height: 0;
     max-height: none;
-    aspect-ratio: 1.85 / 1;
+    aspect-ratio: 2.2 / 1;
   }
-  .app-home__main .post-card__body { align-content: start; padding: clamp(18px, 2vw, 26px); }
+  .app-home__main .post-card__body { align-content: start; gap: 10px; padding: clamp(18px, 2vw, 26px); }
+  .app-home__main .post-card__category { padding: 5px 9px; border-radius: 999px; background: #edf2ff; font-size: 12px; }
+  .app-home__main .post-card__title { font-size: clamp(1.25rem, 1.55vw, 1.65rem); line-height: 1.2; }
+  .app-home__main .post-card__description { color: #596987; font-size: .94rem; line-height: 1.5; }
+  .app-home__main .post-card__budget { margin-top: 2px; color: #173eaa; font-size: clamp(1.2rem, 1.5vw, 1.45rem); font-weight: 760; }
+  .app-home__main .post-card__meta { gap: 7px 18px; color: #667594; font-size: .82rem; }
+  .app-home__main .post-card__byline { padding-top: 10px; border-top: 1px solid #e8edf6; }
 }
 @media (min-width: 768px) {
   .app-page--profile-detail .app-public-profile > .provider-work-summary { grid-column: 1 / -1; width: 100%; min-width: 0; }
