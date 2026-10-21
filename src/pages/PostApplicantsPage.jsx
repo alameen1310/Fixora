@@ -5,12 +5,13 @@ import { ActionSheet, Avatar, Badge, Button, Skeleton } from '../components/UiPr
 import MarketplaceDoodle from '../components/MarketplaceDoodle.jsx'
 import { useToast } from '../components/ToastProvider.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
-import { fetchPostApplications } from '../lib/applicationQueries.js'
+import { fetchPostApplications, markPostApplicationActivitiesRead } from '../lib/applicationQueries.js'
 import { fetchProblemPost } from '../lib/postQueries.js'
 import { formatPostBudget } from '../lib/postQueries.js'
 import { getPostImageUrl } from '../lib/postImages.js'
 import { supabase } from '../lib/supabase.js'
 import { avatarUrl } from '../lib/avatarImages.js'
+import { appQueryCache } from '../lib/postListCache.js'
 import { usePresence } from '../components/PresenceProvider.jsx'
 import '../components/Posts.css'
 import './PostApplicantsPage.css'
@@ -40,6 +41,22 @@ export default function PostApplicantsPage() {
       setPost(result)
       const loadedApplications = await fetchPostApplications(postId)
       setApplications(loadedApplications)
+      if (user?.id) {
+        try {
+          await markPostApplicationActivitiesRead(postId, user.id)
+          const cacheKey = `${user.id}:activity:customer`
+          const cachedActivity = appQueryCache.get(cacheKey)
+          if (cachedActivity) {
+            const readAt = new Date().toISOString()
+            appQueryCache.set(cacheKey, {
+              ...cachedActivity,
+              items: cachedActivity.items.map((item) => item.post_id === postId && item.kind === 'application_received' && !item.read_at ? { ...item, read_at: readAt } : item),
+            })
+          }
+        } catch (readError) {
+          console.error('[activity-read]', { postId, code: readError?.code, message: readError?.message })
+        }
+      }
       void refreshPresence(loadedApplications.map((application) => application.professional_id))
     } catch {
       setError('We couldn’t load the applicants. Check your connection and try again.')

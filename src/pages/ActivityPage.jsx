@@ -64,7 +64,7 @@ function CustomerActivityCard({ item, isOnline, onRead }) {
       {item.problem_post_applications?.message && <blockquote className="activity-item__note">{item.problem_post_applications.message}</blockquote>}
       {isCompleted && <div className="activity-item__completion-meta">{item.review?.rating && <span aria-label={`${item.review.rating} out of 5 stars`}><Star aria-hidden="true" size={15} weight="fill" />{item.review.rating} stars given</span>}{post?.final_price_naira > 0 && <strong>Paid {formatNaira(post.final_price_naira)}</strong>}</div>}
       <div className="activity-item__actions" onClick={(event) => event.stopPropagation()}>
-        {isApplication && <><Button as={Link} to={target} onClick={() => void onRead(item)}>Review applicants</Button>{profileLink && <Button as={Link} to={profileLink} variant="secondary">View profile</Button>}</>}
+        {isApplication && <><Button as={Link} to={target} onClick={() => void onRead(item)}>Review applicants</Button>{profileLink && <Button as={Link} onClick={() => void onRead(item)} to={profileLink} variant="secondary">View profile</Button>}</>}
         {isHired && <>{FEATURES.chat && <Button as={Link} to={`/app/messages?postId=${item.post_id}`} variant="secondary">Message</Button>}<Button as={Link} to={`/app/posts/${item.post_id}/complete`}>Mark as completed</Button></>}
         {isCompleted && <Button as={Link} to={`/app/posts/${item.post_id}`} variant="secondary">View before &amp; after</Button>}
         {!isApplication && !isHired && !isCompleted && <Button as={Link} to={target} variant="secondary">View request</Button>}

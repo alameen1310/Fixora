@@ -33,7 +33,7 @@ export default function AuthenticatedAppShell() {
   const { profile, user } = useAuth()
   const location = useLocation()
   const unreadMessages = useUnreadMessageCount(FEATURES.chat ? user?.id : null)
-  const unreadActivity = useUnreadActivityCount(user?.id)
+  const unreadActivity = useUnreadActivityCount(user?.id, profile?.account_type)
   const totalUnread = unreadMessages + unreadActivity
   const isCustomer = profile?.account_type === 'customer'
   const isProvider = profile?.account_type === 'provider'

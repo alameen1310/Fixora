@@ -123,3 +123,10 @@ export async function markMarketplaceActivityRead(activityId, userId) {
     .update({ read_at: new Date().toISOString() }).eq('id', activityId).eq('recipient_id', userId).is('read_at', null)
   if (error) throw error
 }
+
+export async function markPostApplicationActivitiesRead(postId, userId) {
+  const { error } = await supabase.from('marketplace_activities')
+    .update({ read_at: new Date().toISOString() })
+    .eq('recipient_id', userId).eq('post_id', postId).eq('kind', 'application_received').is('read_at', null)
+  if (error) throw error
+}

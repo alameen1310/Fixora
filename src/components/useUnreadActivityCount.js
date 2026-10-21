@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 
-export default function useUnreadActivityCount(userId) {
+export default function useUnreadActivityCount(userId, accountType) {
   const [count, setCount] = useState(0)
   useEffect(() => {
-    if (!userId || !supabase) { setCount(0); return undefined }
+    if (!userId || !accountType || !supabase) { setCount(0); return undefined }
     let active = true
     let timer
     const refresh = async () => {
-      const { count: nextCount, error } = await supabase.from('marketplace_activities').select('id', { count: 'exact', head: true }).eq('recipient_id', userId).is('read_at', null)
+      let query = supabase.from('marketplace_activities').select('id', { count: 'exact', head: true }).eq('recipient_id', userId).is('read_at', null)
+      if (accountType === 'customer') {
+        query = query.eq('kind', 'application_received').eq('problem_posts.status', 'open')
+          .select('id, problem_posts!inner(status)', { count: 'exact', head: true })
+      }
+      const { count: nextCount, error } = await query
       if (!error && active) setCount(nextCount ?? 0)
     }
     void refresh()
@@ -17,6 +22,6 @@ export default function useUnreadActivityCount(userId) {
       if (!['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(status) && timer) { clearInterval(timer); timer = null }
     })
     return () => { active = false; if (timer) clearInterval(timer); void supabase.removeChannel(channel) }
-  }, [userId])
+  }, [userId, accountType])
   return count
 }
