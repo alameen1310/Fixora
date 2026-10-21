@@ -8,6 +8,7 @@ import { useToast } from '../components/ToastProvider.jsx'
 import { describePhotoError, getPostImageUrl, logPostStep, preparePostPhoto } from '../lib/postImages.js'
 import { invalidatePostListCaches } from '../lib/postListCache.js'
 import { supabase } from '../lib/supabase.js'
+import './AuthenticatedPages.css'
 import '../components/Posts.css'
 import './PostFormPage.css'
 

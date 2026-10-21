@@ -14,6 +14,7 @@ import ReportDialog from '../components/ReportDialog.jsx'
 import { FEATURES } from '../config/features.js'
 import { avatarUrl } from '../lib/avatarImages.js'
 import { usePresence } from '../components/PresenceProvider.jsx'
+import './AuthenticatedPages.css'
 import '../components/Posts.css'
 import PhotoLightbox from '../components/PhotoLightbox.jsx'
 
