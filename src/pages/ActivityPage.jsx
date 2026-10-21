@@ -15,11 +15,22 @@ import { appQueryCache } from '../lib/postListCache.js'
 import { usePresence } from '../components/PresenceProvider.jsx'
 import usePullToRefresh from '../hooks/usePullToRefresh.jsx'
 
-const providerPredicates = (userId) => ({
-  applied: (item) => item.status === 'pending' && item.post?.status === 'open',
-  selected: (item) => item.status === 'hired' || item.post?.hired_professional_id === userId,
-  declined: (item) => item.status === 'not_selected' || item.status === 'withdrawn' || (item.status === 'pending' && ['closed', 'removed'].includes(item.post?.status)),
-})
+const providerPredicates = (userId) => {
+  const hired = (item) => item.status === 'hired' || item.post?.hired_professional_id === userId
+  return {
+    applied: (item) => item.status === 'pending' && item.post?.status === 'open',
+    'in-progress': (item) => hired(item) && item.post?.status !== 'completed' && !item.post?.completed_at,
+    completed: (item) => hired(item) && (item.post?.status === 'completed' || Boolean(item.post?.completed_at)),
+    past: (item) => item.status === 'not_selected' || item.status === 'withdrawn' || (item.status === 'pending' && item.post?.status !== 'open'),
+  }
+}
+
+const customerSegments = [
+  { key: 'needs-action', label: 'New applications', description: 'Professionals who have applied to your open requests.' },
+  { key: 'in-progress', label: 'In progress', description: 'Requests you have hired a professional to complete.' },
+  { key: 'completed', label: 'Completed', description: 'Finished work and its follow-up details.' },
+  { key: 'earlier', label: 'Past updates', description: 'Updates for requests that are no longer active.' },
+]
 
 const activityTime = (value) => new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 
@@ -71,19 +82,15 @@ export default function ActivityPage() {
   const cached = appQueryCache.get(cacheKey)
   const [items, setItems] = useState(() => cached?.items ?? [])
   const [loading, setLoading] = useState(() => !cached)
-  const [isMobile, setIsMobile] = useState(false)
   const [error, setError] = useState(false)
   const lastRefreshAt = useRef(cached?.lastRefreshAt || 0)
   const loadInFlight = useRef(false)
-  const [segment, setSegment] = useState(() => ['applied', 'selected', 'declined', 'needs-action', 'in-progress', 'completed'].includes(searchParams.get('segment')) ? searchParams.get('segment') : isProvider ? 'applied' : 'needs-action')
-
-  useEffect(() => {
-    const media = window.matchMedia('(max-width: 767px)')
-    const sync = () => setIsMobile(media.matches)
-    sync()
-    media.addEventListener('change', sync)
-    return () => media.removeEventListener('change', sync)
-  }, [])
+  const [segment, setSegment] = useState(() => {
+    const requested = searchParams.get('segment')
+    if (isProvider && requested === 'declined') return 'past'
+    const validSegments = isProvider ? ['applied', 'in-progress', 'completed', 'past'] : ['needs-action', 'in-progress', 'completed', 'earlier']
+    return validSegments.includes(requested) ? requested : isProvider ? 'applied' : 'needs-action'
+  })
 
   const load = useCallback(async ({ silent = false } = {}) => {
     if (loadInFlight.current) return
@@ -131,14 +138,15 @@ export default function ActivityPage() {
   const attention = (item) => item.kind === 'application_received' && item.problem_posts?.status === 'open'
   const inProgress = (item) => item.kind === 'post_hired'
   const completed = (item) => item.kind === 'post_completed'
-  const customerCounts = { 'needs-action': items.filter(attention).length, 'in-progress': items.filter(inProgress).length, completed: items.filter(completed).length }
-  const customerGroups = [
-    ['Needs your attention', items.filter(attention)],
-    ['In progress', items.filter(inProgress)],
-    ['Completed', items.filter(completed)],
-    ['Earlier', items.filter((item) => !attention(item) && !inProgress(item) && !completed(item))],
-  ]
-  const displayedCustomerItems = items.filter((item) => segment === 'needs-action' ? attention(item) || (!inProgress(item) && !completed(item)) : segment === 'in-progress' ? inProgress(item) : completed(item))
+  const belongsToCustomerSegment = {
+    'needs-action': attention,
+    'in-progress': inProgress,
+    completed,
+    earlier: (item) => !attention(item) && !inProgress(item) && !completed(item),
+  }
+  const customerCounts = Object.fromEntries(customerSegments.map(({ key }) => [key, items.filter(belongsToCustomerSegment[key]).length]))
+  const displayedCustomerItems = items.filter(belongsToCustomerSegment[segment] || belongsToCustomerSegment['needs-action'])
+  const selectedCustomerSegment = customerSegments.find(({ key }) => key === segment) || customerSegments[0]
   const unreadCount = items.filter((item) => !item.read_at).length
   const hiredCount = items.filter((item) => item.status === 'hired').length
 
@@ -147,18 +155,19 @@ export default function ActivityPage() {
     <header className="app-page__heading activity-heading"><h1 className="text-large-title">Activity</h1><Badge tone="neutral">{items.length} updates</Badge></header>
     {isProvider ? <div className="provider-activity-layout">
       <section className="provider-activity-main">
-        <nav aria-label="Application status" className="provider-activity-tabs">{[['applied', 'Applied'], ['selected', 'Selected'], ['declined', 'Declined']].map(([key, label]) => <button aria-pressed={segment === key} className="provider-activity-tabs__button" key={key} onClick={() => selectSegment(key)} type="button">{label}<span>{providerCounts[key]}</span></button>)}</nav>
+        <nav aria-label="Application status" className="provider-activity-tabs">{[['applied', 'Applied'], ['in-progress', 'In progress'], ['completed', 'Completed'], ['past', 'Past applications']].map(([key, label]) => <button aria-pressed={segment === key} className="provider-activity-tabs__button" key={key} onClick={() => selectSegment(key)} type="button">{label}<span>{providerCounts[key]}</span></button>)}</nav>
         {loading ? <div className="provider-activity-list" aria-label="Loading applications" role="status">{[0,1,2].map((item) => <Skeleton className="provider-application-card" key={item} />)}</div>
           : error ? <section className="posts-feed__error" role="alert"><h2>Activity didn’t load</h2><p>Check your connection and try again.</p><Button onClick={() => void load()} variant="secondary">Retry</Button></section>
             : (() => {
-              const selectedItems = items.filter(providerFilters[segment])
-              if (!selectedItems.length) return <section className="activity-empty provider-activity-empty"><EmptyState action={<Button as={Link} to="/app" variant="secondary">Browse open requests <ArrowRight aria-hidden="true" size={16} /></Button>} icon={Bell} message="Open requests from customers will appear here." title={`No ${segment} applications`} /></section>
+              const selectedItems = items.filter(providerFilters[segment] || providerFilters.applied)
+              if (!selectedItems.length) return <section className="activity-empty provider-activity-empty"><EmptyState action={<Button as={Link} to="/app" variant="secondary">Browse open requests <ArrowRight aria-hidden="true" size={16} /></Button>} icon={Bell} message={segment === 'applied' ? 'Applications you send will appear here.' : 'There are no requests in this category yet.'} title={segment === 'past' ? 'No past applications' : `No ${segment.replace('-', ' ')} applications`} /></section>
               return <div aria-label={`${segment} applications`} className="provider-activity-list">
                 {selectedItems.map((item) => {
                   const post = item.post
                   const selected = item.status === 'hired' || post.hired_professional_id === user.id
-                  const declined = !selected && (item.status === 'not_selected' || item.status === 'withdrawn' || ['closed', 'removed'].includes(post.status))
-                  const statusLabel = selected ? post.status === 'completed' ? 'Completed' : 'In progress' : declined ? 'Declined' : 'Applied'
+                  const isCompleted = selected && (post.status === 'completed' || Boolean(post.completed_at))
+                  const declined = !selected && (item.status === 'not_selected' || item.status === 'withdrawn' || (item.status === 'pending' && post.status !== 'open'))
+                  const statusLabel = isCompleted ? 'Completed' : selected ? 'In progress' : declined ? 'Past application' : 'Applied'
                   const unread = item.activity && !item.activity.read_at
                   return <article className={`provider-application-card${declined ? ' is-declined' : ''}`} key={item.id}>
                     <Link aria-label={`View request: ${post.title}`} className="provider-application-card__cover" to={`/app/posts/${post.id}`}>{post.coverPath ? <img alt="" loading="lazy" src={getPostImageUrl(post.coverPath)} /> : <ClockCounterClockwise aria-hidden="true" size={24} />}</Link>
@@ -168,21 +177,22 @@ export default function ActivityPage() {
                       <div className="provider-application-card__meta">{(post.city || post.region) && <span>{[post.city, post.region].filter(Boolean).join(', ')}</span>}</div>
                       <div className="provider-application-card__identity"><Avatar name={item.customerName} size={34} src={avatarUrl(item.customerAvatarPath)} /><span>{item.customerName}</span><time title={activityTime(item.activity?.created_at || item.updated_at || item.created_at)}>{formatRelativeTime(item.activity?.created_at || item.updated_at || item.created_at)}</time>{unread && <span aria-label="New activity" className="provider-application-card__new" />}</div>
                       {item.message && <blockquote className="provider-application-card__note">{item.message}</blockquote>}
-                      <div className="provider-application-card__foot"><span className="provider-application-card__actions">{selected && FEATURES.chat && <Button as={Link} to={`/app/messages?postId=${post.id}`} variant="secondary">Message</Button>}<Button as={Link} to={`/app/posts/${post.id}`} variant="secondary">View request</Button></span></div>
+                      <div className="provider-application-card__foot"><span className="provider-application-card__actions">{selected && !isCompleted && FEATURES.chat && <Button as={Link} to={`/app/messages?postId=${post.id}`} variant="secondary">Message</Button>}<Button as={Link} to={`/app/posts/${post.id}`} variant="secondary">View request</Button></span></div>
                     </div>
                   </article>
                 })}
               </div>
             })()}
       </section>
-      <aside className="provider-activity-rail"><h2>Applications</h2><div className="provider-activity-rail__counts">{[['Applied', providerCounts.applied], ['Selected', providerCounts.selected], ['Declined', providerCounts.declined]].map(([label, count]) => <div key={label}><span>{label}</span><strong>{count}</strong></div>)}</div><div className="provider-activity-rail__ratio"><strong>{hiredCount} of {items.length}</strong><span>applications selected you</span></div></aside>
+      <aside className="provider-activity-rail"><h2>Applications</h2><div className="provider-activity-rail__counts">{[['Applied', providerCounts.applied], ['In progress', providerCounts['in-progress']], ['Completed', providerCounts.completed], ['Past applications', providerCounts.past]].map(([label, count]) => <div key={label}><span>{label}</span><strong>{count}</strong></div>)}</div><div className="provider-activity-rail__ratio"><strong>{hiredCount} of {items.length}</strong><span>applications selected you</span></div></aside>
     </div> : <>
-      <nav aria-label="Activity groups" className="customer-activity-tabs">{[['needs-action', 'Needs action'], ['in-progress', 'In progress'], ['completed', 'Completed']].map(([key, label]) => <button aria-pressed={segment === key} key={key} onClick={() => selectSegment(key)} type="button">{label}<span>{customerCounts[key]}</span></button>)}</nav>
+      <nav aria-label="Activity categories" className="customer-activity-tabs">{customerSegments.map(({ key, label }) => <button aria-pressed={segment === key} key={key} onClick={() => selectSegment(key)} type="button">{label}<span>{customerCounts[key]}</span></button>)}</nav>
       {loading ? <div className="activity-layout"><section className="activity-list" aria-label="Loading activity" role="status">{[0,1,2].map((item) => <Skeleton className="activity-skeleton" key={item} />)}</section></div>
         : error ? <section className="posts-feed__error" role="alert"><h2>Activity didn’t load</h2><p>Check your connection and try again.</p><Button onClick={() => void load()} variant="secondary">Retry</Button></section>
           : items.length === 0 ? <section className="activity-empty"><EmptyState action={<Button as={Link} to="/app/discover" variant="secondary">Browse professionals <ArrowRight aria-hidden="true" size={16} /></Button>} icon={Bell} message="When a professional applies or a customer makes a decision, updates will appear here." title="No activity yet" /></section>
-            : <div className="activity-layout"><section aria-label="Recent activity" className="activity-list">
-              {isMobile ? displayedCustomerItems.length ? displayedCustomerItems.map((item) => <CustomerActivityCard isOnline={isOnline} item={item} key={item.id} onRead={markRead} />) : <ActivitySegmentEmpty segment={segment} /> : customerGroups.map(([group, groupedItems]) => !groupedItems.length ? null : <section className="activity-group" key={group}><header className="activity-group__heading"><h2>{group}<span>{groupedItems.length}</span></h2></header>{groupedItems.map((item) => <CustomerActivityCard isOnline={isOnline} item={item} key={item.id} onRead={markRead} />)}</section>)}
+            : <div className="activity-layout"><section aria-label={`${selectedCustomerSegment.label} activity`} className="activity-list">
+              <header className="activity-section-heading"><div><h2>{selectedCustomerSegment.label}</h2><p>{selectedCustomerSegment.description}</p></div><span>{displayedCustomerItems.length} {displayedCustomerItems.length === 1 ? 'update' : 'updates'}</span></header>
+              {displayedCustomerItems.length ? displayedCustomerItems.map((item) => <CustomerActivityCard isOnline={isOnline} item={item} key={item.id} onRead={markRead} />) : <ActivitySegmentEmpty segment={segment} />}
             </section><aside className="customer-activity-rail"><div className="customer-activity-summary"><h2>Activity summary</h2><div><span>Needs attention</span><strong>{customerCounts['needs-action']}</strong></div><div><span>In progress</span><strong>{customerCounts['in-progress']}</strong></div><div><span>Completed</span><strong>{customerCounts.completed}</strong></div></div><MarketplaceRail showServices={false} userId={user.id} /></aside></div>}
       {unreadCount > 0 && <span className="sr-only" aria-live="polite">{unreadCount} unread updates</span>}
     </>}
@@ -191,9 +201,10 @@ export default function ActivityPage() {
 
 function ActivitySegmentEmpty({ segment }) {
   const messages = {
-    'needs-action': ['Nothing needs your attention', 'New applications and request updates will appear here.'],
+    'needs-action': ['No new applications', 'When a professional applies to an open request, it will appear here.'],
     'in-progress': ['No work in progress', 'When you hire a professional, the request will appear here.'],
     completed: ['No completed work yet', 'Completed requests and their before-and-after photos will appear here.'],
+    earlier: ['No past updates', 'Updates for closed or inactive requests will appear here.'],
   }
   const [title, message] = messages[segment] || messages['needs-action']
   return <section className="activity-segment-empty"><h2>{title}</h2><p>{message}</p><Link to="/app/my-posts">View your posts <ArrowRight aria-hidden="true" size={16} /></Link></section>
