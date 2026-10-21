@@ -52,6 +52,8 @@
 .activity-item__completion-meta strong { color:var(--color-text-primary); font-variant-numeric:tabular-nums; }
 .activity-item__actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding-top:3px; }
 .activity-item__actions .ui-button { min-height:42px; padding-inline:14px; font-size:13px; }
+/* Shared legacy activity rules sized every action link like a small icon control. */
+.activity-item__actions > a.ui-button { width:auto; height:auto; min-width:0; min-height:42px; flex:0 1 auto; white-space:normal; text-align:center; }
 .activity-item__aside { display:none; }
 .activity-item__unread-dot { width:8px; height:8px; flex:0 0 auto; border-radius:50%; background:#2457d6; }
 .customer-activity-rail { position:sticky; top:88px; display:grid; align-content:start; gap:16px; }
@@ -133,7 +135,7 @@
   .activity-item__sentence { font-size:13px; }
   .activity-item__details { gap:6px; font-size:12px; }
   .activity-item__actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-  .activity-item__actions .ui-button { width:100%; min-width:0; padding-inline:8px; }
+  .activity-item__actions .ui-button,.activity-item__actions > a.ui-button { width:100%; min-width:0; min-height:44px; padding-inline:8px; }
   .activity-item__aside { grid-column:2; grid-row:1; justify-content:flex-end; align-self:start; padding:0; font-size:11px; }
   .activity-item__aside time { padding-right:11px; }
   .activity-item__unread-dot { position:absolute; top:21px; right:17px; width:7px; height:7px; }
