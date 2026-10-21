@@ -12,7 +12,7 @@ export function clearUserAppState(userId) {
   try {
     window.localStorage.removeItem(`fixora-post-draft-${userId}`)
     for (const key of Object.keys(window.localStorage)) {
-      if (key.startsWith('fixora.chatDraft.')) window.localStorage.removeItem(key)
+      if (key.startsWith(`fixora.chatDraft.${userId}.`)) window.localStorage.removeItem(key)
     }
     for (const key of ['fixora.signupType', 'fixora.providerType', 'fixora.returnTo', 'fixora.redirectTo']) {
       window.sessionStorage.removeItem(key)

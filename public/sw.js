@@ -1,5 +1,5 @@
-const SHELL_CACHE = 'fixora-shell-v5'
-const ASSET_CACHE = 'fixora-assets-v5'
+const SHELL_CACHE = 'fixora-shell-v6'
+const ASSET_CACHE = 'fixora-assets-v6'
 const APP_ROOT = new URL('./', self.registration.scope)
 const APP_BASE_PATH = APP_ROOT.pathname
 const appUrl = (path) => new URL(path, APP_ROOT).href
@@ -23,7 +23,6 @@ self.addEventListener('install', (event) => {
       .filter((url) => url.origin === self.location.origin && url.pathname.startsWith(`${APP_BASE_PATH}assets/`))
       .map((url) => url.href)
     await cache.addAll([...APP_SHELL.slice(1), ...shellAssets])
-    await self.skipWaiting()
   })())
 })
 

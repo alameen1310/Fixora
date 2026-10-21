@@ -106,7 +106,7 @@ export default function AuthPage({ mode = 'login' }) {
       } else {
         const { error: authError } = await supabase.auth.updateUser({ password })
         if (authError) throw authError
-        const { error: signOutError } = await supabase.auth.signOut()
+        const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' })
         if (signOutError) {
           const msg = 'Password updated. Please sign in with your new password.'
           setNotice(msg)

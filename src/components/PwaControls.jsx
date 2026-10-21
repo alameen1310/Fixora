@@ -104,29 +104,53 @@ export default function PwaControls() {
     window.addEventListener('appinstalled', handleInstalled)
 
     let registration
+    let stopWatching
     let cancelled = false
     if ('serviceWorker' in navigator && import.meta.env.PROD) {
-      navigator.serviceWorker
-        .getRegistration(`${import.meta.env.BASE_URL}`)
-        .then((currentRegistration) => {
-          if (cancelled || !currentRegistration) return
-          registration = currentRegistration
-          if (registration.waiting) setUpdateWorker(registration.waiting)
-          registration.addEventListener('updatefound', () => {
-            const installingWorker = registration.installing
-            installingWorker?.addEventListener('statechange', () => {
-              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                setUpdateWorker(installingWorker)
-              }
-            })
+      const watchRegistration = (currentRegistration) => {
+        if (cancelled || !currentRegistration) return
+        registration = currentRegistration
+        if (registration.waiting && navigator.serviceWorker.controller) setUpdateWorker(registration.waiting)
+        const watchInstallingWorker = () => {
+          const installingWorker = registration.installing
+          installingWorker?.addEventListener('statechange', () => {
+            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              setUpdateWorker(installingWorker)
+            }
           })
-          registration.update().catch(() => {})
+        }
+        registration.addEventListener('updatefound', watchInstallingWorker)
+        if (registration.installing) watchInstallingWorker()
+        const checkForUpdate = () => {
+          if (document.visibilityState === 'visible') registration.update().catch(() => {})
+        }
+        checkForUpdate()
+        const updateInterval = window.setInterval(checkForUpdate, 5 * 60 * 1000)
+        document.addEventListener('visibilitychange', checkForUpdate)
+        return () => {
+          window.clearInterval(updateInterval)
+          document.removeEventListener('visibilitychange', checkForUpdate)
+          registration?.removeEventListener('updatefound', watchInstallingWorker)
+        }
+      }
+
+      navigator.serviceWorker
+        .register(`${import.meta.env.BASE_URL}sw.js`, {
+          scope: import.meta.env.BASE_URL,
+          updateViaCache: 'none',
         })
-        .catch(() => {})
+        .then((currentRegistration) => {
+          if (cancelled) return
+          stopWatching = watchRegistration(currentRegistration)
+        })
+        .catch((error) => {
+          console.error('Fixora service worker registration failed:', error)
+        })
     }
 
     return () => {
       cancelled = true
+      stopWatching?.()
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
       window.removeEventListener('appinstalled', handleInstalled)
     }
@@ -170,10 +194,10 @@ export default function PwaControls() {
 
   function applyUpdate() {
     if (!updateWorker) return
-    updateWorker.postMessage({ type: 'SKIP_WAITING' })
     navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload(), {
       once: true,
     })
+    updateWorker.postMessage({ type: 'SKIP_WAITING' })
     setUpdateWorker(null)
   }
 
@@ -243,10 +267,10 @@ export default function PwaControls() {
 
       {updateWorker && (
         <aside aria-label="Application update available" className="pwa-update-notice" role="status">
-          <span>New version available</span>
+          <span>A Fixora update is ready</span>
           <button onClick={applyUpdate} type="button">
             <ArrowClockwise aria-hidden="true" size={18} weight="bold" />
-            Refresh
+            Reload to update
           </button>
         </aside>
       )}

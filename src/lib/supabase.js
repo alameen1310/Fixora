@@ -2,6 +2,29 @@ import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+const TAB_AUTH_STORAGE_KEY = 'fixora.auth.storage-key'
+const tabAuthStorage = (() => {
+  try {
+    return window.sessionStorage
+  } catch {
+    const memory = new Map()
+    return {
+      getItem: (key) => memory.get(key) ?? null,
+      setItem: (key, value) => memory.set(key, String(value)),
+      removeItem: (key) => memory.delete(key),
+    }
+  }
+})()
+
+function getTabAuthStorageKey() {
+  let key = tabAuthStorage.getItem(TAB_AUTH_STORAGE_KEY)
+  if (!key) {
+    const tabId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    key = `fixora-auth-${tabId}`
+    tabAuthStorage.setItem(TAB_AUTH_STORAGE_KEY, key)
+  }
+  return key
+}
 
 export const supabase = supabaseUrl && supabasePublishableKey
   ? createClient(supabaseUrl, supabasePublishableKey, {
@@ -9,6 +32,8 @@ export const supabase = supabaseUrl && supabasePublishableKey
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
+      storage: tabAuthStorage,
+      storageKey: getTabAuthStorageKey(),
     },
   })
   : null
