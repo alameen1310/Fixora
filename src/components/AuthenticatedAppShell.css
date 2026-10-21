@@ -539,3 +539,24 @@
   .fixora-app.is-account-menu-open .fixora-app__topbar { z-index: 70; }
   .account-menu__panel { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 }
+
+/* Align every control on the compact tablet rail to the same center axis. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .fixora-app__sidebar { align-items: center; padding-inline: 10px; }
+  .fixora-app__sidebar-brand { width: 44px; margin-inline: auto; }
+  .fixora-app__side-nav,
+  .fixora-app__post-slot,
+  .fixora-app__sidebar > .account-menu { width: 56px; }
+  .fixora-app__side-nav a,
+  .fixora-app__side-nav a.fixora-app__messages-nav {
+    display: grid !important;
+    width: 52px;
+    height: 48px;
+    justify-content: center;
+    margin-inline: auto;
+    padding: 0;
+    place-items: center;
+  }
+  .fixora-app__post-button,
+  .fixora-app__sidebar-account { width: 52px; margin-inline: auto; }
+}
