@@ -286,7 +286,7 @@ export default function AuthPage({ mode = 'login' }) {
 
           {mode === 'login' && (
             <div className="auth-secondary-actions" inert={busy}>
-              <Button as={Link} to="/auth/forgot-password" variant="ghost" wide>
+              <Button as={Link} className="auth-forgot-btn" to="/auth/forgot-password" variant="ghost" wide>
                 Forgot password?
               </Button>
               <Button as={Link} to="/signup/customer" variant="secondary" wide>

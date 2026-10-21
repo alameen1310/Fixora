@@ -272,6 +272,21 @@
   margin-top: 1.25rem;
 }
 
+.auth-secondary-actions .auth-forgot-btn {
+  min-height: 44px;
+  border: 1px solid rgb(36 87 214 / 12%);
+  border-radius: 999px;
+  color: var(--color-primary-dark);
+  background: #f6f8ff;
+  font-size: var(--type-footnote);
+  font-weight: 650;
+}
+
+.auth-secondary-actions .auth-forgot-btn:hover {
+  border-color: rgb(36 87 214 / 24%);
+  background: #edf2ff;
+}
+
 /* Alerts and Hints */
 .auth-error,
 .auth-notice {
