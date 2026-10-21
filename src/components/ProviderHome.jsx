@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, Briefcase, Star } from '@phosphor-icons/react'
+import { ArrowRight, Briefcase, CalendarBlank, MapPin, Star } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { Avatar, Badge, Button, EmptyState, Skeleton } from './UiPrimitives.jsx'
@@ -21,6 +21,12 @@ function greeting() {
   return hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 }
 function Naira({ value }) { return value ? `₦${Number(value).toLocaleString('en-NG')}` : '–' }
+function workTiming(post) {
+  if (post.schedule_mode === 'confirmed' && post.target_date) {
+    return new Intl.DateTimeFormat('en-NG', { day: 'numeric', month: 'short' }).format(new Date(`${post.target_date}T00:00:00`))
+  }
+  return (post.timing || 'Flexible').replaceAll('_', ' ')
+}
 
 export default function ProviderHome() {
   const { profile, user } = useAuth()
@@ -139,7 +145,7 @@ export default function ProviderHome() {
         {data?.matched.length ? <div className="provider-home__matched-grid">{data.matched.map((post) => {
           const cover = post.problem_post_images?.filter((image) => image.kind === 'before').sort((a, b) => a.sort_order - b.sort_order)[0]?.storage_path
           const application = data.applications.find((row) => row.post_id === post.id)
-          return <Link className="provider-home__matched-row" key={post.id} to={`/app/posts/${post.id}`}><span className="provider-home__matched-thumb"><PostThumb category={post.service_categories} path={cover} /></span><span className="provider-home__matched-copy"><span className="provider-home__matched-title"><strong>{post.title}</strong><Badge tone="info">{post.service_categories?.name || 'Service'}</Badge>{application && <Badge tone="success">Applied</Badge>}</span><strong>{formatPostBudget(post)}</strong><span className="provider-home__matched-meta">{[post.city, post.region].filter(Boolean).join(', ') || 'Location not specified'} · {formatRelativeTime(post.created_at)}</span></span><ArrowRight aria-hidden="true" size={18} /></Link>
+          return <Link className="provider-home__matched-row" key={post.id} to={`/app/posts/${post.id}`}><span className="provider-home__matched-thumb"><PostThumb alt={`${post.title} request`} category={post.service_categories} path={cover} /></span><span className="provider-home__matched-copy"><span className="provider-home__matched-title"><Badge tone="info">{post.service_categories?.name || 'Service'}</Badge>{application && <Badge tone="success">Applied</Badge>}<time>{formatRelativeTime(post.created_at)}</time></span><strong className="provider-home__matched-name">{post.title}</strong><strong className="provider-home__matched-price">{formatPostBudget(post)}</strong><span className="provider-home__matched-meta"><span><MapPin aria-hidden="true" size={16} />{[post.city, post.region].filter(Boolean).join(', ') || 'Location not specified'}</span><span><CalendarBlank aria-hidden="true" size={16} />{workTiming(post)}</span></span></span><ArrowRight aria-hidden="true" className="provider-home__matched-arrow" size={20} /></Link>
         })}</div> : <EmptyState action={<Button as={Link} to="/app/discover" variant="secondary">Find work</Button>} icon={Briefcase} message="New requests appear here as customers post them." title="No open requests yet" />}
       </section>
       {data?.activeJobs.length > 0 && <section className="provider-home__section"><div className="provider-home__section-head"><h2>Active jobs</h2><Link to="/app/activity?segment=selected">View all <ArrowRight aria-hidden="true" size={15} /></Link></div><div className="provider-job-list">{data.activeJobs.map((post) => <article className="provider-job-row" key={post.id}><Avatar name={data.authorNames[post.id] || 'Customer'} size={42} src={avatarUrl(data.authorAvatars?.[post.id])} /><div className="provider-job-row__copy"><strong>{data.authorNames[post.id] || 'Customer'}</strong><Link to={`/app/posts/${post.id}`}>{post.title}</Link></div><Badge tone="success">In progress</Badge><Button as={Link} to={`/app/messages?postId=${post.id}`} variant="secondary">Message</Button><Button as={Link} to={`/app/posts/${post.id}`} variant="ghost">View</Button></article>)}</div></section>}
