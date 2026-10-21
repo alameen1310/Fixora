@@ -1106,6 +1106,25 @@
 }
 .fixora-app .page-container .app-home-layout { padding-inline: 0; }
 
+/* Keep the customer feed inside the available app viewport. The desktop
+   sidebar and page gutters reduce usable width, so the shortcut rail only
+   sits beside the feed on genuinely wide screens. */
+.fixora-app .page-container .app-home-layout {
+  box-sizing: border-box;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
+  gap: 24px;
+}
+.fixora-app .page-container .app-home-layout > * { min-width: 0; }
+.fixora-app .page-container .app-home__main.app-page { width: 100%; max-width: none; }
+.fixora-app .page-container .marketplace-rail { width: 100%; min-width: 0; }
+@media (min-width: 1600px) {
+  .fixora-app .page-container .app-home-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+  }
+}
+
 @media (max-width: 767px) {
   .fixora-app .page-container .app-page.complete-job-page { padding-bottom: calc(24px + var(--tabbar-space)) !important; }
   .app-page--discover .discover-controls { top: calc(52px + env(safe-area-inset-top)); }
