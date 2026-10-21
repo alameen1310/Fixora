@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { ArrowLeft, CalendarBlank, DotsThree, Flag, MapPin, Wrench } from '@phosphor-icons/react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { ArrowLeft, ArrowRight, CalendarBlank, DotsThree, Flag, MapPin, Wrench } from '@phosphor-icons/react'
 import { Star } from '@phosphor-icons/react'
 import { Link, useParams } from 'react-router-dom'
 import { ActionSheet, Avatar, Badge, Button, Skeleton } from '../components/UiPrimitives.jsx'
@@ -29,6 +29,7 @@ export default function PostDetailPage() {
   const [post, setPost] = useState(null)
   const [imageUrls, setImageUrls] = useState({})
   const [activePhoto, setActivePhoto] = useState(0)
+  const galleryTrackRef = useRef(null)
   const [lightboxIndex, setLightboxIndex] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -101,6 +102,16 @@ export default function PostDetailPage() {
   const scheduleLabel = post.schedule_mode === 'confirmed' && post.scheduled_start_at && post.scheduled_end_at
     ? `${new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Lagos' }).format(new Date(post.scheduled_start_at))} – ${new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Africa/Lagos' }).format(new Date(post.scheduled_end_at))} WAT`
     : 'Schedule to be agreed before hiring'
+  const visibleImages = post.images.filter(({ storage_path }) => imageUrls[storage_path])
+
+  function movePhoto(index) {
+    const track = galleryTrackRef.current
+    if (!track) return
+    track.scrollTo({
+      left: index * track.clientWidth,
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+    })
+  }
 
   function hideMissingImage(path) { setImageUrls((current) => ({ ...current, [path]: null })) }
 
@@ -159,16 +170,22 @@ export default function PostDetailPage() {
       {post.status === 'completed' && <section aria-label="Before and after completed work" className="post-gallery post-gallery--comparison"><BeforeAfterSlider after={post.images.filter((image) => image.kind === 'after').map((image) => ({ ...image, url: imageUrls[image.storage_path] }))} before={post.images.filter((image) => image.kind === 'before').map((image) => ({ ...image, url: imageUrls[image.storage_path] }))} title={post.title} /></section>}
       {post.status !== 'completed' && post.images.length > 0 && (
         <section aria-label="Post photos" className="post-gallery">
-          <div className="post-gallery__track" onScroll={(event) => setActivePhoto(Math.round(event.currentTarget.scrollLeft / event.currentTarget.clientWidth))}>
-            {post.images.map((image, index) => imageUrls[image.storage_path] ? (
+          <div className="post-gallery__track" onScroll={(event) => setActivePhoto(Math.round(event.currentTarget.scrollLeft / event.currentTarget.clientWidth))} ref={galleryTrackRef}>
+            {visibleImages.map((image, index) => (
               <figure className="post-gallery__slide" key={image.storage_path}>
-                <button aria-label={`View photo ${index + 1}`} className="post-gallery__open-photo" onClick={() => setLightboxIndex(post.images.filter(({ storage_path }) => imageUrls[storage_path]).findIndex(({ storage_path }) => storage_path === image.storage_path))} type="button"><img alt={`${post.title}, photo ${index + 1}`} onError={() => hideMissingImage(image.storage_path)} src={imageUrls[image.storage_path]} /></button>
+                <button aria-label={`View photo ${index + 1}`} className="post-gallery__open-photo" onClick={() => setLightboxIndex(index)} type="button"><img alt={`${post.title}, photo ${index + 1}`} onError={() => hideMissingImage(image.storage_path)} src={imageUrls[image.storage_path]} /></button>
               </figure>
-            ) : null)}
+            ))}
           </div>
-          <div aria-hidden="true" className="post-gallery__dots">
-            {post.images.filter(({ storage_path }) => imageUrls[storage_path]).map((image, index) => <span className={index === activePhoto ? 'is-active' : ''} key={image.storage_path} />)}
-          </div>
+          {visibleImages.length > 1 && <>
+            <button aria-label="Previous photo" className="post-gallery__arrow post-gallery__arrow--previous" disabled={activePhoto === 0} onClick={() => movePhoto(activePhoto - 1)} type="button"><ArrowLeft aria-hidden="true" size={20} weight="bold" /></button>
+            <button aria-label="Next photo" className="post-gallery__arrow post-gallery__arrow--next" disabled={activePhoto === visibleImages.length - 1} onClick={() => movePhoto(activePhoto + 1)} type="button"><ArrowRight aria-hidden="true" size={20} weight="bold" /></button>
+            <div aria-hidden="true" className="post-gallery__dots">
+              {visibleImages.map((image, index) => <span className={index === activePhoto ? 'is-active' : ''} key={image.storage_path} />)}
+            </div>
+          </>}
+          {visibleImages.length === 1 && <span aria-label="1 photo" className="post-gallery__count">1 photo</span>}
+          {visibleImages.length > 1 && <span aria-label={`Photo ${activePhoto + 1} of ${visibleImages.length}`} aria-live="polite" className="post-gallery__count">{activePhoto + 1} / {visibleImages.length}</span>}
         </section>
       )}
         <article className="post-detail__content">
@@ -226,7 +243,7 @@ export default function PostDetailPage() {
       </div>
       <ActionSheet busy={actionBusy} confirmLabel="Remove post" description="This removes the post from Fixora. Its photos remain stored." onCancel={() => setRemoveOpen(false)} onConfirm={() => { setRemoveOpen(false); void changeStatus('removed') }} open={removeOpen} title="Remove this post?" />
       <ReportDialog onClose={() => setReportOpen(false)} open={reportOpen} targetId={post.id} targetType="post" />
-      {lightboxIndex !== null && <PhotoLightbox images={post.images.filter(({ storage_path }) => imageUrls[storage_path]).map((image, index) => ({ src: imageUrls[image.storage_path], alt: `${post.title}, photo ${index + 1}` }))} index={lightboxIndex} onClose={() => setLightboxIndex(null)} onIndexChange={setLightboxIndex} />}
+      {lightboxIndex !== null && <PhotoLightbox images={visibleImages.map((image, index) => ({ src: imageUrls[image.storage_path], alt: `${post.title}, photo ${index + 1}` }))} index={lightboxIndex} onClose={() => setLightboxIndex(null)} onIndexChange={setLightboxIndex} />}
     </main>
   )
 }

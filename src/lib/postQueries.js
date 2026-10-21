@@ -16,7 +16,7 @@ function postQuery({ categorySlug, allImages = false } = {}) {
   const query = supabase.from('problem_posts')
     .select(categorySlug ? POST_COLUMNS.replace('service_categories(name, slug)', 'service_categories!inner(name, slug)') : POST_COLUMNS)
     .order('sort_order', { referencedTable: 'problem_post_images', ascending: true })
-  return allImages ? query : query.eq('problem_post_images.kind', 'before').limit(1, { referencedTable: 'problem_post_images' })
+  return allImages ? query : query.eq('problem_post_images.kind', 'before')
 }
 
 function withCover(posts) {

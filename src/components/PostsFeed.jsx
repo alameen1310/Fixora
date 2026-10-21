@@ -41,7 +41,8 @@ export function PostsFeed({ userId, showOwnLatest = false, categorySlug = '' }) 
     const cards = await fetchAuthorCards(items)
     setAuthors((current) => ({ ...current, ...Object.fromEntries(cards.map((card) => [card.post_id, card.display_name])) }))
     setAuthorAvatars((current) => ({ ...current, ...Object.fromEntries(cards.map((card) => [card.post_id, card.avatar_path])) }))
-    setCovers((current) => ({ ...current, ...Object.fromEntries(items.filter(({ coverPath }) => coverPath).map(({ coverPath }) => [coverPath, getPostImageUrl(coverPath)])) }))
+      const imagePaths = items.flatMap(({ problem_post_images = [] }) => problem_post_images.map(({ storage_path }) => storage_path).filter(Boolean))
+      setCovers((current) => ({ ...current, ...Object.fromEntries(imagePaths.map((path) => [path, getPostImageUrl(path)])) }))
   }, [])
 
   const loadFirstPage = useCallback(async ({ silent = false } = {}) => {
@@ -156,8 +157,6 @@ export function PostsFeed({ userId, showOwnLatest = false, categorySlug = '' }) 
     return () => observer.disconnect()
   }, [hasMore, loadMore, loading, loadingMore])
 
-  function retryCover(path) { setCovers((current) => { const next = { ...current }; delete next[path]; return next }) }
-
   const visiblePosts = useMemo(() => posts, [posts])
   const empty = !loading && !error && !ownLatest && visiblePosts.length === 0
   const noOtherPosts = !loading && !error && visiblePosts.length === 0
@@ -173,13 +172,13 @@ export function PostsFeed({ userId, showOwnLatest = false, categorySlug = '' }) 
       {showOwnLatest && ownLatest && (
         <section aria-label="Your latest post" className="posts-own-latest">
           <p className="posts-feed__label">Your latest post</p>
-          <PostCard authorName={authors[ownLatest.id]} authorAvatarPath={authorAvatars[ownLatest.id]} coverUrl={covers[ownLatest.coverPath]} onCoverError={() => retryCover(ownLatest.coverPath)} post={ownLatest} priority showOwnerBadge />
+          <PostCard authorName={authors[ownLatest.id]} authorAvatarPath={authorAvatars[ownLatest.id]} coverUrl={covers[ownLatest.coverPath]} photoUrls={covers} post={ownLatest} priority showOwnerBadge />
         </section>
       )}
       {!empty && visiblePosts.length > 0 && (
         <div className="posts-grid">
           {visiblePosts.map((post, index) => (
-            <PostCard authorName={authors[post.id]} authorAvatarPath={authorAvatars[post.id]} coverUrl={covers[post.coverPath]} key={post.id} onCoverError={() => retryCover(post.coverPath)} post={post} priority={index === 0 && !ownLatest} />
+            <PostCard authorName={authors[post.id]} authorAvatarPath={authorAvatars[post.id]} coverUrl={covers[post.coverPath]} photoUrls={covers} key={post.id} post={post} priority={index === 0 && !ownLatest} />
           ))}
         </div>
       )}
@@ -230,7 +229,8 @@ export function MyPostsList({ userId }) {
       const cards = await fetchAuthorCards(page)
       setAuthors((current) => ({ ...current, ...Object.fromEntries(cards.map((card) => [card.post_id, card.display_name])) }))
       setAuthorAvatars((current) => ({ ...current, ...Object.fromEntries(cards.map((card) => [card.post_id, card.avatar_path])) }))
-      setCovers((current) => ({ ...current, ...Object.fromEntries(page.filter(({ coverPath }) => coverPath).map(({ coverPath }) => [coverPath, getPostImageUrl(coverPath)])) }))
+      const imagePaths = page.flatMap(({ problem_post_images = [] }) => problem_post_images.map(({ storage_path }) => storage_path).filter(Boolean))
+      setCovers((current) => ({ ...current, ...Object.fromEntries(imagePaths.map((path) => [path, getPostImageUrl(path)])) }))
       setPosts((current) => append ? [...current, ...page] : page)
       cursor.current = postCursor(page.at(-1))
       setHasMore(page.length === PAGE_SIZE)
@@ -268,7 +268,7 @@ export function MyPostsList({ userId }) {
       {error && <section className="posts-feed__error" role="alert"><p>{error}</p><Button onClick={() => void loadPage(true)} variant="secondary">Retry</Button></section>}
       <div className="posts-grid">
         {posts.map((post, index) => (
-          <PostCard authorName={authors[post.id]} authorAvatarPath={authorAvatars[post.id]} coverUrl={covers[post.coverPath]} key={post.id} post={post} priority={index === 0} showOwnerBadge />
+          <PostCard authorName={authors[post.id]} authorAvatarPath={authorAvatars[post.id]} coverUrl={covers[post.coverPath]} photoUrls={covers} key={post.id} post={post} priority={index === 0} showOwnerBadge />
         ))}
       </div>
       {hasMore && <div className="posts-feed__more"><Button loading={loadingMore} onClick={() => void loadPage(true)} variant="secondary">Load more</Button></div>}
