@@ -68,6 +68,7 @@ export default function PostApplicantsPage() {
     const outcomeMessages = {
       conflict: 'This professional has another job at an overlapping time. Their application remains visible; choose another available applicant.',
       availability_unknown: 'We can’t confirm this professional’s schedule because another active job has no confirmed time. Please choose another applicant or agree on availability first.',
+      active_job_near_term: 'This professional has an unfinished job and can only be hired for flexible work or a request scheduled at least 7 days from today.',
       busy: 'This professional is not accepting new work right now. Their application remains visible.',
       invalid_schedule: 'Confirm this request’s start and end time before hiring.',
       already_hired: 'This request has already been hired. Refresh the applicant list.',
@@ -111,8 +112,9 @@ export default function PostApplicantsPage() {
               const services = (provider?.provider_service_categories ?? []).map((item) => item.category?.name).filter(Boolean)
               const shownServices = services.slice(0, 4)
               const areas = (provider?.provider_service_areas ?? []).map((item) => [item.city, item.region].filter(Boolean).join(', ')).filter(Boolean)
-              const availabilityLabel = { unavailable: 'Unavailable for this time', unknown: 'Availability unconfirmed', busy: 'Not accepting work' }[application.availability]
-              const isUnavailable = application.status === 'pending' && ['unavailable', 'unknown', 'busy'].includes(application.availability)
+              const availabilityLabel = { unavailable: 'Unavailable for this time', unknown: 'Availability unconfirmed', busy: 'Not accepting work', active_job: 'Has an unfinished job' }[application.availability]
+              const isUnavailable = application.status === 'pending' && ['unavailable', 'unknown', 'busy', 'active_job'].includes(application.availability)
+              const isWorking = application.status === 'pending' && application.availability === 'working'
               const label = application.status === 'pending' && !scheduleConfirmed ? 'Schedule unconfirmed' : isUnavailable ? availabilityLabel : { pending: 'Pending', hired: 'Hired', not_selected: 'Not selected', withdrawn: 'Withdrawn' }[application.status]
               return (
                 <article className={`applicant-card${isUnavailable ? ' is-unavailable' : ''}`} key={application.id}>
@@ -121,14 +123,15 @@ export default function PostApplicantsPage() {
                     <div className="applicant-card__identity"><h2>{provider?.display_name || 'Professional profile unavailable'}</h2>{Number(provider?.rating?.review_count) > 0 ? <span className="applicant-card__rating"><Star aria-hidden="true" size={14} weight="fill" />{Number(provider.rating.average_rating).toFixed(1)} ({provider.rating.review_count})</span> : <span className="applicant-card__rating applicant-card__rating--empty">No reviews yet</span>}</div>
                     <Badge tone={application.status === 'hired' ? 'success' : application.status === 'pending' && !isUnavailable && scheduleConfirmed ? 'info' : 'neutral'}>{label}</Badge>
                   </div>
-                  {provider && <span className={`applicant-card__availability${provider.availability === 'busy' ? ' is-busy' : ''}`}>{provider.availability === 'busy' ? 'Not accepting work' : 'Available'}</span>}
+                  {provider && <span className={`applicant-card__availability${provider.availability === 'busy' ? ' is-busy' : ''}`}>{provider.availability === 'busy' ? 'Not accepting work' : isWorking ? 'Working another job' : 'Available'}</span>}
+                  {isWorking && <p className="applicant-card__work-warning" role="note">This professional has an unfinished job. Their schedule does not overlap this request, but confirm they can take it on before hiring.</p>}
                   {shownServices.length > 0 && <div className="applicant-card__service-chips">{shownServices.map((service) => <span key={service}>{service}</span>)}{services.length > 4 && <span>+{services.length - 4}</span>}</div>}
                   {areas.length > 0 && <p className="applicant-card__services"><MapPin aria-hidden="true" size={16} />{areas.join(' · ')}</p>}
                   {provider?.service_description && <p className="applicant-card__description">{provider.service_description}</p>}
                   {application.message && <blockquote className="applicant-card__message">“{application.message}”</blockquote>}
                   <div className="applicant-card__actions">
                     {provider && <Button as={Link} to={`/app/professionals/${provider.profile_id}`} variant="secondary">View profile</Button>}
-                    {post.status === 'open' && application.status === 'pending' && scheduleConfirmed && application.availability === 'available' && <Button onClick={() => setSelected(application)}>Hire professional</Button>}
+                    {post.status === 'open' && application.status === 'pending' && scheduleConfirmed && ['available', 'working'].includes(application.availability) && <Button onClick={() => setSelected(application)}>Hire professional</Button>}
                   </div>
                 </article>
               )
@@ -141,7 +144,7 @@ export default function PostApplicantsPage() {
             <Link to={`/app/posts/${postId}`}>View request</Link>
           </aside>
       </div>
-      <ActionSheet busy={hiring} confirmLabel="Hire this professional" description={`This closes the request and marks other pending applications as not selected. Work time: ${scheduleSummary}. Availability is checked again before the hire is saved.`} onCancel={() => setSelected(null)} onConfirm={() => void hire()} open={Boolean(selected)} title="Confirm hire?" />
+      <ActionSheet busy={hiring} confirmLabel="Hire this professional" description={`${selected?.availability === 'working' ? 'This professional is currently completing another job. You can still hire them for this request, but confirm they can take on both commitments. ' : ''}This closes the request and marks other pending applications as not selected. Work time: ${scheduleSummary}. Availability is checked again before the hire is saved.`} onCancel={() => setSelected(null)} onConfirm={() => void hire()} open={Boolean(selected)} title={selected?.availability === 'working' ? 'Hire while they’re working?' : 'Confirm hire?'} />
     </main>
   )
 }

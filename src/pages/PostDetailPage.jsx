@@ -133,7 +133,9 @@ export default function PostDetailPage() {
     setActionBusy(false)
     if (applyError) {
       console.error('[marketplace-write]', { step: 'apply', postId: post.id, code: applyError.code, message: applyError.message })
-      const message = applyError.code === '23505'
+      const message = applyError.message?.includes('unfinished job')
+        ? 'You have an unfinished job. You can apply to flexible requests or jobs scheduled at least 7 days from today.'
+        : applyError.code === '23505'
         ? 'You have already applied to this request.'
         : applyError.code === '42501'
           ? 'Your application could not be accepted. Confirm your professional profile is published and the request is still open.'
