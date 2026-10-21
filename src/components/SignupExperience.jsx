@@ -6,6 +6,7 @@ import AuthLayout from './AuthLayout.jsx'
 import SignupForm from './SignupForm.jsx'
 import { SegmentedControl } from './UiPrimitives.jsx'
 import './SignupExperience.css'
+import { useLanguage } from '../i18n/LanguageContext.jsx'
 
 gsap.registerPlugin(useGSAP)
 
@@ -25,6 +26,7 @@ const experiences = {
 export default function SignupExperience({ audience }) {
   const pageRef = useRef(null)
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const experience = experiences[audience]
 
   useGSAP(() => {
@@ -51,17 +53,17 @@ export default function SignupExperience({ audience }) {
       <main className="signup-layout" ref={pageRef}>
         <section aria-labelledby="signup-title" className="signup-form-column">
           <div className="signup-intro" data-signup-enter>
-            <span className="signup-eyebrow">{experience.audienceLabel}</span>
-            <h1 id="signup-title">{experience.title}</h1>
-            <p>{experience.introduction}</p>
+            <span className="signup-eyebrow">{t(experience.audienceLabel)}</span>
+            <h1 id="signup-title">{t(experience.title)}</h1>
+            <p>{t(experience.introduction)}</p>
 
             <div className="signup-account-switch">
               <SegmentedControl
-                label="Choose account type"
+                label={t('Choose account type')}
                 onChange={(val) => navigate(`/signup/${val}`)}
                 options={[
-                  { value: 'customer', label: 'Customer' },
-                  { value: 'provider', label: 'Professional' },
+                  { value: 'customer', label: t('Customer') },
+                  { value: 'provider', label: t('Professional') },
                 ]}
                 value={audience}
               />

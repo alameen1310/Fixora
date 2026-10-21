@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowUpRight } from '@phosphor-icons/react'
 import './SiteHeader.css'
 import LanguageSelector from '../i18n/LanguageSelector.jsx'
+import { useLanguage } from '../i18n/LanguageContext.jsx'
 
 const links = [
   { label: 'Discover', href: '#discovery' },
@@ -22,6 +23,7 @@ function BrandMark() {
 }
 
 export default function SiteHeader() {
+  const { t } = useLanguage()
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function SiteHeader() {
   return (
     <header className="site-header">
       <div className="site-header__inner">
-        <a className="brand-lockup" href="#top" onClick={closeMenu} aria-label="Fixora home">
+          <a className="brand-lockup" href="#top" onClick={closeMenu} aria-label={t('Fixora home')}>
           <BrandMark />
           <span>fixora</span>
         </a>
@@ -50,7 +52,7 @@ export default function SiteHeader() {
           type="button"
           aria-controls="primary-navigation"
           aria-expanded={menuOpen}
-          aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-label={t(menuOpen ? 'Close navigation menu' : 'Open navigation menu')}
           onClick={() => setMenuOpen((open) => !open)}
         >
           <span />
@@ -66,16 +68,16 @@ export default function SiteHeader() {
             <LanguageSelector compact />
             {links.map((link) => (
               <a href={link.href} key={link.href} onClick={closeMenu}>
-                {link.label}
+                {t(link.label)}
               </a>
             ))}
           </div>
           <div className="primary-navigation__actions">
             <Link className="nav-action nav-action--primary" onClick={closeMenu} to="/signup/customer">
-              Find a professional
+              {t('Find a professional')}
             </Link>
             <Link className="nav-action nav-action--secondary" onClick={closeMenu} to="/signup/provider">
-              Offer your services
+              {t('Offer your services')}
               <ArrowUpRight aria-hidden="true" size={16} />
             </Link>
           </div>

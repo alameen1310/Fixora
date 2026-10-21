@@ -7,10 +7,12 @@ import { useToast } from './ToastProvider.jsx'
 import { authConfigured, supabase } from '../lib/supabase.js'
 import './SignupForm.css'
 import '../pages/AuthPage.css'
+import { useLanguage } from '../i18n/LanguageContext.jsx'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function PasswordField({ error, hint, id, label, onBlur, onChange, onToggle, value, visible }) {
+  const { t } = useLanguage()
   const hintId = `${id}-hint`
   const errorId = `${id}-error`
   const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ') || undefined
@@ -28,13 +30,13 @@ function PasswordField({ error, hint, id, label, onBlur, onChange, onToggle, val
           name={id}
           onBlur={onBlur}
           onChange={onChange}
-          placeholder="Enter password"
+          placeholder={t('Enter password')}
           required
           type={visible ? 'text' : 'password'}
           value={value}
         />
         <button
-          aria-label={`${visible ? 'Hide' : 'Show'} ${label.toLowerCase()}`}
+          aria-label={`${t(visible ? 'Hide password' : 'Show password')}: ${label}`}
           className="auth-password-toggle"
           onClick={onToggle}
           type="button"
@@ -43,7 +45,7 @@ function PasswordField({ error, hint, id, label, onBlur, onChange, onToggle, val
         </button>
       </div>
       {hint && <span className="auth-field__hint" id={hintId}>{hint}</span>}
-      {error && <span className="auth-field__error" id={errorId} role="alert">{error}</span>}
+      {error && <span className="auth-field__error" id={errorId} role="alert">{t(error)}</span>}
     </div>
   )
 }
@@ -90,6 +92,7 @@ function formatSignupError(error) {
 }
 
 export default function SignupForm({ audience }) {
+  const { t } = useLanguage()
   const isProvider = audience === 'provider'
   const [values, setValues] = useState({
     fullName: '',
@@ -132,7 +135,7 @@ export default function SignupForm({ audience }) {
   async function beginGoogleSignup() {
     if (requestInFlight.current) return
     if (!supabase) {
-      setNotice('Account services are not configured yet.')
+      setNotice(t('Account services are not configured yet.'))
       return
     }
     requestInFlight.current = true
@@ -156,7 +159,7 @@ export default function SignupForm({ audience }) {
       }
       requestInFlight.current = false
       setBusy(false)
-      showToast({ type: 'error', message: 'Google sign-in could not start. Please try again or use email.' })
+      showToast({ type: 'error', message: t('Google sign-in could not start. Please try again or use email.') })
     }
   }
 
@@ -218,7 +221,7 @@ export default function SignupForm({ audience }) {
     try {
       const { error } = await supabase.auth.resend({ type: 'signup', email: values.email.trim(), options: { emailRedirectTo: `${window.location.origin}/auth/callback` } })
       if (error) throw error
-      showToast({ type: 'success', message: 'Confirmation email sent. Check your inbox.' })
+      showToast({ type: 'success', message: t('Confirmation email sent. Check your inbox.') })
     } catch (error) {
       showToast({ type: 'error', message: formatSignupError(error) })
     } finally { setBusy(false) }
@@ -226,11 +229,11 @@ export default function SignupForm({ audience }) {
 
   if (confirmationSent) return <section aria-labelledby="signup-confirmation-title" className="signup-confirmation">
     <span className="signup-confirmation__icon"><CheckCircle aria-hidden="true" size={27} weight="fill" /></span>
-    <p className="app-eyebrow">One quick step</p><h2 id="signup-confirmation-title">Check your inbox</h2>
-    <p>We sent a confirmation link to <strong>{values.email.trim()}</strong>. Open it to continue to Fixora and finish setting up your account.</p>
-    <Button disabled={busy} loading={busy} onClick={() => void resendConfirmation()} wide variant="primary">Resend confirmation email</Button>
-    <Button disabled={busy} onClick={() => void beginGoogleSignup()} wide variant="secondary"><GoogleLogo aria-hidden="true" size={18} />Use Google instead</Button>
-    <button className="signup-confirmation__edit" onClick={() => setConfirmationSent(false)} type="button">Use a different email</button>
+    <p className="app-eyebrow">{t('One quick step')}</p><h2 id="signup-confirmation-title">{t('Check your inbox')}</h2>
+    <p>{t('We sent a confirmation link to')} <strong>{values.email.trim()}</strong>. {t('Open it to continue to Fixora and finish setting up your account.')}</p>
+    <Button disabled={busy} loading={busy} onClick={() => void resendConfirmation()} wide variant="primary">{t('Resend confirmation email')}</Button>
+    <Button disabled={busy} onClick={() => void beginGoogleSignup()} wide variant="secondary"><GoogleLogo aria-hidden="true" size={18} />{t('Use Google instead')}</Button>
+    <button className="signup-confirmation__edit" onClick={() => setConfirmationSent(false)} type="button">{t('Use a different email')}</button>
   </section>
 
   return (
@@ -242,16 +245,16 @@ export default function SignupForm({ audience }) {
         type="button"
       >
         <GoogleLogo aria-hidden="true" size={20} weight="bold" />
-        <span>Continue with Google</span>
+        <span>{t('Continue with Google')}</span>
       </button>
 
       <div className="auth-divider">
-        <span>or sign up with email</span>
+        <span>{t('or sign up with email')}</span>
       </div>
 
       <div className="signup-form__fields">
         <div className={`auth-field${errors.fullName ? ' has-error' : ''}`}>
-          <label htmlFor="fullName">Full name</label>
+          <label htmlFor="fullName">{t('Full name')}</label>
           <input
             aria-describedby={errors.fullName ? 'fullName-error' : undefined}
             aria-invalid={Boolean(errors.fullName)}
@@ -260,7 +263,7 @@ export default function SignupForm({ audience }) {
             name="fullName"
             onBlur={() => handleBlur('fullName')}
             onChange={(event) => update('fullName', event.target.value)}
-            placeholder="e.g. Amina Bello"
+            placeholder={t('e.g. Amina Bello')}
             required
             value={values.fullName}
           />
@@ -272,7 +275,7 @@ export default function SignupForm({ audience }) {
         </div>
 
         <div className={`auth-field${errors.email ? ' has-error' : ''}`}>
-          <label htmlFor="email">Email address</label>
+          <label htmlFor="email">{t('Email address')}</label>
           <input
             aria-describedby={errors.email ? 'email-error' : undefined}
             aria-invalid={Boolean(errors.email)}
@@ -306,9 +309,9 @@ export default function SignupForm({ audience }) {
 
         <PasswordField
           error={errors.password}
-          hint="Use at least 8 characters."
+          hint={t('Use at least 8 characters.')}
           id="password"
-          label="Password"
+          label={t('Password')}
           onBlur={() => handleBlur('password')}
           onChange={(event) => update('password', event.target.value)}
           onToggle={() => setVisiblePasswords((cur) => ({ ...cur, password: !cur.password }))}
@@ -319,7 +322,7 @@ export default function SignupForm({ audience }) {
         <PasswordField
           error={errors.confirmPassword}
           id="confirmPassword"
-          label="Confirm password"
+          label={t('Confirm password')}
           onBlur={() => handleBlur('confirmPassword')}
           onChange={(event) => update('confirmPassword', event.target.value)}
           onToggle={() => setVisiblePasswords((cur) => ({ ...cur, confirmPassword: !cur.confirmPassword }))}
@@ -338,8 +341,8 @@ export default function SignupForm({ audience }) {
           wide
         >
           {busy
-            ? 'Creating account…'
-            : <>Create {isProvider ? 'professional' : 'customer'} account <ArrowRight aria-hidden="true" size={18} weight="bold" /></>}
+            ? t('Creating account…')
+            : <>{t(isProvider ? 'Create professional account' : 'Create customer account')} <ArrowRight aria-hidden="true" size={18} weight="bold" /></>}
         </Button>
 
         <Button
@@ -349,7 +352,7 @@ export default function SignupForm({ audience }) {
           variant="secondary"
           wide
         >
-          Already have an account? Sign in
+          {t('Already have an account? Sign in')}
         </Button>
       </div>
 

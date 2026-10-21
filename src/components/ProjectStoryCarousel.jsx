@@ -3,6 +3,7 @@ import plumberPhoto from '../assets/plumber-at-work.png'
 import renovationPhoto from '../assets/kitchen-renovation.jpg'
 import completedPhoto from '../assets/african-kitchen.jpg'
 import './ProjectStoryCarousel.css'
+import { useLanguage } from '../i18n/LanguageContext.jsx'
 
 const stories = [
   {
@@ -33,6 +34,7 @@ const stories = [
 ]
 
 export default function ProjectStoryCarousel() {
+  const { t } = useLanguage()
   const [activeIndex, setActiveIndex] = useState(0)
   const visibleStories = [stories[activeIndex], stories[(activeIndex + 1) % stories.length]]
 
@@ -49,25 +51,25 @@ export default function ProjectStoryCarousel() {
     >
       {visibleStories.map((story, index) => (
         <article
-          aria-label={`${story.type}, story ${index + 1} of 2`}
+          aria-label={`${t(story.type)}, story ${index + 1} of 2`}
           aria-roledescription="slide"
           className={`story-card story-card--${index + 1}`}
           data-story-card
           key={story.title}
         >
-          <img alt={story.alt} className="story-card__image" src={story.image} />
+          <img alt={t(story.alt)} className="story-card__image" src={story.image} />
           <div className="story-card__shade" />
           <div className="story-card__copy">
-            <span className="story-card__type">{story.type}</span>
-            <h3>{story.title}</h3>
-            <p>{story.description}</p>
+            <span className="story-card__type">{t(story.type)}</span>
+            <h3>{t(story.title)}</h3>
+            <p>{t(story.description)}</p>
             <span className="story-card__note">{story.note}</span>
           </div>
         </article>
       ))}
 
       <span aria-live="polite" className="visually-hidden">
-        Showing {visibleStories[0].title} and {visibleStories[1].title}.
+        {t('Showing')} {t(visibleStories[0].title)} {t('and')} {t(visibleStories[1].title)}.
       </span>
 
       <div aria-label="Project story controls" className="story-carousel__controls">

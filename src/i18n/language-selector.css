@@ -4,4 +4,9 @@
 .language-selector select:focus-visible { outline: 3px solid #9db8ff; outline-offset: 2px; }
 .language-selector--compact { gap: 8px; }
 .language-selector--compact .language-selector__current { display: none; }
+.language-selector--compact { width: auto; flex: 0 0 auto; gap: 7px; }
+.language-selector--compact .language-selector__label { gap: 0; }
+.language-selector--compact .language-selector__label svg { width: 18px; height: 18px; }
+.language-selector--compact .language-selector__label { font-size: 0; }
+.language-selector--compact select { width: 126px; min-width: 126px; max-width: none; min-height: 42px; padding-inline: 10px 28px; font-size: .88rem; }
 @media (max-width: 480px) { .language-selector:not(.language-selector--compact) { align-items: stretch; flex-direction: column; gap: 8px; } .language-selector:not(.language-selector--compact) select { width: 100%; max-width: none; } }

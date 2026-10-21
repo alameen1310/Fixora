@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import './StepAccordion.css'
+import { useLanguage } from '../i18n/LanguageContext.jsx'
 
 const steps = [
   {
@@ -23,6 +24,7 @@ const steps = [
 ]
 
 export default function StepAccordion() {
+  const { t } = useLanguage()
   const [activeStep, setActiveStep] = useState(0)
 
   return (
@@ -32,7 +34,7 @@ export default function StepAccordion() {
         const panelId = `step-panel-${index + 1}`
 
         return (
-          <article className={`step-panel${isActive ? ' is-active' : ''}`} key={step.title}>
+      <article className={`step-panel${isActive ? ' is-active' : ''}`} key={step.title}>
             <button
               aria-controls={panelId}
               aria-expanded={isActive}
@@ -41,14 +43,14 @@ export default function StepAccordion() {
               type="button"
             >
               <span className="step-panel__number">0{index + 1}</span>
-              <span className="step-panel__title">{step.title}</span>
+              <span className="step-panel__title">{t(step.title)}</span>
               <span aria-hidden="true" className="step-panel__toggle">
                 {isActive ? '−' : '+'}
               </span>
             </button>
             <div className="step-panel__body" hidden={!isActive} id={panelId}>
-              <p>{step.description}</p>
-              <span>{step.detail}</span>
+              <p>{t(step.description)}</p>
+              <span>{t(step.detail)}</span>
             </div>
           </article>
         )

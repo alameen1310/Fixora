@@ -196,7 +196,7 @@ export default function AuthPage({ mode = 'login' }) {
                   id="auth-email"
                   inputMode="email"
                   onChange={(event) => setEmail(event.target.value)}
-                  placeholder="name@example.com"
+                  placeholder={t('name@example.com')}
                   required
                   type="email"
                   value={email}
@@ -222,7 +222,7 @@ export default function AuthPage({ mode = 'login' }) {
                     value={password}
                   />
                   <button
-                    aria-label={visible ? 'Hide password' : 'Show password'}
+                    aria-label={t(visible ? 'Hide password' : 'Show password')}
                     className="auth-password-toggle"
                     onClick={() => setVisible((current) => !current)}
                     disabled={busy}
@@ -248,7 +248,7 @@ export default function AuthPage({ mode = 'login' }) {
                     value={confirmPassword}
                   />
                   <button
-                    aria-label={confirmVisible ? 'Hide password' : 'Show password'}
+                    aria-label={t(confirmVisible ? 'Hide password' : 'Show password')}
                     className="auth-password-toggle"
                     onClick={() => setConfirmVisible((current) => !current)}
                     disabled={busy}
@@ -262,16 +262,16 @@ export default function AuthPage({ mode = 'login' }) {
 
             {mode === 'reset' && !loading && !user && (
               <p className="auth-error" role="alert">
-                Open the latest password-reset link from your email to proceed.
+                {t('Open the latest password-reset link from your email to proceed.')}
               </p>
             )}
 
             {loginNotice && mode === 'login' && (
-              <p className="auth-notice" role="status">{loginNotice}</p>
+              <p className="auth-notice" role="status">{t(loginNotice)}</p>
             )}
 
-            {notice && <p className="auth-notice" role="status">{notice}</p>}
-            {error && <p className="auth-error" role="alert">{error}</p>}
+            {notice && <p className="auth-notice" role="status">{t(notice)}</p>}
+            {error && <p className="auth-error" role="alert">{t(error)}</p>}
 
             <Button
               className="auth-submit-btn"
@@ -281,7 +281,7 @@ export default function AuthPage({ mode = 'login' }) {
               variant="primary"
               wide
             >
-              {busyAction === 'email' ? 'Please wait…' : config.action}
+              {busyAction === 'email' ? t('Please wait…') : t(config.action)}
               <ArrowRight aria-hidden="true" size={18} weight="bold" />
             </Button>
           </form>
@@ -289,10 +289,10 @@ export default function AuthPage({ mode = 'login' }) {
           {mode === 'login' && (
             <div className="auth-secondary-actions" inert={busy}>
               <Button as={Link} className="auth-forgot-btn" to="/auth/forgot-password" variant="ghost" wide>
-                Forgot password?
+                {t('Forgot password?')}
               </Button>
               <Button as={Link} to="/signup/customer" variant="secondary" wide>
-                Create an account
+                {t('Create an account')}
               </Button>
             </div>
           )}
@@ -300,7 +300,7 @@ export default function AuthPage({ mode = 'login' }) {
           {(mode === 'forgot' || mode === 'reset') && (
             <div className="auth-secondary-actions" inert={busy}>
               <Button as={Link} to="/auth/login" variant="secondary" wide>
-                Return to sign in
+                {t('Return to sign in')}
               </Button>
             </div>
           )}
