@@ -200,11 +200,13 @@ export default function AuthenticatedAppShell() {
           ))}
         </nav>
         {showPostAction ? <div className="fixora-app__post-slot"><Link aria-label={t('Post a problem')} className="fixora-app__post-button" title={t('Post a problem')} to="/app/posts/new"><Plus aria-hidden="true" size={20} />{t('Post a problem')}</Link></div> : isProvider && <div className="fixora-app__post-slot"><Link aria-label={t('Find work')} className="fixora-app__post-button" title={t('Find work')} to="/app/discover"><Briefcase aria-hidden="true" size={20} />{t('Find work')}</Link></div>}
+        <div className="fixora-app__sidebar-language"><LanguageSelector compact /></div>
         <AccountMenu firstName={firstName} isProvider={isProvider} profile={profile} user={user} />
       </aside>
 
       <header className={`fixora-app__topbar${!isTabRoute ? ' is-subroute' : ''}`}>
         <Logo className="fixora-app__brand" to="/app" />
+        <div className="fixora-app__topbar-language"><LanguageSelector compact /></div>
         <div className="fixora-app__account">
         <AccountMenu firstName={firstName} isProvider={isProvider} mobile onOpenChange={setMobileAccountOpen} profile={profile} user={user} />
         </div>
