@@ -1056,16 +1056,20 @@
 @media (min-width: 768px) {
   .app-home__main .posts-grid .post-card,
   .app-home__main .posts-own-latest .post-card {
-    display: grid;
-    grid-template-columns: minmax(220px, 32%) minmax(0, 1fr);
-    align-items: stretch;
+    display: block;
   }
   .app-home__main .posts-grid .post-card__cover,
   .app-home__main .posts-own-latest .post-card__cover {
-    height: 100%;
-    aspect-ratio: 4 / 3;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    aspect-ratio: 16 / 10;
   }
-  .app-home__main .post-card__body { align-content: center; padding: clamp(18px, 2vw, 26px); }
+  .app-home__main .post-card__body { align-content: start; padding: clamp(18px, 2vw, 26px); }
+}
+@media (min-width: 768px) {
+  .app-page--profile-detail .app-public-profile > .provider-work-summary { grid-column: 1 / -1; width: 100%; min-width: 0; }
 }
 @media (min-width:1024px) { .post-detail__layout { grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr); } }
 

@@ -3,7 +3,7 @@ import { ArrowClockwise, ClipboardText } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { Button, EmptyState } from './UiPrimitives.jsx'
 import PostCard, { PostCardSkeleton } from './PostCard.jsx'
-import { fetchAuthorCards, fetchLatestOwnPost, fetchOtherOpenPosts, fetchMyPosts, postCursor } from '../lib/postQueries.js'
+import { fetchAuthorCards, fetchLatestOwnPost, fetchOpenPosts, fetchMyPosts, postCursor } from '../lib/postQueries.js'
 import { getPostImageUrl } from '../lib/postImages.js'
 import { homeFeedCache, myPostsCache } from '../lib/postListCache.js'
 
@@ -54,8 +54,8 @@ export function PostsFeed({ userId, showOwnLatest = false, categorySlug = '' }) 
     }
     try {
       const [firstPage, latest] = await Promise.all([
-        fetchOtherOpenPosts(userId, { limit: PAGE_SIZE, categorySlug }),
-        showOwnLatest ? fetchLatestOwnPost(userId) : Promise.resolve(null),
+        fetchOpenPosts({ limit: PAGE_SIZE, categorySlug }),
+        showOwnLatest ? fetchLatestOwnPost(userId, { categorySlug }) : Promise.resolve(null),
       ])
       await attachAssets([...firstPage, ...(latest ? [latest] : [])])
       if (silent) {
@@ -85,7 +85,7 @@ export function PostsFeed({ userId, showOwnLatest = false, categorySlug = '' }) 
     busy.current = true
     setLoadingMore(true)
     try {
-      const page = await fetchOtherOpenPosts(userId, { cursor: cursor.current, limit: PAGE_SIZE, categorySlug })
+      const page = await fetchOpenPosts({ cursor: cursor.current, limit: PAGE_SIZE, categorySlug })
       await attachAssets(page)
       setPosts((current) => {
         const known = new Set(current.map(({ id }) => id))
@@ -141,10 +141,13 @@ export function PostsFeed({ userId, showOwnLatest = false, categorySlug = '' }) 
     const onHomeRefresh = () => {
       if (window.scrollY <= 8) void loadFirstPage({ silent: true })
     }
+    const onPostCreated = () => void loadFirstPage()
     window.addEventListener('fixora:home-refresh', onHomeRefresh)
+    window.addEventListener('fixora:post-created', onPostCreated)
     return () => {
       document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('fixora:home-refresh', onHomeRefresh)
+      window.removeEventListener('fixora:post-created', onPostCreated)
     }
   }, [loadFirstPage])
 
@@ -157,7 +160,10 @@ export function PostsFeed({ userId, showOwnLatest = false, categorySlug = '' }) 
     return () => observer.disconnect()
   }, [hasMore, loadMore, loading, loadingMore])
 
-  const visiblePosts = useMemo(() => posts, [posts])
+  const visiblePosts = useMemo(() => {
+    if (!ownLatest || posts.some((post) => post.id === ownLatest.id)) return posts
+    return [ownLatest, ...posts]
+  }, [ownLatest, posts])
   const empty = !loading && !error && !ownLatest && visiblePosts.length === 0
   const noOtherPosts = !loading && !error && visiblePosts.length === 0
   if (loading) return <div aria-label="Loading posts" className="posts-grid" role="status"><PostCardSkeleton /><PostCardSkeleton /><PostCardSkeleton /></div>
@@ -169,16 +175,10 @@ export function PostsFeed({ userId, showOwnLatest = false, categorySlug = '' }) 
           <ArrowClockwise aria-hidden="true" size={16} />New posts
         </button>
       )}
-      {showOwnLatest && ownLatest && (
-        <section aria-label="Your latest post" className="posts-own-latest">
-          <p className="posts-feed__label">Your latest post</p>
-          <PostCard authorName={authors[ownLatest.id]} authorAvatarPath={authorAvatars[ownLatest.id]} coverUrl={covers[ownLatest.coverPath]} photoUrls={covers} post={ownLatest} priority showOwnerBadge />
-        </section>
-      )}
       {!empty && visiblePosts.length > 0 && (
         <div className="posts-grid">
           {visiblePosts.map((post, index) => (
-            <PostCard authorName={authors[post.id]} authorAvatarPath={authorAvatars[post.id]} coverUrl={covers[post.coverPath]} photoUrls={covers} key={post.id} post={post} priority={index === 0 && !ownLatest} />
+            <PostCard authorName={authors[post.id]} authorAvatarPath={authorAvatars[post.id]} coverUrl={covers[post.coverPath]} photoUrls={covers} key={post.id} post={post} priority={index === 0} showOwnerBadge={post.author_id === userId} />
           ))}
         </div>
       )}

@@ -27,23 +27,23 @@ function withCover(posts) {
   }))
 }
 
-export async function fetchLatestOwnPost(userId) {
-  const { data, error } = await postQuery()
+export async function fetchLatestOwnPost(userId, { categorySlug } = {}) {
+  let query = postQuery({ categorySlug })
     .eq('author_id', userId)
     .not('published_at', 'is', null)
     .neq('status', 'removed')
-    .order('created_at', { ascending: false })
+  if (categorySlug) query = query.eq('service_categories.slug', categorySlug)
+  const { data, error } = await query.order('created_at', { ascending: false })
     .order('id', { ascending: false })
     .limit(1)
   if (error) throw error
   return withCover(data)[0] ?? null
 }
 
-export async function fetchOtherOpenPosts(userId, { cursor, limit = POST_PAGE_SIZE, categorySlug } = {}) {
+export async function fetchOpenPosts({ cursor, limit = POST_PAGE_SIZE, categorySlug } = {}) {
   let query = postQuery({ categorySlug })
     .eq('status', 'open')
     .not('published_at', 'is', null)
-    .neq('author_id', userId)
   if (categorySlug) query = query.eq('service_categories.slug', categorySlug)
   query = applyCursor(query, cursor)
   const { data, error } = await query
