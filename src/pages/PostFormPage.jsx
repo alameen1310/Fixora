@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Camera, Image as ImageIcon, MapPin, X } from '@phosphor-icons/react'
 import { Button, Chip, InputField, SegmentedControl, SelectField, Skeleton } from '../components/UiPrimitives.jsx'
@@ -55,6 +55,7 @@ function PostFormPage({ editing = false }) {
   const [loading, setLoading] = useState(editing)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const errorRef = useRef(null)
   const [step, setStep] = useState(1)
   const [stagedId, setStagedId] = useState(null)
   const [uploaded, setUploaded] = useState(new Set())
@@ -69,14 +70,14 @@ function PostFormPage({ editing = false }) {
         Promise.resolve(!editing ? (() => { try { return JSON.parse(localStorage.getItem(`fixora-post-draft-${user.id}`) || 'null') } catch { return null } })() : null),
       ])
       if (!active) return
-      if (categoryError) setError('We couldn’t load service categories. Check your connection and retry.')
+      if (categoryError) showError('We couldn’t load service categories. Check your connection and retry.')
       setCategories(categoryRows ?? [])
       if (savedDraft) setValues((current) => ({ ...current, ...savedDraft, category_id: '', region: '', city: '' }))
       if (editing) {
         const { data, error: loadError } = await supabase.from('problem_posts').select(editColumns).eq('id', postId).maybeSingle()
         if (!active) return
         if (loadError || !data || data.author_id !== user.id || data.status === 'removed') {
-          setError('This post is unavailable or can no longer be edited.')
+          showError('This post is unavailable or can no longer be edited.')
         } else {
           setValues({ title: data.title, description: data.description, category_id: data.category_id, budget_type: data.budget_type, min: data.budget_min_naira?.toString() || '', max: data.budget_max_naira?.toString() || '', negotiable: data.negotiable, region: data.region, city: data.city, timing: data.timing, target_date: data.target_date || '', schedule_mode: data.schedule_mode || 'flexible', scheduled_start_at: toLagosInput(data.scheduled_start_at), scheduled_end_at: toLagosInput(data.scheduled_end_at), job_type: data.job_type })
           const beforeImages = (data.problem_post_images ?? []).filter((image) => image.kind === 'before').sort((a, b) => a.sort_order - b.sort_order)
@@ -124,6 +125,13 @@ function PostFormPage({ editing = false }) {
     }
   }, [])
 
+  function showError(message) {
+    setError(message)
+    window.requestAnimationFrame(() => errorRef.current?.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'center',
+    }))
+  }
   function set(key, value) { setValues((current) => ({ ...current, [key]: value })); setError('') }
   function validateSchedule() {
     if (values.schedule_mode !== 'confirmed') return ''
@@ -144,7 +152,7 @@ function PostFormPage({ editing = false }) {
         setPhotos((current) => [...current, { file: prepared, url: URL.createObjectURL(prepared), name: file.name }])
       } catch (problem) {
         logPostStep('prepare', { postId: stagedId || postId, error: problem })
-        setError(`Photo ${existing.length + photos.length + index + 1} failed: ${describePhotoError(problem)}.`)
+        showError(`Photo ${existing.length + photos.length + index + 1} failed: ${describePhotoError(problem)}.`)
         break
       }
     }
@@ -154,9 +162,9 @@ function PostFormPage({ editing = false }) {
     if (!photo) return
     if (photo.path) {
       const { error: storageError } = await supabase.storage.from('problem-post-photos').remove([photo.path])
-      if (storageError) { logPostStep('remove_storage', { postId: stagedId || postId, error: storageError }); setError(`Could not remove this photo: ${describePhotoError(storageError)}.`); return }
+      if (storageError) { logPostStep('remove_storage', { postId: stagedId || postId, error: storageError }); showError(`Could not remove this photo: ${describePhotoError(storageError)}.`); return }
       const { error: rowError } = await supabase.from('problem_post_images').delete().eq('post_id', stagedId || postId).eq('storage_path', photo.path)
-      if (rowError) { logPostStep('remove_reservation', { postId: stagedId || postId, error: rowError }); setError(`Could not remove this photo: ${describePhotoError(rowError)}.`); return }
+      if (rowError) { logPostStep('remove_reservation', { postId: stagedId || postId, error: rowError }); showError(`Could not remove this photo: ${describePhotoError(rowError)}.`); return }
     }
     URL.revokeObjectURL(photo.url)
     setPhotos((current) => current.filter((_, i) => i !== index))
@@ -186,8 +194,8 @@ function PostFormPage({ editing = false }) {
   async function publish() {
     if (saving) return
     const invalid = validate()
-    if (invalid) { setError(invalid); return }
-    if (!supabase) { setError('Post services are unavailable.'); return }
+    if (invalid) { showError(invalid); return }
+    if (!supabase) { showError('Post services are unavailable.'); return }
     setSaving(true); setError('')
     let currentPostId = editing ? postId : stagedId
     let writeStep = editing ? 'update' : 'stage'
@@ -257,8 +265,8 @@ function PostFormPage({ editing = false }) {
       navigate(`/app/posts/${currentPostId}`)
     } catch (problem) {
       if (writeStep === 'insert') logPostStep('insert', { postId: currentPostId, error: problem })
-      if (problem?.code === 'CUSTOMER_REQUIRED') setError('Only a Customer account can create posts. Switch to your Customer account and try again.')
-      else setError(errorText(problem, writeStep))
+      if (problem?.code === 'CUSTOMER_REQUIRED') showError('Only a Customer account can create posts. Switch to your Customer account and try again.')
+      else showError(errorText(problem, writeStep))
     }
     finally { setSaving(false) }
   }
@@ -268,10 +276,10 @@ function PostFormPage({ editing = false }) {
     <main className="app-page post-form-page">
       <Link className="app-back-link post-form-back post-detail__back" to={editing ? `/app/posts/${postId}` : '/app'}><span className="post-form-back__icon"><ArrowLeft aria-hidden="true" size={18} weight="bold" /></span>Back</Link>
       <header className="post-form-heading"><p>Step {step} of 4</p><h1>{editing ? 'Edit your post' : ['Add photos and title', 'Describe the work', 'Set your budget', 'Review your post'][step - 1]}</h1><div aria-label={`Step ${step} of 4`} className="post-form-progress"><span style={{ transform: `scaleX(${step / 4})` }} /></div></header>
-      {error && <p className="post-form-error" role="alert">{error}</p>}
+      {error && <p className="post-form-error" ref={errorRef} role="alert">{error}</p>}
       <div className="post-form-workspace">
       <section className={`post-form-content post-form-content--step-${step}`}>
-        {step === 1 && <><InputField id="post-title" label="Title" maxLength={120} onChange={(event) => set('title', event.target.value)} placeholder="What needs fixing?" value={values.title} /><label className={`post-photo-picker${photoDragOver ? ' is-drag-over' : ''}`} onDragEnter={(event) => { event.preventDefault(); setPhotoDragOver(true) }} onDragOver={(event) => event.preventDefault()} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPhotoDragOver(false) }} onDrop={(event) => { event.preventDefault(); setPhotoDragOver(false); void selectPhotos(event.dataTransfer.files) }}><Camera aria-hidden="true" size={27} /><strong>Add photos</strong><span>Up to 5. JPG, PNG or WebP</span><input accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => { void selectPhotos(event.target.files); event.target.value = '' }} type="file" /></label><div className="post-photo-list">{existing.map((image) => <div className="post-photo-item" key={image.storage_path}>{existingUrls[image.storage_path] ? <button aria-label={`Preview photo ${image.sort_order + 1}`} className="post-photo-item__preview" onClick={() => setPreviewPhoto({ src: existingUrls[image.storage_path], alt: `Existing post photo ${image.sort_order + 1}` })} type="button"><img alt="" onError={() => setExistingUrls((current) => ({ ...current, [image.storage_path]: null }))} src={existingUrls[image.storage_path]} /><span>Preview</span></button> : null}<div className="post-photo-item__details"><strong>Photo {image.sort_order + 1}</strong><button aria-label={`Remove photo ${image.sort_order + 1}`} className="post-photo-item__remove" disabled={saving} onClick={() => void removeExistingPhoto(image).catch(() => setError('Could not remove this photo. Try again.'))} type="button"><X size={18} /></button></div></div>)}{photos.map((photo, index) => <div className="post-photo-item" key={photo.url}><button aria-label={`Preview selected photo ${index + 1}`} className="post-photo-item__preview" onClick={() => setPreviewPhoto({ src: photo.url, alt: `Selected post photo ${index + 1}` })} type="button"><img alt="" src={photo.url} /><span>Preview</span></button><div className="post-photo-item__details"><strong>{photo.name}</strong><button aria-label={`Remove photo ${index + 1}`} className="post-photo-item__remove" onClick={() => void removePhoto(index)} type="button"><X size={18} /></button></div></div>)}</div>{!editing && <small className="post-photo-hint">Photos are not saved in drafts. Avoid faces, documents, or valuables.</small>}</>}
+        {step === 1 && <><InputField id="post-title" label="Title" maxLength={120} onChange={(event) => set('title', event.target.value)} placeholder="What needs fixing?" value={values.title} /><label className={`post-photo-picker${photoDragOver ? ' is-drag-over' : ''}`} onDragEnter={(event) => { event.preventDefault(); setPhotoDragOver(true) }} onDragOver={(event) => event.preventDefault()} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPhotoDragOver(false) }} onDrop={(event) => { event.preventDefault(); setPhotoDragOver(false); void selectPhotos(event.dataTransfer.files) }}><Camera aria-hidden="true" size={27} /><strong>Add photos</strong><span>Up to 5. JPG, PNG or WebP</span><input accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => { void selectPhotos(event.target.files); event.target.value = '' }} type="file" /></label><div className="post-photo-list">{existing.map((image) => <div className="post-photo-item" key={image.storage_path}>{existingUrls[image.storage_path] ? <button aria-label={`Preview photo ${image.sort_order + 1}`} className="post-photo-item__preview" onClick={() => setPreviewPhoto({ src: existingUrls[image.storage_path], alt: `Existing post photo ${image.sort_order + 1}` })} type="button"><img alt="" onError={() => setExistingUrls((current) => ({ ...current, [image.storage_path]: null }))} src={existingUrls[image.storage_path]} /><span>Preview</span></button> : null}<div className="post-photo-item__details"><strong>Photo {image.sort_order + 1}</strong><button aria-label={`Remove photo ${image.sort_order + 1}`} className="post-photo-item__remove" disabled={saving} onClick={() => void removeExistingPhoto(image).catch(() => showError('Could not remove this photo. Try again.'))} type="button"><X size={18} /></button></div></div>)}{photos.map((photo, index) => <div className="post-photo-item" key={photo.url}><button aria-label={`Preview selected photo ${index + 1}`} className="post-photo-item__preview" onClick={() => setPreviewPhoto({ src: photo.url, alt: `Selected post photo ${index + 1}` })} type="button"><img alt="" src={photo.url} /><span>Preview</span></button><div className="post-photo-item__details"><strong>{photo.name}</strong><button aria-label={`Remove photo ${index + 1}`} className="post-photo-item__remove" onClick={() => void removePhoto(index)} type="button"><X size={18} /></button></div></div>)}</div>{!editing && <small className="post-photo-hint">Photos are not saved in drafts. Avoid faces, documents, or valuables.</small>}</>}
         {step === 2 && <><SelectField id="post-category" label="Service category" onChange={(event) => set('category_id', event.target.value)} value={values.category_id}><option value="">Choose a category</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</SelectField><label className="ui-field" htmlFor="post-description"><span className="ui-field__label">Description</span><textarea className="post-form-description" id="post-description" maxLength={2500} onChange={(event) => set('description', event.target.value)} placeholder="Describe what needs fixing, where it is, and any helpful details…" rows={7} value={values.description} /><small className="ui-field__hint">{values.description.length}/2,500</small></label></>}
         {step === 3 && <>
           <SegmentedControl label="Budget type" onChange={(value) => set('budget_type', value)} options={budgetOptions} value={values.budget_type} />
@@ -300,7 +308,7 @@ function PostFormPage({ editing = false }) {
           </div>
           <p className="post-form-review__note">Your photos are visible to anyone with their link. Avoid sensitive images.</p>
         </div>}
-        <footer className="post-form-actions">{step > 1 && <Button disabled={saving} onClick={() => setStep((current) => current - 1)} variant="secondary">Back</Button>}{step < 4 ? <Button onClick={() => { const problem = step === 1 && (!values.title.trim() || values.title.length > 120) ? 'Add a title between 1 and 120 characters.' : step === 2 && (!values.category_id || !values.description.trim()) ? 'Choose a category and describe the work.' : step === 3 && (!values.region.trim() || !values.city.trim()) ? 'Choose a state and city or area before continuing.' : step === 3 ? validateSchedule() : ''; if (problem) setError(problem); else { setError(''); setStep((current) => current + 1) } }}>Next</Button> : <Button loading={saving} onClick={() => void publish()}>{editing ? 'Save changes' : 'Publish post'}</Button>}</footer>
+        <footer className="post-form-actions">{step > 1 && <Button disabled={saving} onClick={() => setStep((current) => current - 1)} variant="secondary">Back</Button>}{step < 4 ? <Button onClick={() => { const problem = step === 1 && (!values.title.trim() || values.title.length > 120) ? 'Add a title between 1 and 120 characters.' : step === 2 && (!values.category_id || !values.description.trim()) ? 'Choose a category and describe the work.' : step === 3 && (!values.region.trim() || !values.city.trim()) ? 'Choose a state and city or area before continuing.' : step === 3 ? validateSchedule() : ''; if (problem) showError(problem); else { setError(''); setStep((current) => current + 1) } }}>Next</Button> : <Button loading={saving} onClick={() => void publish()}>{editing ? 'Save changes' : 'Publish post'}</Button>}</footer>
       </section>
       <aside aria-label="Request guidance" className="post-form-aside">
         <MarketplaceDoodle />

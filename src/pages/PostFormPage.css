@@ -7,7 +7,7 @@
 .post-form-content { display: grid; gap: 20px; padding: 20px; border-radius: 22px; background: #fff; box-shadow: 0 8px 24px rgb(32 56 116 / 8%); animation: post-step-in 220ms var(--ease-standard) both; }
 /* Avoid transforms on the card: the mobile fixed action bar lives inside it. */
 @keyframes post-step-in { from { opacity: 0; } to { opacity: 1; } }
-.post-form-error { padding: 12px 14px; border-radius: 12px; color: #8f2d2d; background: #fff0ef; }
+.post-form-error { padding: 12px 14px; border-radius: 12px; color: #8f2d2d; background: #fff0ef; scroll-margin-block: 24px; }
 .post-photo-picker { display: grid; min-height: 48px; place-items: center; border: 1px dashed #bac8e8; border-radius: 14px; color: var(--color-primary); font-weight: 700; cursor: pointer; }
 .post-photo-picker input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .post-photo-list { display: grid; gap: 8px; }
