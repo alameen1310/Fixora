@@ -162,7 +162,7 @@ export default function AuthenticatedAppShell() {
             </NavLink>
           ))}
         </nav>
-        {showPostAction ? <div className="fixora-app__post-slot"><Link className="fixora-app__post-button" to="/app/posts/new"><Plus aria-hidden="true" size={20} />Post a problem</Link></div> : isProvider && <div className="fixora-app__post-slot"><Link className="fixora-app__post-button" to="/app/discover"><Briefcase aria-hidden="true" size={20} />Find work</Link></div>}
+        {showPostAction ? <div className="fixora-app__post-slot"><Link aria-label="Post a problem" className="fixora-app__post-button" title="Post a problem" to="/app/posts/new"><Plus aria-hidden="true" size={20} />Post a problem</Link></div> : isProvider && <div className="fixora-app__post-slot"><Link aria-label="Find work" className="fixora-app__post-button" title="Find work" to="/app/discover"><Briefcase aria-hidden="true" size={20} />Find work</Link></div>}
         <AccountMenu firstName={firstName} isProvider={isProvider} profile={profile} user={user} />
       </aside>
 
