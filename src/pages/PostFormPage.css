@@ -217,3 +217,19 @@
   .post-form-actions .ui-button { width: 100%; min-width: 0; }
   .post-form-actions > :only-child { grid-column: 1 / -1; }
 }
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .post-form-actions {
+    right: 0;
+    left: var(--sidebar-w, 76px);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-inline: 24px;
+  }
+  .post-form-actions .ui-button {
+    width: auto;
+    min-width: 150px;
+    flex: 0 1 190px;
+  }
+}
