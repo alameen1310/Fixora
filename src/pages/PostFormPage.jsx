@@ -3,9 +3,11 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Camera, Image as ImageIcon, MapPin, X } from '@phosphor-icons/react'
 import { Button, Chip, InputField, SegmentedControl, SelectField, Skeleton } from '../components/UiPrimitives.jsx'
 import MarketplaceDoodle from '../components/MarketplaceDoodle.jsx'
+import OverlayPortal from '../components/OverlayPortal.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../components/ToastProvider.jsx'
 import { describePhotoError, getPostImageUrl, logPostStep, preparePostPhoto } from '../lib/postImages.js'
+import { nigerianLocations } from '../lib/nigerianLocations.js'
 import { invalidatePostListCaches } from '../lib/postListCache.js'
 import { supabase } from '../lib/supabase.js'
 import './AuthenticatedPages.css'
@@ -17,6 +19,15 @@ const budgetOptions = [{ value: 'fixed', label: 'Fixed' }, { value: 'range', lab
 const timings = [['urgent', 'Urgent'], ['this_week', 'This week'], ['flexible', 'Flexible'], ['specific_date', 'Pick a date']]
 const jobTypes = [['repair', 'Repair'], ['installation', 'Installation'], ['maintenance', 'Maintenance'], ['new_project', 'New project']]
 const editColumns = 'id, author_id, category_id, title, description, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, schedule_mode, scheduled_start_at, scheduled_end_at, job_type, status, published_at, hired_professional_id, problem_post_images(storage_path, sort_order, kind)'
+const suggestedCities = ['Ikeja', 'Lekki', 'Yaba', 'Surulere', 'Ikoyi', 'Victoria Island', 'Ajah', 'Ejigbo', 'Festac', 'Maryland']
+
+function defaultSchedule() {
+  const nowWAT = new Date(Date.now() + 60 * 60 * 1000)
+  const start = new Date(Date.UTC(nowWAT.getUTCFullYear(), nowWAT.getUTCMonth(), nowWAT.getUTCDate() + 1, 9))
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000)
+  const toInput = (date) => date.toISOString().slice(0, 16)
+  return { start: toInput(start), end: toInput(end), date: start.toISOString().slice(0, 10) }
+}
 
 function toLagosInput(value) {
   if (!value) return ''
@@ -62,6 +73,7 @@ function PostFormPage({ editing = false }) {
   const [uploaded, setUploaded] = useState(new Set())
   const [previewPhoto, setPreviewPhoto] = useState(null)
   const [photoDragOver, setPhotoDragOver] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState('')
 
   useEffect(() => {
     let active = true
@@ -133,7 +145,20 @@ function PostFormPage({ editing = false }) {
       block: 'center',
     }))
   }
-  function set(key, value) { setValues((current) => ({ ...current, [key]: value })); setError('') }
+  function set(key, value) {
+    setValues((current) => {
+      const next = { ...current, [key]: value }
+      if ((key === 'timing' && value === 'specific_date' && !current.target_date)
+        || (key === 'schedule_mode' && value === 'confirmed' && !current.scheduled_start_at)) {
+        const defaults = defaultSchedule()
+        next.scheduled_start_at ||= defaults.start
+        next.scheduled_end_at ||= defaults.end
+        if (key === 'timing') next.target_date = defaults.date
+      }
+      return next
+    })
+    setError('')
+  }
   function validateSchedule() {
     if (values.schedule_mode !== 'confirmed') return ''
     const start = fromLagosInput(values.scheduled_start_at)
@@ -220,8 +245,7 @@ function PostFormPage({ editing = false }) {
         if (existing.length + photos.length > 5) throw new Error('Keep no more than five photos.')
         const { data: updatedPost, error: updateError } = await supabase.from('problem_posts').update(payload()).eq('id', postId).eq('author_id', user.id).neq('status', 'removed').select('id').maybeSingle()
         if (updateError || !updatedPost) { const problem = updateError || new Error('This post is no longer editable.'); console.error('[post-write]', { step: 'update', postId, code: problem.code || 'not-updated', message: problem.message }); throw problem }
-        const taken = new Set(existing.map((image) => image.sort_order))
-        for (const [index, image] of photos.entries()) if (!uploaded.has(image)) await uploadPhoto(image, postId, user.id, existing, uploaded, setUploaded, taken, index + 1)
+        await uploadPendingPhotos(photos, uploaded, postId, user.id, existing, setUploaded, (message) => setUploadProgress(message))
         invalidatePostListCaches(user.id)
         showToast({ type: 'success', message: 'Post updated.' }); navigate(`/app/posts/${postId}`); return
       }
@@ -248,9 +272,8 @@ function PostFormPage({ editing = false }) {
       writeStep = 'reserve'
       const { data: reservationRows, error: reservationError } = await supabase.from('problem_post_images').select('storage_path, sort_order, kind').eq('post_id', currentPostId).eq('kind', 'before')
       if (reservationError) { console.error('[post-write]', { step: 'reserve', postId: currentPostId, code: reservationError.code, message: reservationError.message }); throw reservationError }
-      const taken = new Set((reservationRows ?? []).map((row) => row.sort_order))
       writeStep = 'upload'
-      for (const [index, photo] of photos.entries()) if (!uploaded.has(photo)) await uploadPhoto(photo, currentPostId, authorId, [...(reservationRows ?? [])], uploaded, setUploaded, taken, index + 1)
+      await uploadPendingPhotos(photos, uploaded, currentPostId, authorId, [...(reservationRows ?? [])], setUploaded, (message) => setUploadProgress(message))
       writeStep = 'publish'
       const { error: publishError } = await supabase.rpc('publish_problem_post', { requested_post_id: currentPostId })
       if (publishError) { console.error('[post-write]', { step: 'publish', postId: currentPostId, code: publishError.code, message: publishError.message }); throw publishError }
@@ -269,7 +292,7 @@ function PostFormPage({ editing = false }) {
       if (problem?.code === 'CUSTOMER_REQUIRED') showError('Only a Customer account can create posts. Switch to your Customer account and try again.')
       else showError(errorText(problem, writeStep))
     }
-    finally { setSaving(false) }
+    finally { setSaving(false); setUploadProgress('') }
   }
 
   if (loading) return <main aria-busy="true" className="app-page post-form-page post-form-page--loading"><p className="post-form-loading__status" role="status">Loading your post…</p><Skeleton className="post-form-loading__title" /><Skeleton className="post-form-loading__card" /></main>
@@ -286,8 +309,8 @@ function PostFormPage({ editing = false }) {
           <SegmentedControl label="Budget type" onChange={(value) => set('budget_type', value)} options={budgetOptions} value={values.budget_type} />
           {values.budget_type !== 'open_to_quotes' && <div className="post-form-budget"><InputField id="post-min" inputMode="numeric" label={values.budget_type === 'range' ? 'Minimum (₦)' : 'Amount (₦)'} onChange={(event) => set('min', event.target.value.replace(/\D/g, ''))} value={values.min} /><output>{values.min ? new Intl.NumberFormat('en-NG').format(Number(values.min)) : ''}</output>{values.budget_type === 'range' && <InputField id="post-max" inputMode="numeric" label="Maximum (₦)" onChange={(event) => set('max', event.target.value.replace(/\D/g, ''))} value={values.max} />}</div>}
           <label className="post-form-switch"><input checked={values.negotiable} onChange={(event) => set('negotiable', event.target.checked)} type="checkbox" />Budget is negotiable</label>
-          <InputField id="post-region" label="State or region" onChange={(event) => set('region', event.target.value)} placeholder="e.g. Lagos State" value={values.region} />
-          <InputField id="post-city" label="City or area" onChange={(event) => set('city', event.target.value)} placeholder="e.g. Ikeja" value={values.city} />
+          <SelectField id="post-region" label="State or region" onChange={(event) => set('region', event.target.value)} value={values.region}><option value="">Choose a state</option>{nigerianLocations.map(([name]) => <option key={name} value={name}>{name}</option>)}{values.region && !nigerianLocations.some(([name]) => name === values.region) && <option value={values.region}>{values.region} (saved location)</option>}</SelectField>
+          <div><InputField id="post-city" label="City or area" list="post-city-suggestions" maxLength={100} onChange={(event) => set('city', event.target.value)} placeholder="e.g. Ikeja" value={values.city} /><datalist id="post-city-suggestions">{suggestedCities.map((city) => <option key={city} value={city} />)}</datalist></div>
           <fieldset className="post-form-options"><legend>When do you need the work?</legend>{timings.map(([value, label]) => <Chip key={value} onClick={() => set('timing', value)} selected={values.timing === value}>{label}</Chip>)}</fieldset>
           {values.timing === 'specific_date' && <InputField id="post-date" label="Target date" onChange={(event) => set('target_date', event.target.value)} type="date" value={values.target_date} />}
           <fieldset className="post-form-options post-form-schedule"><legend>Work schedule</legend><p>Providers can only be hired when the work window is confirmed. Times use West Africa Time (WAT).</p><SegmentedControl label="Work schedule certainty" onChange={(value) => set('schedule_mode', value)} options={[{ value: 'flexible', label: 'Flexible for now' }, { value: 'confirmed', label: 'Confirm a time' }]} value={values.schedule_mode} />
@@ -309,7 +332,7 @@ function PostFormPage({ editing = false }) {
           </div>
           <p className="post-form-review__note">Your photos are visible to anyone with their link. Avoid sensitive images.</p>
         </div>}
-        <footer className="post-form-actions">{step > 1 && <Button disabled={saving} onClick={() => setStep((current) => current - 1)} variant="secondary">Back</Button>}{step < 4 ? <Button onClick={() => { const problem = step === 1 && (!values.title.trim() || values.title.length > 120) ? 'Add a title between 1 and 120 characters.' : step === 2 && (!values.category_id || !values.description.trim()) ? 'Choose a category and describe the work.' : step === 3 && (!values.region.trim() || !values.city.trim()) ? 'Choose a state and city or area before continuing.' : step === 3 ? validateSchedule() : ''; if (problem) showError(problem); else { setError(''); setStep((current) => current + 1) } }}>Next</Button> : <Button loading={saving} onClick={() => void publish()}>{editing ? 'Save changes' : 'Publish post'}</Button>}</footer>
+        <footer className="post-form-actions">{step > 1 && <Button disabled={saving} onClick={() => setStep((current) => current - 1)} variant="secondary">Back</Button>}{step < 4 ? <Button onClick={() => { const problem = step === 1 && (!values.title.trim() || values.title.length > 120) ? 'Add a title between 1 and 120 characters.' : step === 2 && (!values.category_id || !values.description.trim()) ? 'Choose a category and describe the work.' : step === 3 && (!values.region.trim() || !values.city.trim()) ? 'Choose a state and city or area before continuing.' : step === 3 ? validateSchedule() : ''; if (problem) showError(problem); else { setError(''); setStep((current) => current + 1) } }}>{saving && uploadProgress ? uploadProgress : 'Next'}</Button> : <Button loading={saving} onClick={() => void publish()}>{saving && uploadProgress ? uploadProgress : editing ? 'Save changes' : 'Publish post'}</Button>}</footer>
       </section>
       <aside aria-label="Request guidance" className="post-form-aside">
         <MarketplaceDoodle />
@@ -324,7 +347,7 @@ function PostFormPage({ editing = false }) {
         </div>
       </aside>
       </div>
-      {previewPhoto && <div className="post-photo-lightbox" onClick={(event) => { if (event.target === event.currentTarget) setPreviewPhoto(null) }} role="presentation"><section aria-label="Photo preview" aria-modal="true" className="post-photo-lightbox__panel" role="dialog"><button aria-label="Close photo preview" className="post-photo-lightbox__close" onClick={() => setPreviewPhoto(null)} type="button"><X aria-hidden="true" size={22} /></button><img alt={previewPhoto.alt} src={previewPhoto.src} /></section></div>}
+      {previewPhoto && <OverlayPortal><div className="post-photo-lightbox" onClick={(event) => { if (event.target === event.currentTarget) setPreviewPhoto(null) }} role="presentation"><section aria-label="Photo preview" aria-modal="true" className="post-photo-lightbox__panel" role="dialog"><button aria-label="Close photo preview" className="post-photo-lightbox__close" onClick={() => setPreviewPhoto(null)} type="button"><X aria-hidden="true" size={22} /></button><img alt={previewPhoto.alt} src={previewPhoto.src} /></section></div></OverlayPortal>}
     </main>
   )
 }
@@ -333,19 +356,40 @@ async function uploadPhoto(photo, postId, userId, reservations, uploaded, setUpl
   let sortOrder = 0
   while (taken.has(sortOrder) && sortOrder < 5) sortOrder += 1
   if (sortOrder >= 5) throw Object.assign(new Error('Keep no more than five photos.'), { photoNumber })
+  taken.add(sortOrder)
   photoNumber = sortOrder + 1
   const path = `${userId}/${postId}/${sortOrder}.jpg`
   const { error: reserveError } = await supabase.from('problem_post_images').insert({ post_id: postId, storage_path: path, sort_order: sortOrder, kind: 'before' })
-  if (reserveError) { logPostStep('reserve', { postId, error: reserveError }); throw Object.assign(reserveError, { photoNumber }) }
+  if (reserveError) { taken.delete(sortOrder); logPostStep('reserve', { postId, error: reserveError }); throw Object.assign(reserveError, { photoNumber }) }
   const { error: uploadError } = await supabase.storage.from('problem-post-photos').upload(path, photo.file, { contentType: 'image/jpeg', upsert: false })
   if (uploadError) {
     logPostStep('upload', { postId, error: uploadError })
     const { error: cleanupError } = await supabase.from('problem_post_images').delete().eq('post_id', postId).eq('storage_path', path)
     if (cleanupError) logPostStep('reservation_cleanup', { postId, error: cleanupError })
+    taken.delete(sortOrder)
     throw Object.assign(uploadError, { photoNumber })
   }
   photo.path = path
-  setUploaded((current) => new Set([...current, photo])); taken.add(sortOrder)
+  setUploaded((current) => new Set([...current, photo]))
+}
+
+async function uploadPendingPhotos(photos, uploaded, postId, userId, reservations, setUploaded, onProgress) {
+  const pending = photos.filter((photo) => !uploaded.has(photo))
+  if (!pending.length) return
+  const taken = new Set(reservations.map((row) => row.sort_order))
+  let completed = 0
+  let nextIndex = 0
+  const workers = Array.from({ length: Math.min(2, pending.length) }, async () => {
+    while (nextIndex < pending.length) {
+      const index = nextIndex++
+      const photo = pending[index]
+      onProgress(`Uploading photo ${completed + 1} of ${pending.length}…`)
+      await uploadPhoto(photo, postId, userId, reservations, uploaded, setUploaded, taken, index + 1)
+      completed += 1
+      onProgress(completed < pending.length ? `Uploaded ${completed} of ${pending.length} photos…` : 'Finishing photo uploads…')
+    }
+  })
+  await Promise.all(workers)
 }
 
 export function CreatePostPage() { return <PostFormPage /> }

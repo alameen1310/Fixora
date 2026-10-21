@@ -1,0 +1,14 @@
+.first-run-checklist { margin: 0 0 24px; padding: 18px; border: 1px solid var(--color-border); border-radius: 18px; background: #fff; box-shadow: 0 8px 24px rgb(32 56 116 / 6%); }
+.first-run-checklist>header,.first-run-checklist>header>div,.first-run-checklist li,.first-run-checklist li a { display:flex; align-items:center; }
+.first-run-checklist>header { justify-content:space-between; gap:12px; }
+.first-run-checklist>header>div { gap:9px; color:var(--color-primary); }
+.first-run-checklist h2 { margin:0; color:var(--color-text-primary); font-size:1rem; }
+.first-run-checklist button { border:0; color:var(--color-text-secondary); background:transparent; font:inherit; font-size:.875rem; cursor:pointer; }
+.first-run-checklist ol { display:grid; gap:4px; margin:12px 0 0; padding:0; list-style:none; }
+.first-run-checklist li { min-height:42px; gap:10px; }
+.first-run-checklist li>svg { flex:none; color:var(--color-success,#17834f); }
+.first-run-checklist__number { width:19px; height:19px; flex:none; border:1.5px solid var(--color-border); border-radius:50%; }
+.first-run-checklist li a { width:100%; justify-content:space-between; gap:10px; color:var(--color-text-primary); font-weight:600; text-decoration:none; }
+.first-run-checklist li a:hover { color:var(--color-primary); }
+.first-run-checklist li a svg { flex:none; color:var(--color-primary); }
+.first-run-checklist li.is-done a { color:var(--color-text-secondary); text-decoration:line-through; }

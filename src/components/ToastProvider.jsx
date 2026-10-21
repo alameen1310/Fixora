@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { CheckCircle, Info, Warning, WarningCircle, X } from '@phosphor-icons/react'
+import OverlayPortal from './OverlayPortal.jsx'
 import './ToastProvider.css'
 
 const ToastContext = createContext(null)
@@ -56,7 +57,7 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={contextValue}>
       {children}
-      <aside aria-label="Notifications" className="fixora-toasts">
+      <OverlayPortal lockScroll={false} open={false}><aside aria-label="Notifications" className="fixora-toasts">
         {toasts.map(({ id, type, message }) => {
           const Icon = toastIcons[type]
           return (
@@ -69,7 +70,7 @@ export function ToastProvider({ children }) {
             </div>
           )
         })}
-      </aside>
+      </aside></OverlayPortal>
     </ToastContext.Provider>
   )
 }

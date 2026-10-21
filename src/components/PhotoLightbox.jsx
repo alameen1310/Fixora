@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, X } from '@phosphor-icons/react'
+import OverlayPortal from './OverlayPortal.jsx'
 import './PhotoLightbox.css'
 
 export default function PhotoLightbox({ images = [], index = 0, onIndexChange, onClose }) {
@@ -31,7 +32,7 @@ export default function PhotoLightbox({ images = [], index = 0, onIndexChange, o
   }, [images.length, safeIndex, onClose])
 
   if (!active) return null
-  return <div aria-label="Photo viewer" aria-modal="true" className="photo-lightbox" onClick={onClose} role="dialog">
+  return <OverlayPortal><div aria-label="Photo viewer" aria-modal="true" className="photo-lightbox" onClick={onClose} role="dialog">
     <div className="photo-lightbox__content" onClick={(event) => event.stopPropagation()} ref={dialogRef} tabIndex={-1}>
       <button aria-label="Close photo viewer" className="photo-lightbox__close" onClick={onClose} type="button"><X size={22} /></button>
       {images.length > 1 && <button aria-label="Previous photo" className="photo-lightbox__previous" onClick={() => move(-1)} type="button"><ArrowLeft size={22} /></button>}
@@ -39,5 +40,5 @@ export default function PhotoLightbox({ images = [], index = 0, onIndexChange, o
       {images.length > 1 && <button aria-label="Next photo" className="photo-lightbox__next" onClick={() => move(1)} type="button"><ArrowRight size={22} /></button>}
       <span className="photo-lightbox__counter">{safeIndex + 1} / {images.length}</span>
     </div>
-  </div>
+  </div></OverlayPortal>
 }

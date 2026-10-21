@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js'
 
-const MAX_EDGE = 1600
-const TARGET_BYTES = 300 * 1024
+const MAX_EDGE = 1280
+const TARGET_BYTES = 200 * 1024
 
 export function getPostImageUrl(path) {
   if (!path || !supabase) return null
@@ -60,7 +60,7 @@ export async function preparePostPhoto(file) {
   image.close?.()
   let quality = 0.82
   let blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality))
-  while (blob && blob.size > TARGET_BYTES && quality > 0.48) {
+  while (blob && blob.size > TARGET_BYTES && quality > 0.32) {
     quality -= 0.08
     blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality))
   }

@@ -10,7 +10,7 @@ export async function fetchPostApplicationCount(postId) {
 
 export async function fetchMyApplication(postId, professionalId) {
   const { data, error } = await supabase.from('problem_post_applications')
-    .select('id, post_id, professional_id, message, status, created_at, updated_at')
+    .select('id, post_id, professional_id, message, quote_naira, status, created_at, updated_at')
     .eq('post_id', postId).eq('professional_id', professionalId).maybeSingle()
   if (error) throw error
   return data
@@ -18,7 +18,7 @@ export async function fetchMyApplication(postId, professionalId) {
 
 export async function fetchPostApplications(postId) {
   const { data, error } = await supabase.from('problem_post_applications')
-    .select('id, post_id, professional_id, message, status, created_at, updated_at')
+    .select('id, post_id, professional_id, message, quote_naira, status, created_at, updated_at')
     .eq('post_id', postId).order('created_at', { ascending: false })
   if (error) throw error
   const rows = data ?? []
@@ -43,7 +43,7 @@ export async function fetchPostApplications(postId) {
 
 export async function fetchMarketplaceActivities(userId) {
   const { data, error } = await supabase.from('marketplace_activities')
-    .select('id, recipient_id, actor_id, kind, post_id, application_id, read_at, created_at, problem_posts(id, title, status, budget_type, budget_min_naira, budget_max_naira, negotiable, category_id, city, region, hired_professional_id, completed_at, final_price_naira, service_categories(name), problem_post_images(storage_path, sort_order, kind)), problem_post_applications(id, professional_id, message, status)')
+    .select('id, recipient_id, actor_id, kind, post_id, application_id, read_at, created_at, problem_posts(id, title, status, budget_type, budget_min_naira, budget_max_naira, negotiable, category_id, city, region, hired_professional_id, completed_at, final_price_naira, service_categories(name, slug), problem_post_images(storage_path, sort_order, kind)), problem_post_applications(id, professional_id, message, quote_naira, status)')
     .eq('recipient_id', userId).order('created_at', { ascending: false }).limit(60)
   if (error) throw error
   const rows = data ?? []
@@ -75,7 +75,7 @@ export async function fetchMarketplaceActivities(userId) {
 
 export async function fetchProviderApplications(userId) {
   const { data: applications, error } = await supabase.from('problem_post_applications')
-    .select('id, post_id, professional_id, message, status, created_at, updated_at')
+    .select('id, post_id, professional_id, message, quote_naira, status, created_at, updated_at')
     .eq('professional_id', userId).order('created_at', { ascending: false })
   if (error) throw error
   const rows = applications ?? []

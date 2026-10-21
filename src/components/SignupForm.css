@@ -29,6 +29,15 @@
   margin-top: 0.25rem;
 }
 
+.signup-confirmation { display:grid; justify-items:start; gap:14px; padding:clamp(1.4rem,4vw,2.2rem); border:1px solid var(--color-border); border-radius:var(--radius-xl); background:var(--color-surface); box-shadow:var(--shadow-raised); }
+.signup-confirmation__icon { display:grid; width:52px; height:52px; place-items:center; border-radius:16px; color:var(--color-primary); background:var(--color-pale-blue); }
+.signup-confirmation .app-eyebrow,.signup-confirmation h2,.signup-confirmation p { margin:0; }
+.signup-confirmation h2 { font-size:1.6rem; letter-spacing:-.03em; }
+.signup-confirmation p { color:var(--color-text-secondary); line-height:1.55; }
+.signup-confirmation p strong { color:var(--color-text-primary); overflow-wrap:anywhere; }
+.signup-confirmation .ui-button { width:100%; }
+.signup-confirmation__edit { justify-self:center; border:0; color:var(--color-primary); background:transparent; font:inherit; font-weight:650; cursor:pointer; }
+
 @media (max-width: 560px) {
   .signup-form {
     padding: 1.35rem 1.15rem;

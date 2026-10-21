@@ -268,6 +268,7 @@
   transition: transform 200ms var(--ease-standard), opacity 200ms var(--ease-standard);
 }
 .fixora-app__mobile-nav.is-hidden { transform: translateY(calc(100% + 20px)); opacity: 0; pointer-events: none; }
+html.fixora-overlay-open .fixora-app__mobile-nav { transform: translateY(calc(100% + 28px)); opacity: 0; pointer-events: none; }
 .fixora-app__mobile-link { min-height: 48px; position: relative; z-index: 1; gap: 2px; font-size: 11px; }
 .fixora-app__mobile-nav.has-messages { grid-template-columns: repeat(5,minmax(0,1fr)); }
 .fixora-app__mobile-nav.has-messages .fixora-app__unread-badge { position:absolute; top:2px; right:calc(50% - 21px); }
@@ -396,6 +397,7 @@
 @media (max-width: 767px) {
   .fixora-app { --tabbar-space: calc(108px + env(safe-area-inset-bottom)); }
   .fixora-app__topbar.is-subroute { display: none; }
+  .fixora-app.is-focused-flow .fixora-app__topbar { display: none; }
   .fixora-app__mobile-nav.is-hidden { display: none; }
   .fixora-app__mobile-link { font-size: 12px; }
   .fixora-app__mobile-link .fixora-app__unread-badge {

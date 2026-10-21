@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowBendUpLeft, ArrowLeft, ArrowRight, Briefcase, Camera, ChatCircleDots, Check, ClipboardText, DotsThree, Flag, House, Info, PaperPlaneRight, Smiley, TrashSimple, WarningCircle, Wrench, X } from '@phosphor-icons/react'
 import { Link, NavLink, Outlet, useLocation, useNavigate, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
-import { Avatar, Button, Skeleton } from '../components/UiPrimitives.jsx'
+import { Avatar, Button, EmptyState, Skeleton } from '../components/UiPrimitives.jsx'
+import OverlayPortal from '../components/OverlayPortal.jsx'
+import PostThumb from '../components/PostThumb.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { fetchConversationMessages, fetchEarlierMessages, fetchMessageReactions, fetchMyConversations, markConversationRead, sendConversationMessage, setMessageReaction, unsendConversationMessage } from '../lib/chatQueries.js'
 import { formatRelativeTime } from '../lib/postQueries.js'
@@ -61,8 +63,8 @@ function MessageList({ conversations, loading, error, onRetry, userId, isProvide
 }
 
 function MessagesWelcome() {
-  const { conversations } = useOutletContext()
-  if (!conversations.length) return null
+  const { conversations, isProvider } = useOutletContext()
+  if (!conversations.length) return <div className="messages-welcome messages-welcome--empty"><EmptyState action={<Button as={Link} to="/app/discover" variant="secondary">{isProvider ? 'Find work' : 'Browse professionals'}</Button>} icon={ChatCircleDots} title="Your conversations start with a hire" message="Once a professional is hired, you can coordinate the work here." /></div>
   return <div className="messages-welcome">
     <div aria-hidden="true" className="messages-welcome__art"><span><Wrench size={27} weight="regular" /></span><span><House size={36} weight="regular" /></span></div>
     <div className="messages-welcome__copy"><span>FIXORA MESSAGES</span><h2>Good work starts with a conversation</h2><p>Select a conversation to coordinate details, timing and progress for a hired request.</p></div>
@@ -334,12 +336,12 @@ function ConversationThread() {
   function handleKeyDown(event) { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && window.matchMedia('(pointer: fine)').matches) { event.preventDefault(); void send() } }
   function handleDraftChange(value) { setDraft(value); if (channelRef.current) { void channelRef.current.send({ type: 'broadcast', event: 'typing', payload: { senderId: user.id } }); clearTimeout(typingTimer.current); typingTimer.current = setTimeout(() => { setTyping(false) }, 900) } }
 
-  if (!conversation) return conversationsLoading ? <div className="messages-welcome" role="status"><Skeleton style={{ width: '72%', height: 48 }} /><Skeleton style={{ width: '56%', height: 48 }} /></div> : <div className="messages-welcome" role="status"><p>This conversation is unavailable.</p><Button as={Link} to="/app/messages" variant="secondary">Back to messages</Button></div>
+  if (!conversation) return conversationsLoading ? <div className="messages-welcome" role="status"><Skeleton style={{ width: '72%', height: 48 }} /><Skeleton style={{ width: '56%', height: 48 }} /></div> : <div className="messages-welcome"><EmptyState action={<Button as={Link} to="/app/messages" variant="secondary">Back to messages</Button>} icon={ChatCircleDots} title="Conversation unavailable" message="This conversation may have been removed or is no longer available." /></div>
 
   const quickReplies = isProvider ? ['Hello, I’m ready to start', 'What time works for you?', 'Thanks for choosing me'] : ['Hi, when can you start?', 'Can you share your quote?', 'Thanks for applying']
   return <section aria-label={'Conversation with ' + conversation.other_display_name} className="messages-thread">
     <header className="messages-thread__header"><Link aria-label="Back to messages" className="messages-thread__back" to="/app/messages"><ArrowLeft aria-hidden="true" size={21} /></Link><span className={'messages-thread__avatar' + (online ? ' is-online' : '')}><Avatar name={conversation.other_display_name} size={40} src={avatarUrl(conversation.other_avatar_path)} presence={online} /></span><div className="messages-thread__identity"><strong>{conversation.other_display_name}</strong><span>{typing ? 'Typing…' : online ? 'Online' : conversation.post_title}</span></div><div className="messages-thread__actions"><Button className="messages-thread__view-job" as={Link} to={postHref} variant="secondary">View job</Button><Button aria-label="Conversation details" className="messages-thread__details" onClick={openDetails} variant="ghost"><Info aria-hidden="true" size={19} /></Button><details className="messages-thread__overflow"><summary aria-label="More conversation actions"><DotsThree aria-hidden="true" size={21} /></summary><div><Link to={postHref}>View job</Link><button onClick={openDetails} type="button">Details</button>{!isProvider && <Link to={`/app/professionals/${conversation.other_user_id}`}>View profile</Link>}<button onClick={() => setReportOpen(true)} type="button"><Flag aria-hidden="true" size={15} />Report</button></div></details></div></header>
-    <div className="messages-job-context"><span className="messages-job-context__image">{conversation.cover_path ? <img alt="" src={getPostImageUrl(conversation.cover_path)} /> : <Wrench aria-hidden="true" size={20} />}</span><div><strong>{conversation.post_title}</strong><span>{conversation.post_status === 'completed' ? 'Completed' : conversation.post_status === 'closed' ? 'In progress' : 'Request'}</span></div>{!isProvider && conversation.post_status === 'closed' ? <Button as={Link} to={`${postHref}/complete`} variant="primary">Mark as completed</Button> : <Button as={Link} to={postHref} variant="secondary">View request</Button>}</div>
+    <div className="messages-job-context"><span className="messages-job-context__image"><PostThumb path={conversation.cover_path} /></span><div><strong>{conversation.post_title}</strong><span>{conversation.post_status === 'completed' ? 'Completed' : conversation.post_status === 'closed' ? 'In progress' : 'Request'}</span></div>{!isProvider && conversation.post_status === 'closed' ? <Button as={Link} to={`${postHref}/complete`} variant="primary">Mark as completed</Button> : <Button as={Link} to={postHref} variant="secondary">View request</Button>}</div>
     {error ? <div className="messages-thread__error" role="alert"><p>Messages couldn’t load.</p><Button onClick={() => void load()} variant="secondary">Retry</Button></div> : <>
       <div aria-live="polite" className="messages-thread__scroll" onScroll={onScroll} ref={scrollNode} style={{ '--chat-wallpaper': `url("${appDoodles}")` }}>
         {loading && <div className="messages-thread__skeletons" role="status" aria-label="Loading messages"><Skeleton /><Skeleton /><Skeleton /></div>}
@@ -359,7 +361,7 @@ function ConversationThread() {
         <button aria-label="Send message" className="messages-composer__send" disabled={(!draft.trim() && !photo) || photoBusy || conversation.post_status === 'removed'} type="submit"><PaperPlaneRight aria-hidden="true" size={21} weight="fill" /></button>
       </form>
     </>}
-    {lightbox && <button aria-label="Close image" className="messages-lightbox" onClick={() => setLightbox('')} type="button"><img alt="Photo shared in chat" src={lightbox} /><span>Close</span></button>}
+    {lightbox && <OverlayPortal><button aria-label="Close image" className="messages-lightbox" onClick={() => setLightbox('')} type="button"><img alt="Photo shared in chat" src={lightbox} /><span>Close</span></button></OverlayPortal>}
     <ReportDialog onClose={() => setReportOpen(false)} open={reportOpen} targetId={conversation.other_user_id} targetType="user" />
   </section>
 }
@@ -452,9 +454,9 @@ export function MessagesLayout() {
   const openDetails = useCallback(() => setDetailsOpen(true), [])
   const closeDetails = useCallback(() => setDetailsOpen(false), [])
   useEffect(() => { setDetailsOpen(false) }, [location.pathname])
-  const context = useMemo(() => ({ conversations, loading, reload, openDetails }), [conversations, loading, openDetails, reload])
-  return <main className={'messages-shell' + (threadOpen ? ' is-thread-open' : '') + (selectedConversation ? ' has-selection' : '') + (polling ? ' is-polling' : '')} ref={pullRefresh.containerRef}>
-    {pullRefresh.indicator}
+  const context = useMemo(() => ({ conversations, loading, reload, openDetails, isProvider: profile?.account_type === 'provider' }), [conversations, loading, openDetails, profile?.account_type, reload])
+  return <main className={'messages-shell' + (threadOpen ? ' is-thread-open' : '') + (selectedConversation ? ' has-selection' : '') + (polling ? ' is-polling' : '')} ref={threadOpen ? null : pullRefresh.containerRef}>
+    {!threadOpen && pullRefresh.indicator}
     <MessageList conversations={conversations} error={error} isProvider={profile?.account_type === 'provider'} loading={loading} onRetry={() => void reload()} onlineUsers={onlineUsers} userId={user.id} />
     <section className="messages-main" style={{ '--chat-wallpaper': `url("${appDoodles}")` }}><Outlet context={context} /></section>
     {detailsOpen && selectedConversation && <MessageInfoPane conversation={selectedConversation} isProvider={profile?.account_type === 'provider'} onClose={closeDetails} />}
@@ -487,13 +489,13 @@ function MessageInfoPane({ conversation, isProvider, onClose }) {
     }).catch((error) => console.error('[chat-details]', { code: error?.code, message: error?.message }))
     return () => { active = false }
   }, [conversation.other_user_id, isProvider])
-  return <><button aria-label="Close conversation details" className="messages-details-backdrop" onClick={onClose} tabIndex={-1} type="button" /><aside aria-label="Conversation details" className="messages-info-pane" ref={boundaryRef}>
+  return <OverlayPortal><button aria-label="Close conversation details" className="messages-details-backdrop" onClick={onClose} tabIndex={-1} type="button" /><aside aria-label="Conversation details" className="messages-info-pane" ref={boundaryRef}>
     <header className="messages-info-pane__header"><h2>Details</h2><button aria-label="Close details" onClick={onClose} type="button"><X size={20} /></button></header>
     <div className="messages-info-pane__person"><Avatar name={conversation.other_display_name} size={96} src={avatarUrl(conversation.other_avatar_path)} presence={isOnline(conversation.other_user_id)} /><strong>{conversation.other_display_name}</strong>{isOnline(conversation.other_user_id) ? <span className="messages-info-pane__online">Online</span> : <span className="messages-info-pane__online">{conversation.post_title}</span>}{!isProvider && <><span className="messages-info-pane__stats">{providerSummary?.rating?.review_count ? `${Number(providerSummary.rating.average_rating).toFixed(1)} · ${providerSummary.rating.review_count} reviews` : 'No reviews yet'} · {providerSummary?.jobs ?? 0} jobs completed</span><Link to={`/app/professionals/${conversation.other_user_id}`}>View profile</Link></>}</div>
-      <section><h2>Job</h2><Link className="messages-info-pane__job" to={`/app/posts/${conversation.post_id}`}>{conversation.cover_path && <img alt="" src={getPostImageUrl(conversation.cover_path)} />}<strong>{conversation.post_title}</strong><span>{conversation.post_status === 'completed' ? 'Completed' : conversation.post_status === 'closed' ? 'In progress' : 'Request'}</span></Link>{!isProvider && conversation.post_status === 'closed' && <Button as={Link} to={`/app/posts/${conversation.post_id}/complete`} variant="primary">Mark as completed</Button>}</section>
+      <section><h2>Job</h2><Link className="messages-info-pane__job" to={`/app/posts/${conversation.post_id}`}><PostThumb path={conversation.cover_path} /><strong>{conversation.post_title}</strong><span>{conversation.post_status === 'completed' ? 'Completed' : conversation.post_status === 'closed' ? 'In progress' : 'Request'}</span></Link>{!isProvider && conversation.post_status === 'closed' && <Button as={Link} to={`/app/posts/${conversation.post_id}/complete`} variant="primary">Mark as completed</Button>}</section>
     <section><h2>Shared photos</h2>{photos.length ? <div className="messages-info-pane__photos">{photos.map((photo) => <button aria-label="View shared photo" key={photo.id} onClick={() => setPreview(getPostImageUrl(photo.image_path))} type="button"><img alt="Shared in conversation" src={getPostImageUrl(photo.image_path)} /></button>)}</div> : <p className="messages-info-pane__empty">No shared photos yet.</p>}</section>
-    {preview && <button aria-label="Close photo" className="messages-lightbox" onClick={() => setPreview('')} type="button"><img alt="Shared in conversation" src={preview} /><span>Close</span></button>}
-  </aside></>
+    {preview && <OverlayPortal><button aria-label="Close photo" className="messages-lightbox" onClick={() => setPreview('')} type="button"><img alt="Shared in conversation" src={preview} /><span>Close</span></button></OverlayPortal>}
+  </aside></OverlayPortal>
 }
 
 export function MessagesHome() { return <MessagesWelcome /> }

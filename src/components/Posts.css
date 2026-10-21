@@ -168,3 +168,7 @@
   .post-detail__owner-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .post-detail__owner-actions .ui-button { min-width: 0; padding-inline: 10px; }
 }
+
+.post-application-panel__quote,.applicant-card__quote,.provider-application-card__quote { color:var(--color-primary-dark); font-weight:750; }
+.post-application-panel .ui-field textarea { min-height:104px; resize:vertical; padding:.75rem .95rem; border:1px solid rgb(36 87 214 / 14%); border-radius:var(--radius-sm); outline:0; color:var(--color-text-primary); background:var(--color-surface-tinted); font:inherit; line-height:1.5; }
+.post-application-panel .ui-field textarea:focus { border-color:var(--color-primary); background:#fff; box-shadow:0 0 0 3px rgb(36 87 214 / 16%); }

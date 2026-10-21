@@ -1131,7 +1131,7 @@
   .post-detail__back { position: relative; z-index: 1; gap: 4px; color: var(--color-primary); font-weight: 600; }
   .post-detail__owner-menu { margin-left: auto; }
   .post-detail__owner-actions { display: none !important; }
-  .post-detail__mobile-action { position: fixed; z-index: 24; right: 0; bottom: calc(var(--tabbar-space) - 34px); left: 0; display: flex; justify-content: flex-end; gap: 10px; padding: 12px var(--gutter); border-top: 1px solid var(--color-border); background: #fff; box-shadow: 0 -8px 24px rgba(16,32,96,.08); }
+  .post-detail__mobile-action { position: fixed; z-index: 24; right: 0; bottom: var(--kb-inset, 0px); left: 0; display: flex; justify-content: flex-end; gap: 10px; padding: 12px var(--gutter) calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--color-border); background: #fff; box-shadow: 0 -8px 24px rgba(16,32,96,.08); }
   .post-detail__mobile-action .ui-button { flex: 1; min-height: 48px; }
   .app-page.post-detail { padding-bottom: calc(var(--tabbar-space) + 84px) !important; }
 }

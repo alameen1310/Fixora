@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Briefcase, MagnifyingGlass, SlidersHorizontal, Wrench, X } from '@phosphor-icons/react'
+import { Briefcase, MagnifyingGlass, SlidersHorizontal, X } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { Badge, Button, Chip, Skeleton } from './UiPrimitives.jsx'
 import CompletedWorkFeed from './CompletedWorkFeed.jsx'
+import OverlayPortal from './OverlayPortal.jsx'
 import { formatPostBudget, formatRelativeTime } from '../lib/postQueries.js'
-import { getPostImageUrl } from '../lib/postImages.js'
+import PostThumb from './PostThumb.jsx'
 import { supabase } from '../lib/supabase.js'
 import './ProviderFindWork.css'
 
@@ -33,6 +34,7 @@ export default function ProviderFindWork() {
   const [sort, setSort] = useState('newest')
   const [segment, setSegment] = useState('requests')
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [newRequest, setNewRequest] = useState(false)
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState(false)
@@ -41,11 +43,9 @@ export default function ProviderFindWork() {
 
   useEffect(() => {
     if (!filtersOpen) return undefined
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
     const closeOnEscape = (event) => { if (event.key === 'Escape') setFiltersOpen(false) }
     document.addEventListener('keydown', closeOnEscape)
-    return () => { document.body.style.overflow = previousOverflow; document.removeEventListener('keydown', closeOnEscape) }
+    return () => { document.removeEventListener('keydown', closeOnEscape) }
   }, [filtersOpen])
 
   useEffect(() => {
@@ -123,9 +123,11 @@ export default function ProviderFindWork() {
 
   useEffect(() => { if (profileLoaded) void load() }, [profileLoaded, load])
   useEffect(() => {
-    const refresh = () => { void load() }
+    const onNewRequest = () => setNewRequest(true)
+    const refresh = () => { setNewRequest(false); void load() }
+    window.addEventListener('fixora:new-request', onNewRequest)
     window.addEventListener('fixora:discover-refresh', refresh)
-    return () => window.removeEventListener('fixora:discover-refresh', refresh)
+    return () => { window.removeEventListener('fixora:new-request', onNewRequest); window.removeEventListener('fixora:discover-refresh', refresh) }
   }, [load])
   const displayRows = rows
 
@@ -140,15 +142,16 @@ export default function ProviderFindWork() {
 
   return <main className="provider-find-work app-page">
     <header className="provider-find-work__header"><h1>Find work</h1><label className="provider-find-work__search"><MagnifyingGlass aria-hidden="true" size={19} /><span className="visually-hidden">Search requests</span><input onChange={(event) => setSearch(event.target.value)} placeholder="Search title, service or location" value={search} /></label><label className="provider-find-work__toggle"><input checked={matchesOnly} onChange={(event) => setMatchesOnly(event.target.checked)} type="checkbox" /><span>Matches my services</span></label></header>
+    {newRequest && <button className="provider-find-work__new-request" onClick={() => window.dispatchEvent(new CustomEvent('fixora:discover-refresh'))} type="button">New request — refresh the latest work</button>}
     <button aria-expanded={filtersOpen} className="provider-find-work__filter-trigger" onClick={() => setFiltersOpen(true)} type="button"><SlidersHorizontal aria-hidden="true" size={18} />Filters{activeFilterCount > 0 && <span>{activeFilterCount}</span>}</button>
     <div aria-label="Find work sections" className="provider-find-work__segments" role="tablist"><button aria-selected={segment === 'requests'} onClick={() => setSegment('requests')} role="tab" type="button">Open requests</button><button aria-selected={segment === 'completed'} onClick={() => setSegment('completed')} role="tab" type="button">Completed work</button></div>
     {segment === 'completed' ? <CompletedWorkFeed /> : <div className="provider-find-work__layout">
       <aside aria-label="Request filters" className="provider-find-work__filters">{filterControls}</aside>
       <section className="provider-find-work__results" aria-label="Open customer requests">
-        {loading ? <div className="provider-find-work__skeletons" role="status" aria-label="Loading requests">{[0,1,2,3].map((item) => <Skeleton key={item} />)}</div> : error ? <section className="provider-find-work__empty"><p>Requests couldn’t load.</p><Button onClick={() => void load()} variant="secondary">Retry</Button></section> : displayRows.length ? <div className="provider-find-work__list">{displayRows.map((post) => { const cover = post.problem_post_images?.filter((image) => image.kind === 'before').sort((a,b) => a.sort_order-b.sort_order)[0]?.storage_path; return <Link className="provider-work-row" key={post.id} to={`/app/posts/${post.id}`}><div className="provider-work-row__image">{cover ? <img alt="" src={getPostImageUrl(cover)} /> : <Wrench aria-hidden="true" size={28} />}{applications.has(post.id) && <Badge tone="info">Applied</Badge>}</div><div className="provider-work-row__body"><div className="provider-work-row__heading"><strong>{post.title}</strong><Badge tone="info">{post.service_categories?.name || 'Service'}</Badge></div><strong className="provider-work-row__budget">{formatPostBudget(post)}</strong>{post.description?.trim() && <p className="provider-work-row__description">{post.description.trim()}</p>}<div className="provider-work-row__meta"><span>{[post.city, post.region].filter(Boolean).join(', ') || 'Location not specified'}</span><span>{formatRelativeTime(post.created_at)}</span></div>{categoryIds.includes(post.category_id) && providerRegions.has(normalize(post.region)) && <span className="provider-work-row__match">Matches your services</span>}</div></Link> })}</div> : hasMore ? <section className="provider-find-work__empty"><p>Looking for requests on the next page.</p><Button loading={loadingMore} onClick={() => void load(true)} variant="secondary">Load more requests</Button></section> : <section className="provider-find-work__empty"><Briefcase aria-hidden="true" size={28} /><h2>No requests match your filters</h2><Button onClick={clearFilters} variant="secondary">Clear filters</Button></section>}
+        {loading ? <div className="provider-find-work__skeletons" role="status" aria-label="Loading requests">{[0,1,2,3].map((item) => <Skeleton key={item} />)}</div> : error ? <section className="provider-find-work__empty"><p>Requests couldn’t load.</p><Button onClick={() => void load()} variant="secondary">Retry</Button></section> : displayRows.length ? <div className="provider-find-work__list">{displayRows.map((post) => { const cover = post.problem_post_images?.filter((image) => image.kind === 'before').sort((a,b) => a.sort_order-b.sort_order)[0]?.storage_path; return <Link className="provider-work-row" key={post.id} to={`/app/posts/${post.id}`}><div className="provider-work-row__image"><PostThumb category={post.service_categories} path={cover} />{applications.has(post.id) && <Badge tone="info">Applied</Badge>}</div><div className="provider-work-row__body"><div className="provider-work-row__heading"><strong>{post.title}</strong><Badge tone="info">{post.service_categories?.name || 'Service'}</Badge></div><strong className="provider-work-row__budget">{formatPostBudget(post)}</strong>{post.description?.trim() && <p className="provider-work-row__description">{post.description.trim()}</p>}<div className="provider-work-row__meta"><span>{[post.city, post.region].filter(Boolean).join(', ') || 'Location not specified'}</span><span>{formatRelativeTime(post.created_at)}</span></div>{categoryIds.includes(post.category_id) && providerRegions.has(normalize(post.region)) && <span className="provider-work-row__match">Matches your services</span>}</div></Link> })}</div> : hasMore ? <section className="provider-find-work__empty"><p>Looking for requests on the next page.</p><Button loading={loadingMore} onClick={() => void load(true)} variant="secondary">Load more requests</Button></section> : <section className="provider-find-work__empty"><Briefcase aria-hidden="true" size={28} /><h2>No requests match your filters</h2><Button onClick={clearFilters} variant="secondary">Clear filters</Button></section>}
         {!loading && !error && displayRows.length > 0 && <div className="provider-find-work__foot"><span>Showing {displayRows.length} requests</span>{hasMore && <Button loading={loadingMore} onClick={() => void load(true)} variant="secondary">Load more</Button>}</div>}
       </section>
     </div>}
-    {filtersOpen && <div className="provider-find-work__sheet-layer"><button aria-label="Close filters" className="provider-find-work__sheet-scrim" onClick={() => setFiltersOpen(false)} type="button" /><section aria-labelledby="provider-filter-title" aria-modal="true" className="provider-find-work__sheet" role="dialog"><header><h2 id="provider-filter-title">Filters</h2><button aria-label="Close filters" onClick={() => setFiltersOpen(false)} type="button"><X aria-hidden="true" size={20} /></button></header>{filterControls}<Button onClick={() => setFiltersOpen(false)}>Show requests</Button></section></div>}
+    {filtersOpen && <OverlayPortal><div className="provider-find-work__sheet-layer"><button aria-label="Close filters" className="provider-find-work__sheet-scrim" onClick={() => setFiltersOpen(false)} type="button" /><section aria-labelledby="provider-filter-title" aria-modal="true" className="provider-find-work__sheet" role="dialog"><header><h2 id="provider-filter-title">Filters</h2><button aria-label="Close filters" onClick={() => setFiltersOpen(false)} type="button"><X aria-hidden="true" size={20} /></button></header>{filterControls}<Button onClick={() => setFiltersOpen(false)}>Show requests</Button></section></div></OverlayPortal>}
   </main>
 }

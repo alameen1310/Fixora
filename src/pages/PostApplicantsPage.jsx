@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ArrowLeft, MapPin, Star, Wrench } from '@phosphor-icons/react'
+import { ArrowLeft, MapPin, Star } from '@phosphor-icons/react'
 import { Link, useParams } from 'react-router-dom'
 import { ActionSheet, Avatar, Badge, Button, Skeleton } from '../components/UiPrimitives.jsx'
 import MarketplaceDoodle from '../components/MarketplaceDoodle.jsx'
@@ -7,8 +7,8 @@ import { useToast } from '../components/ToastProvider.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { fetchPostApplications, markPostApplicationActivitiesRead } from '../lib/applicationQueries.js'
 import { fetchProblemPost } from '../lib/postQueries.js'
-import { formatPostBudget } from '../lib/postQueries.js'
-import { getPostImageUrl } from '../lib/postImages.js'
+import { formatNaira, formatPostBudget } from '../lib/postQueries.js'
+import PostThumb from '../components/PostThumb.jsx'
 import { supabase } from '../lib/supabase.js'
 import { avatarUrl } from '../lib/avatarImages.js'
 import { appQueryCache } from '../lib/postListCache.js'
@@ -117,7 +117,7 @@ export default function PostApplicantsPage() {
       <Link className="app-back-link post-detail__back" to={`/app/posts/${postId}`}><ArrowLeft aria-hidden="true" size={19} />Back to request</Link>
       <header className="applicants-page__title"><div><h1>Applicants</h1><Badge tone="neutral">{applications.length} {applications.length === 1 ? 'applicant' : 'applicants'}</Badge></div></header>
       <section className="applicants-request-summary">
-        <span className="applicants-request-summary__image">{post.coverPath ? <img alt="" src={getPostImageUrl(post.coverPath)} /> : <Wrench aria-hidden="true" size={18} />}</span>
+        <span className="applicants-request-summary__image"><PostThumb category={post.service_categories} path={post.coverPath} /></span>
         <div className="applicants-request-summary__text"><strong>{post.title}</strong><span>{post.service_categories?.name || 'Service request'} · {formatPostBudget(post)}</span></div>
         <Badge tone={post.hired_professional_id ? 'success' : post.status === 'open' ? 'info' : 'neutral'}>{post.hired_professional_id ? 'Hired' : post.status === 'open' ? 'Open' : 'Closed'}</Badge>
       </section>
@@ -146,6 +146,7 @@ export default function PostApplicantsPage() {
                   {areas.length > 0 && <p className="applicant-card__services"><MapPin aria-hidden="true" size={16} />{areas.join(' · ')}</p>}
                   {provider?.service_description && <p className="applicant-card__description">{provider.service_description}</p>}
                   {application.message && <blockquote className="applicant-card__message">“{application.message}”</blockquote>}
+                  {application.quote_naira && <strong className="applicant-card__quote">Quote: {formatNaira(application.quote_naira)}</strong>}
                   <div className="applicant-card__actions">
                     {provider && <Button as={Link} to={`/app/professionals/${provider.profile_id}`} variant="secondary">View profile</Button>}
                     {post.status === 'open' && application.status === 'pending' && scheduleConfirmed && ['available', 'working'].includes(application.availability) && <Button onClick={() => setSelected(application)}>Hire professional</Button>}
@@ -161,7 +162,7 @@ export default function PostApplicantsPage() {
             <Link to={`/app/posts/${postId}`}>View request</Link>
           </aside>
       </div>
-      <ActionSheet busy={hiring} confirmLabel="Hire this professional" description={`${selected?.availability === 'working' ? 'This professional is currently completing another job. You can still hire them for this request, but confirm they can take on both commitments. ' : ''}This closes the request and marks other pending applications as not selected. Work time: ${scheduleSummary}. Availability is checked again before the hire is saved.`} onCancel={() => setSelected(null)} onConfirm={() => void hire()} open={Boolean(selected)} title={selected?.availability === 'working' ? 'Hire while they’re working?' : 'Confirm hire?'} />
+      <ActionSheet busy={hiring} confirmLabel="Hire this professional" description={`${selected?.quote_naira ? `Hire at ${formatNaira(selected.quote_naira)}. ` : ''}${selected?.availability === 'working' ? 'This professional is currently completing another job. You can still hire them for this request, but confirm they can take on both commitments. ' : ''}This closes the request and marks other pending applications as not selected. Work time: ${scheduleSummary}. Availability is checked again before the hire is saved.`} onCancel={() => setSelected(null)} onConfirm={() => void hire()} open={Boolean(selected)} title={selected?.quote_naira ? `Hire at ${formatNaira(selected.quote_naira)}?` : selected?.availability === 'working' ? 'Hire while they’re working?' : 'Confirm hire?'} />
     </main>
   )
 }

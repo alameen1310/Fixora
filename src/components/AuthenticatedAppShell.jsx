@@ -11,6 +11,9 @@ import { FEATURES } from '../config/features.js'
 import useUnreadMessageCount from './useUnreadMessageCount.js'
 import useUnreadActivityCount from './useUnreadActivityCount.js'
 import CommandPalette from './CommandPalette.jsx'
+import OverlayPortal from './OverlayPortal.jsx'
+import { useToast } from './ToastProvider.jsx'
+import { supabase } from '../lib/supabase.js'
 import './AuthenticatedAppShell.css'
 
 const MOBILE_TABS = {
@@ -34,6 +37,7 @@ export default function AuthenticatedAppShell() {
   const location = useLocation()
   const unreadMessages = useUnreadMessageCount(FEATURES.chat ? user?.id : null)
   const unreadActivity = useUnreadActivityCount(user?.id, profile?.account_type)
+  const { showToast } = useToast()
   const totalUnread = unreadMessages + unreadActivity
   const isCustomer = profile?.account_type === 'customer'
   const isProvider = profile?.account_type === 'provider'
@@ -47,7 +51,8 @@ export default function AuthenticatedAppShell() {
   const isTabRoute = destinations.some(({ to }) => location.pathname === to)
   const showPostAction = FEATURES.posts && isCustomer
   const isFullScreenFlow = location.pathname === '/app/posts/new'
-    || /^\/app\/posts\/[^/]+\/(edit|complete)$/.test(location.pathname)
+    || location.pathname === '/app/profile/edit'
+    || /^\/app\/posts\/[^/]+(?:\/(edit|complete|applicants))?$/.test(location.pathname)
     || /^\/app\/messages\/[^/]+$/.test(location.pathname)
   const [keyboardOpen, setKeyboardOpen] = useState(false)
   const [mobileAccountOpen, setMobileAccountOpen] = useState(false)
@@ -63,6 +68,35 @@ export default function AuthenticatedAppShell() {
       else Promise.resolve(navigator.clearAppBadge?.()).catch(() => {})
     } catch { /* app badges are progressive enhancement */ }
   }, [totalUnread])
+
+  useEffect(() => {
+    if (!user?.id || !supabase) return undefined
+    const seenPosts = new Set()
+    const listeningSince = Date.now() - 5000
+    const channel = supabase.channel(`marketplace-live-${user.id}`)
+    if (profile?.account_type === 'provider') {
+      channel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'problem_posts' }, ({ new: post }) => {
+        const publishedAt = post?.published_at ? new Date(post.published_at).getTime() : 0
+        if (!post?.id || post.status !== 'open' || publishedAt < listeningSince || seenPosts.has(post.id)) return
+        seenPosts.add(post.id)
+        window.dispatchEvent(new CustomEvent('fixora:new-request'))
+      })
+    }
+    if (profile?.account_type === 'customer') {
+      channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'problem_post_applications' }, async ({ new: application }) => {
+        if (!application?.post_id || !application?.professional_id) return
+        const [{ data: post }, { data: provider }] = await Promise.all([
+          supabase.from('problem_posts').select('id, title').eq('id', application.post_id).eq('author_id', user.id).maybeSingle(),
+          supabase.from('provider_profiles').select('profile_id, display_name').eq('profile_id', application.professional_id).maybeSingle(),
+        ])
+        if (!post) return
+        showToast({ type: 'info', message: `${provider?.display_name || 'A professional'} applied to ${post.title || 'your request'}` })
+        window.dispatchEvent(new CustomEvent('fixora:activity-refresh'))
+      })
+    }
+    channel.subscribe()
+    return () => { void supabase.removeChannel(channel) }
+  }, [profile?.account_type, showToast, user?.id])
 
   function handleTabClick(targetPath) {
     if (location.pathname === targetPath) {
@@ -150,7 +184,7 @@ export default function AuthenticatedAppShell() {
   }, [location.pathname])
 
   return (
-    <div className={`fixora-app${isChatRoute ? ' is-chat-route' : ''}${location.pathname === '/app/messages' ? ' is-messages-root' : ''}${mobileAccountOpen ? ' is-account-menu-open' : ''}`} style={{ '--tabbar-space': isFullScreenFlow ? '0px' : undefined }}>
+    <div className={`fixora-app${isChatRoute ? ' is-chat-route' : ''}${location.pathname === '/app/messages' ? ' is-messages-root' : ''}${mobileAccountOpen ? ' is-account-menu-open' : ''}${isFullScreenFlow ? ' is-focused-flow' : ''}`} style={{ '--tabbar-space': isFullScreenFlow ? '0px' : undefined }}>
       <a className="fixora-app__skip" href="#app-content">Skip to content</a>
 
       <aside aria-label="Application navigation" className="fixora-app__sidebar">
@@ -215,14 +249,16 @@ function AccountMenu({ firstName, isProvider, mobile = false, onOpenChange, prof
       <span className="fixora-app__account-name">{firstName}</span>
       {mobile && <Avatar name={profile?.full_name || firstName} size={40} src={avatarUrl(profile?.avatar_path)} />}
     </button>
-    {open && <>
-      {mobile && <button aria-label="Close account menu" className="account-menu__backdrop" onClick={closeMenu} type="button" />}
-      <section aria-label="Account menu" aria-modal={mobile || undefined} className="account-menu__panel" role="dialog">
-        <button aria-label="Close account menu" className="account-menu__close" onClick={closeMenu} type="button"><X size={18} /></button>
-        <div className="account-menu__identity"><Avatar name={profile?.full_name || firstName} size={56} src={avatarUrl(profile?.avatar_path)} /><div><strong>{profile?.full_name || firstName}</strong><small>{user?.email}</small>{!isProvider && <span className="account-menu__role">Customer</span>}</div></div>
-        <nav aria-label="Account" className="account-menu__links"><Link onClick={closeMenu} to="/app/profile"><UserCircle size={18} />View profile</Link><Link onClick={closeMenu} to="/app/profile/edit"><Briefcase size={18} />Edit profile</Link></nav>
-        <SignOutAction className="account-menu__signout" location="profile" />
-      </section>
-    </>}
+    {open && mobile && <OverlayPortal><button aria-label="Close account menu" className="account-menu__backdrop" onClick={closeMenu} type="button" /><AccountMenuPanel closeMenu={closeMenu} firstName={firstName} isProvider={isProvider} profile={profile} user={user} mobile /> </OverlayPortal>}
+    {open && !mobile && <AccountMenuPanel closeMenu={closeMenu} firstName={firstName} isProvider={isProvider} profile={profile} user={user} />}
   </div>
+}
+
+function AccountMenuPanel({ closeMenu, firstName, isProvider, mobile = false, profile, user }) {
+  return <section aria-label="Account menu" aria-modal={mobile || undefined} className="account-menu__panel" role="dialog">
+    <button aria-label="Close account menu" className="account-menu__close" onClick={closeMenu} type="button"><X size={18} /></button>
+    <div className="account-menu__identity"><Avatar name={profile?.full_name || firstName} size={56} src={avatarUrl(profile?.avatar_path)} /><div><strong>{profile?.full_name || firstName}</strong><small>{user?.email}</small>{!isProvider && <span className="account-menu__role">Customer</span>}</div></div>
+    <nav aria-label="Account" className="account-menu__links"><Link onClick={closeMenu} to="/app/profile"><UserCircle size={18} />View profile</Link><Link onClick={closeMenu} to="/app/profile/edit"><Briefcase size={18} />Edit profile</Link></nav>
+    <SignOutAction className="account-menu__signout" location="profile" />
+  </section>
 }

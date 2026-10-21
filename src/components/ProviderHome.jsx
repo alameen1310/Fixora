@@ -2,11 +2,10 @@ import { useEffect, useState } from 'react'
 import { ArrowRight, Briefcase, Star } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-import { Avatar, Badge, Button, Skeleton } from './UiPrimitives.jsx'
-import PostCard from './PostCard.jsx'
+import { Avatar, Badge, Button, EmptyState, Skeleton } from './UiPrimitives.jsx'
+import PostThumb from './PostThumb.jsx'
 import { fetchProviderApplications } from '../lib/applicationQueries.js'
-import { formatRelativeTime } from '../lib/postQueries.js'
-import { getPostImageUrl } from '../lib/postImages.js'
+import { formatPostBudget, formatRelativeTime } from '../lib/postQueries.js'
 import { supabase } from '../lib/supabase.js'
 import { avatarUrl } from '../lib/avatarImages.js'
 import { appQueryCache } from '../lib/postListCache.js'
@@ -32,7 +31,15 @@ export default function ProviderHome() {
   const [loading, setLoading] = useState(() => !cached)
   const [error, setError] = useState(false)
   const [retry, setRetry] = useState(0)
+  const [newRequest, setNewRequest] = useState(false)
   const pullRefresh = usePullToRefresh(() => setRetry((value) => value + 1))
+  useEffect(() => {
+    const onNewRequest = () => setNewRequest(true)
+    const refreshRequests = () => { setNewRequest(false); setRetry((value) => value + 1) }
+    window.addEventListener('fixora:new-request', onNewRequest)
+    window.addEventListener('fixora:discover-refresh', refreshRequests)
+    return () => { window.removeEventListener('fixora:new-request', onNewRequest); window.removeEventListener('fixora:discover-refresh', refreshRequests) }
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -43,7 +50,7 @@ export default function ProviderHome() {
       try {
         const [providerResult, pendingResult, activeResult, completedResult, ratingResult, applications] = await Promise.all([
           supabase.from('provider_profiles').select('profile_id, display_name, service_description, is_published, avatar_path, availability, is_nationwide, provider_service_categories(category_id, category:service_categories(name, slug)), provider_service_areas(country_code, region, city, state_code)').eq('profile_id', user.id).maybeSingle(),
-          supabase.from('problem_post_applications').select('id', { count: 'exact', head: true }).eq('professional_id', user.id).eq('status', 'pending'),
+          supabase.from('problem_post_applications').select('id, problem_posts!inner(status)', { count: 'exact', head: true }).eq('professional_id', user.id).eq('status', 'pending').eq('problem_posts.status', 'open'),
           supabase.from('problem_posts').select(columns, { count: 'exact' }).eq('hired_professional_id', user.id).eq('status', 'closed').order('hired_at', { ascending: false }).limit(8),
           supabase.from('problem_posts').select('id, final_price_naira, completed_at', { count: 'exact' }).eq('hired_professional_id', user.id).eq('status', 'completed'),
           supabase.from('provider_rating_summary').select('provider_id, review_count, average_rating').eq('provider_id', user.id).maybeSingle(),
@@ -85,7 +92,7 @@ export default function ProviderHome() {
         const reviewActivity = (reviews ?? []).map((review) => ({ id: `review-${review.id}`, created_at: review.created_at, text: `Received a ${review.rating}-star review` }))
         if (!active) return
         const earned = (completedResult.data ?? []).reduce((sum, post) => sum + Number(post.final_price_naira || 0), 0)
-        const nextData = { provider, matched, applications, activeJobs, activeCount: activeResult.count ?? 0, authorNames, authorAvatars, pendingCount: pendingResult.count ?? 0, completedCount: completedResult.count ?? 0, earned, rating: ratingResult.data, latestReview: reviews?.[0] ?? null, activity: [...applicationActivity, ...reviewActivity].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 6) }
+        const nextData = { provider, matched, applications, activeJobs, activeCount: activeResult.count ?? 0, authorNames, authorAvatars, pendingCount: pendingResult.count ?? 0, completedCount: completedResult.count ?? 0, earned, rating: ratingResult.data, latestReview: reviews?.[0] ?? null, activity: [...applicationActivity, ...reviewActivity].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5) }
         setData(nextData)
         appQueryCache.set(cacheKey, { data: nextData, lastRefreshAt: Date.now() })
         if (import.meta.env.DEV) console.info('[query-timing] Provider home', { durationMs: Math.round(performance.now() - startedAt), rows: matched.length + activeJobs.length })
@@ -125,24 +132,20 @@ export default function ProviderHome() {
   return <div className={`provider-home-layout${hasRailContent ? ' has-rail' : ''}`} ref={pullRefresh.containerRef}>
     {pullRefresh.indicator}
     <main className="provider-home app-page">
-      <header className="provider-home__header"><div><h1>{greeting()}, {name}</h1></div><Link className={`provider-home__live${profileReady ? '' : ' is-draft'}`} to={profileReady ? `/app/professionals/${user.id}` : '/onboarding/provider'}><span />{profileReady ? 'Profile live' : 'Complete profile'}<ArrowRight aria-hidden="true" size={15} /></Link></header>
+      <header className="provider-home__header"><div><h1>{greeting()}, {name}</h1></div><div className="provider-home__header-actions">{newRequest && <button className="provider-home__new-request" onClick={() => window.dispatchEvent(new CustomEvent('fixora:discover-refresh'))} type="button">New request <ArrowRight size={15} /></button>}<Link className={`provider-home__live${profileReady ? '' : ' is-draft'}`} to={profileReady ? `/app/professionals/${user.id}` : '/onboarding/provider'}><span />{profileReady ? 'Profile live' : 'Complete profile'}<ArrowRight aria-hidden="true" size={15} /></Link></div></header>
       {!profileReady && <aside className="provider-home__setup"><div><strong>Your profile needs one more step</strong><span>{setupMessage}</span></div><Button as={Link} to="/onboarding/provider" variant="secondary">Finish profile</Button></aside>}
-      {provider && <ProfileCompleteness profile={profile} provider={provider} userId={user.id} />}
       <section aria-label="Your work summary" className="provider-home__stats">{stats.map((stat) => <Link className="provider-stat" key={stat.label} to={stat.to}><span>{stat.label}</span><strong>{stat.value}</strong><small>{stat.hint}</small></Link>)}</section>
       <section className="provider-home__section"><div className="provider-home__section-head"><div><h2>Matched to your services</h2><p>Open requests that fit the work you offer.</p></div><Link to="/app/discover">See all <ArrowRight aria-hidden="true" size={15} /></Link></div>
-        {data?.matched.length ? <div className="provider-home__matched-grid">{data.matched.map((post, index) => {
-          const photoUrls = Object.fromEntries((post.problem_post_images ?? []).map(({ storage_path }) => [storage_path, getPostImageUrl(storage_path)]))
+        {data?.matched.length ? <div className="provider-home__matched-grid">{data.matched.map((post) => {
           const cover = post.problem_post_images?.filter((image) => image.kind === 'before').sort((a, b) => a.sort_order - b.sort_order)[0]?.storage_path
           const application = data.applications.find((row) => row.post_id === post.id)
-          return <div className="provider-home__matched-card" key={post.id}>
-            {application && <span className="provider-home__applied-badge">Applied</span>}
-            <PostCard authorAvatarPath={data.authorAvatars[post.id]} authorName={data.authorNames[post.id]} coverUrl={cover ? photoUrls[cover] : ''} photoUrls={photoUrls} post={post} priority={index === 0} />
-          </div>
-        })}</div> : <div className="provider-home__empty"><p>No matching requests right now.</p><Link to="/app/discover">Browse all requests</Link></div>}
+          return <Link className="provider-home__matched-row" key={post.id} to={`/app/posts/${post.id}`}><span className="provider-home__matched-thumb"><PostThumb category={post.service_categories} path={cover} /></span><span className="provider-home__matched-copy"><span className="provider-home__matched-title"><strong>{post.title}</strong><Badge tone="info">{post.service_categories?.name || 'Service'}</Badge>{application && <Badge tone="success">Applied</Badge>}</span><strong>{formatPostBudget(post)}</strong><span className="provider-home__matched-meta">{[post.city, post.region].filter(Boolean).join(', ') || 'Location not specified'} · {formatRelativeTime(post.created_at)}</span></span><ArrowRight aria-hidden="true" size={18} /></Link>
+        })}</div> : <EmptyState action={<Button as={Link} to="/app/discover" variant="secondary">Find work</Button>} icon={Briefcase} message="New requests appear here as customers post them." title="No open requests yet" />}
       </section>
       {data?.activeJobs.length > 0 && <section className="provider-home__section"><div className="provider-home__section-head"><h2>Active jobs</h2><Link to="/app/activity?segment=selected">View all <ArrowRight aria-hidden="true" size={15} /></Link></div><div className="provider-job-list">{data.activeJobs.map((post) => <article className="provider-job-row" key={post.id}><Avatar name={data.authorNames[post.id] || 'Customer'} size={42} src={avatarUrl(data.authorAvatars?.[post.id])} /><div className="provider-job-row__copy"><strong>{data.authorNames[post.id] || 'Customer'}</strong><Link to={`/app/posts/${post.id}`}>{post.title}</Link></div><Badge tone="success">In progress</Badge><Button as={Link} to={`/app/messages?postId=${post.id}`} variant="secondary">Message</Button><Button as={Link} to={`/app/posts/${post.id}`} variant="ghost">View</Button></article>)}</div></section>}
     </main>
     {hasRailContent && <aside className="provider-home__rail">
+      {provider && <ProfileCompleteness profile={profile} provider={provider} userId={user.id} />}
       {data?.activity.length > 0 && <section className="provider-rail-block"><h2>Recent activity</h2>{data.activity.map((item) => <div className="provider-activity-line" key={item.id}><span>{item.text}</span><time>{formatRelativeTime(item.created_at)}</time></div>)}</section>}
       {data?.latestReview && <section className="provider-rail-block provider-latest-review"><h2>Latest review</h2><div className="provider-latest-review__stars"><Star aria-hidden="true" size={15} weight="fill" /> {data.latestReview.rating}/5</div>{data.latestReview.comment && <p>{data.latestReview.comment}</p>}<span>{data.latestReview.customer_display_name}</span></section>}
       {provider?.is_published && <section className="provider-public-mini"><span className="provider-public-mini__label">Your public profile</span><div><Avatar name={provider.display_name} size={44} src={avatarUrl(provider.avatar_path)} /><div><strong>{provider.display_name}</strong><span>{services.slice(0, 2).join(' · ') || 'Services not listed'}</span></div></div><Link to={`/app/professionals/${user.id}`}>View as customer <ArrowRight aria-hidden="true" size={15} /></Link></section>}

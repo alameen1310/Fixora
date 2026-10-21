@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { X } from '@phosphor-icons/react'
 import { Button } from './UiPrimitives.jsx'
+import OverlayPortal from './OverlayPortal.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from './ToastProvider.jsx'
 import { useDismissable } from '../hooks/useDismissable.js'
@@ -35,7 +36,7 @@ export default function ReportDialog({ open, onClose, targetType, targetId }) {
     showToast({ type: 'success', message: 'Thanks. Your report was sent.' })
   }
 
-  return <div className="report-dialog-backdrop" onClick={onClose}>
+  return <OverlayPortal><div className="report-dialog-backdrop" onClick={onClose}>
     <section aria-labelledby="report-dialog-title" aria-modal="true" className="report-dialog" onClick={(event) => event.stopPropagation()} ref={boundaryRef} role="dialog">
       <header><div><h2 id="report-dialog-title">Report this {targetType === 'user' ? 'profile' : targetType}</h2><p>Tell us what needs a closer look.</p></div><button aria-label="Close report form" onClick={onClose} type="button"><X size={19} /></button></header>
       <form onSubmit={(event) => void submit(event)}>
@@ -47,5 +48,5 @@ export default function ReportDialog({ open, onClose, targetType, targetId }) {
         <Button disabled={!reason} loading={saving} type="submit">Send report</Button>
       </form>
     </section>
-  </div>
+  </div></OverlayPortal>
 }

@@ -62,3 +62,5 @@
   .provider-find-work__sheet .provider-find-work__chips { max-height: 150px; overflow-y: auto; }
 }
 @media (prefers-reduced-motion: reduce) { .provider-find-work__sheet-layer { animation: none; } }
+
+.provider-find-work__new-request { display:inline-flex; min-height:42px; align-items:center; gap:8px; margin:0 0 12px; padding:0 14px; border:1px solid #b8c9ff; border-radius:999px; color:#173fba; background:#edf2ff; font:inherit; font-weight:700; cursor:pointer; }

@@ -17,11 +17,13 @@ export default function useUnreadActivityCount(userId, accountType) {
       if (!error && active) setCount(nextCount ?? 0)
     }
     void refresh()
+    const onActivityRefresh = () => { void refresh() }
+    window.addEventListener('fixora:activity-refresh', onActivityRefresh)
     const channel = supabase.channel(`unread-activity-${userId}`).on('postgres_changes', { event: '*', schema: 'public', table: 'marketplace_activities', filter: `recipient_id=eq.${userId}` }, () => { void refresh() }).subscribe((status) => {
       if (['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(status) && !timer) timer = window.setInterval(() => { if (document.visibilityState === 'visible') void refresh() }, 15000)
       if (!['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(status) && timer) { clearInterval(timer); timer = null }
     })
-    return () => { active = false; if (timer) clearInterval(timer); void supabase.removeChannel(channel) }
+    return () => { active = false; if (timer) clearInterval(timer); window.removeEventListener('fixora:activity-refresh', onActivityRefresh); void supabase.removeChannel(channel) }
   }, [userId, accountType])
   return count
 }

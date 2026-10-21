@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, Eye, EyeSlash, GoogleLogo } from '@phosphor-icons/react'
+import { ArrowRight, CheckCircle, Eye, EyeSlash, GoogleLogo } from '@phosphor-icons/react'
 import PhoneNumberField, { getE164Phone } from './PhoneNumberField.jsx'
 import { Button } from './UiPrimitives.jsx'
 import { useToast } from './ToastProvider.jsx'
@@ -103,6 +103,7 @@ export default function SignupForm({ audience }) {
   const [visiblePasswords, setVisiblePasswords] = useState({ password: false, confirmPassword: false })
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
+  const [confirmationSent, setConfirmationSent] = useState(false)
   const requestInFlight = useRef(false)
   const navigate = useNavigate()
   const { showToast } = useToast()
@@ -199,11 +200,7 @@ export default function SignupForm({ audience }) {
       if (data.session) {
         navigate('/auth/callback', { replace: true })
       } else {
-        showToast({
-          duration: 0,
-          message: 'Check your email for a confirmation link to finish setting up your Fixora account.',
-          type: 'info',
-        })
+        setConfirmationSent(true)
       }
     } catch (err) {
       const formatted = formatSignupError(err)
@@ -214,6 +211,27 @@ export default function SignupForm({ audience }) {
       setBusy(false)
     }
   }
+
+  async function resendConfirmation() {
+    if (!supabase || busy) return
+    setBusy(true)
+    try {
+      const { error } = await supabase.auth.resend({ type: 'signup', email: values.email.trim(), options: { emailRedirectTo: `${window.location.origin}/auth/callback` } })
+      if (error) throw error
+      showToast({ type: 'success', message: 'Confirmation email sent. Check your inbox.' })
+    } catch (error) {
+      showToast({ type: 'error', message: formatSignupError(error) })
+    } finally { setBusy(false) }
+  }
+
+  if (confirmationSent) return <section aria-labelledby="signup-confirmation-title" className="signup-confirmation">
+    <span className="signup-confirmation__icon"><CheckCircle aria-hidden="true" size={27} weight="fill" /></span>
+    <p className="app-eyebrow">One quick step</p><h2 id="signup-confirmation-title">Check your inbox</h2>
+    <p>We sent a confirmation link to <strong>{values.email.trim()}</strong>. Open it to continue to Fixora and finish setting up your account.</p>
+    <Button disabled={busy} loading={busy} onClick={() => void resendConfirmation()} wide variant="primary">Resend confirmation email</Button>
+    <Button disabled={busy} onClick={() => void beginGoogleSignup()} wide variant="secondary"><GoogleLogo aria-hidden="true" size={18} />Use Google instead</Button>
+    <button className="signup-confirmation__edit" onClick={() => setConfirmationSent(false)} type="button">Use a different email</button>
+  </section>
 
   return (
     <form className="signup-form" data-signup-enter noValidate onSubmit={handleSubmit}>

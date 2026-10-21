@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ArrowRight, Bell, ClockCounterClockwise, Star } from '@phosphor-icons/react'
+import { ArrowRight, Bell, Star } from '@phosphor-icons/react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Avatar, Badge, Button, EmptyState, Skeleton } from '../components/UiPrimitives.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import MarketplaceRail from '../components/MarketplaceRail.jsx'
 import { fetchMarketplaceActivities, fetchProviderApplications, markMarketplaceActivityRead } from '../lib/applicationQueries.js'
 import { formatPostBudget, formatRelativeTime, formatNaira } from '../lib/postQueries.js'
-import { getPostImageUrl } from '../lib/postImages.js'
+import PostThumb from '../components/PostThumb.jsx'
 import { FEATURES } from '../config/features.js'
 import './ActivityPage.css'
 import './AuthenticatedPages.css'
@@ -49,7 +49,7 @@ function CustomerActivityCard({ item, isOnline, onRead }) {
   const profileLink = item.actor_id ? `/app/professionals/${item.actor_id}` : null
 
   return <article className={`activity-item${item.read_at ? '' : ' is-unread'}`}>
-    <Link aria-label={`Open ${postTitle}`} className="activity-item__cover" onClick={() => void onRead(item)} to={`/app/posts/${item.post_id}`}>{post?.coverPath ? <img alt="" loading="lazy" src={getPostImageUrl(post.coverPath)} /> : <ClockCounterClockwise aria-hidden="true" size={24} />}</Link>
+    <Link aria-label={`Open ${postTitle}`} className="activity-item__cover" onClick={() => void onRead(item)} to={`/app/posts/${item.post_id}`}><PostThumb category={post?.service_categories} path={post?.coverPath} /></Link>
     <div className="activity-item__body">
       <div className="activity-item__topline">
         <div className="activity-item__request-title"><span>{category}</span><Link onClick={() => void onRead(item)} to={`/app/posts/${item.post_id}`}>{postTitle}</Link></div>
@@ -59,7 +59,7 @@ function CustomerActivityCard({ item, isOnline, onRead }) {
           {Number(item.actorRating?.review_count) > 0 && <span className="activity-item__reputation"><Star aria-hidden="true" size={14} weight="fill" />{Number(item.actorRating.average_rating).toFixed(1)} ({item.actorRating.review_count}){item.actorCompletedJobs > 0 && <span> · {item.actorCompletedJobs} {item.actorCompletedJobs === 1 ? 'job' : 'jobs'} completed</span>}</span>}
         </div><time dateTime={item.created_at} title={activityTime(item.created_at)}>{formatRelativeTime(item.created_at)}</time><span className="activity-item__unread-wrap">{!item.read_at && <span aria-label="Unread activity" className="activity-item__unread-dot" />}</span>
       </div>
-      <strong className="activity-item__budget">{isCompleted && post?.final_price_naira ? `Paid ${formatNaira(post.final_price_naira)}` : budget}</strong>
+      <strong className="activity-item__budget">{isCompleted && post?.final_price_naira ? `Paid ${formatNaira(post.final_price_naira)}` : isApplication && item.problem_post_applications?.quote_naira ? `Quote ${formatNaira(item.problem_post_applications.quote_naira)}` : budget}</strong>
       <div className="activity-item__details">{post?.city || post?.region ? <span className="activity-item__location">{[post.city, post.region].filter(Boolean).join(', ')}</span> : null}</div>
       {item.problem_post_applications?.message && <blockquote className="activity-item__note">{item.problem_post_applications.message}</blockquote>}
       {isCompleted && <div className="activity-item__completion-meta">{item.review?.rating && <span aria-label={`${item.review.rating} out of 5 stars`}><Star aria-hidden="true" size={15} weight="fill" />{item.review.rating} stars given</span>}{post?.final_price_naira > 0 && <strong>Paid {formatNaira(post.final_price_naira)}</strong>}</div>}
@@ -152,7 +152,7 @@ export default function ActivityPage() {
 
   return <main className="app-page app-page--activity" ref={pullRefresh.containerRef}>
     {pullRefresh.indicator}
-    <header className="app-page__heading activity-heading"><h1 className="text-large-title">Activity</h1><Badge tone="neutral">{items.length} updates</Badge></header>
+    <header className="app-page__heading activity-heading"><h1 className="text-large-title">Activity</h1><Badge tone="neutral">{items.length} {items.length === 1 ? 'update' : 'updates'}</Badge></header>
     {isProvider ? <div className="provider-activity-layout">
       <section className="provider-activity-main">
         <nav aria-label="Application status" className="provider-activity-tabs">{[['applied', 'Applied'], ['in-progress', 'In progress'], ['completed', 'Completed'], ['past', 'Past applications']].map(([key, label]) => <button aria-pressed={segment === key} className="provider-activity-tabs__button" key={key} onClick={() => selectSegment(key)} type="button">{label}<span>{providerCounts[key]}</span></button>)}</nav>
@@ -170,10 +170,11 @@ export default function ActivityPage() {
                   const statusLabel = isCompleted ? 'Completed' : selected ? 'In progress' : declined ? 'Past application' : 'Applied'
                   const unread = item.activity && !item.activity.read_at
                   return <article className={`provider-application-card${declined ? ' is-declined' : ''}`} key={item.id}>
-                    <Link aria-label={`View request: ${post.title}`} className="provider-application-card__cover" to={`/app/posts/${post.id}`}>{post.coverPath ? <img alt="" loading="lazy" src={getPostImageUrl(post.coverPath)} /> : <ClockCounterClockwise aria-hidden="true" size={24} />}</Link>
+                    <Link aria-label={`View request: ${post.title}`} className="provider-application-card__cover" to={`/app/posts/${post.id}`}><PostThumb category={post.service_categories} path={post.coverPath} /></Link>
                     <div className="provider-application-card__main">
                       <div className="provider-application-card__top"><div><span className="provider-application-card__category">{post.service_categories?.name || 'Service request'}</span><Link to={`/app/posts/${post.id}`}>{post.title}</Link></div><Badge tone={selected ? 'success' : declined ? 'neutral' : 'info'}>{statusLabel}</Badge></div>
                       <strong className="provider-application-card__budget">{formatPostBudget(post)}</strong>
+                      {item.quote_naira && <strong className="provider-application-card__quote">Your quote: {formatNaira(item.quote_naira)}</strong>}
                       <div className="provider-application-card__meta">{(post.city || post.region) && <span>{[post.city, post.region].filter(Boolean).join(', ')}</span>}</div>
                       <div className="provider-application-card__identity"><Avatar name={item.customerName} size={34} src={avatarUrl(item.customerAvatarPath)} /><span>{item.customerName}</span><time title={activityTime(item.activity?.created_at || item.updated_at || item.created_at)}>{formatRelativeTime(item.activity?.created_at || item.updated_at || item.created_at)}</time>{unread && <span aria-label="New activity" className="provider-application-card__new" />}</div>
                       {item.message && <blockquote className="provider-application-card__note">{item.message}</blockquote>}

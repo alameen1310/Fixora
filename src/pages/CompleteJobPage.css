@@ -1,4 +1,4 @@
-.app-page.complete-job-page { max-width:560px; padding-bottom:calc(var(--tabbar-space, 96px) + 24px); }
+.app-page.complete-job-page { width:100%; max-width:560px; min-width:0; overflow-x:clip; padding-bottom:calc(var(--tabbar-space, 96px) + 24px); }
 .complete-job-heading { margin:22px 0 24px; }
 .complete-job-heading > span { color:var(--color-primary); font-size:14px; font-weight:650; }
 .complete-job-heading h1 { margin:8px 0 18px; color:var(--color-text-primary); font-size:clamp(30px,5vw,42px); line-height:1.1; }

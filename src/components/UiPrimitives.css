@@ -310,7 +310,8 @@
 }
 
 .ui-field input,
-.ui-field select {
+.ui-field select,
+.ui-field textarea {
   width: 100%;
   min-height: 52px;
   padding: 0.75rem 0.95rem;
@@ -328,7 +329,8 @@
 }
 
 .ui-field input:focus,
-.ui-field select:focus {
+.ui-field select:focus,
+.ui-field textarea:focus {
   border-color: var(--color-primary);
   background: #fff;
   box-shadow: 0 0 0 3px rgb(36 87 214 / 16%);
@@ -344,7 +346,8 @@
 }
 
 .ui-field--error input,
-.ui-field--error select {
+.ui-field--error select,
+.ui-field--error textarea {
   border-color: var(--color-danger);
   background: var(--color-danger-surface);
 }

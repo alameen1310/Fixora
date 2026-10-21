@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import OverlayPortal from './OverlayPortal.jsx'
 import { ArrowRight, MagnifyingGlass, X } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -73,11 +74,11 @@ export default function CommandPalette({ isCustomer }) {
   }
 
   return <>
-    {(open || helpOpen) && <div aria-label={helpOpen ? 'Keyboard shortcuts' : 'Command palette'} aria-modal="true" className="command-palette-backdrop" onClick={() => { setOpen(false); setHelpOpen(false) }} role="dialog">
+    {(open || helpOpen) && <OverlayPortal><div aria-label={helpOpen ? 'Keyboard shortcuts' : 'Command palette'} aria-modal="true" className="command-palette-backdrop" onClick={() => { setOpen(false); setHelpOpen(false) }} role="dialog">
       <section className="command-palette" onClick={(event) => event.stopPropagation()} ref={boundaryRef}>
         <button aria-label="Close" className="command-palette__close" onClick={() => { setOpen(false); setHelpOpen(false) }} type="button"><X size={18} /></button>
         {helpOpen ? <><h2>Keyboard shortcuts</h2><div className="command-palette__shortcuts"><p><kbd>Ctrl</kbd> <span>or</span> <kbd>⌘</kbd> <kbd>K</kbd><span>Open search</span></p><p><kbd>/</kbd><span>Focus page search</span></p>{isCustomer && <p><kbd>N</kbd><span>Post a problem</span></p>}<p><kbd>?</kbd><span>Show shortcuts</span></p></div></> : <><label className="command-palette__search"><MagnifyingGlass size={20} /><input onChange={(event) => setQuery(event.target.value)} onKeyDown={onListKey} placeholder="Search Fixora…" ref={inputRef} value={query} /><kbd>ESC</kbd></label><div className="command-palette__results" role="listbox">{items.length ? items.map((item, index) => <button aria-selected={active === index} className={active === index ? 'is-active' : ''} key={`${item.to}-${item.label}`} onClick={() => choose(item)} onMouseEnter={() => setActive(index)} role="option" type="button"><span>{item.label}</span><ArrowRight size={17} /></button>) : <p>No matching pages or saved items.</p>}</div></>}
       </section>
-    </div>}
+    </div></OverlayPortal>}
   </>
 }

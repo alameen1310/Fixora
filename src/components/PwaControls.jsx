@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowClockwise, DownloadSimple, X } from '@phosphor-icons/react'
+import OverlayPortal from './OverlayPortal.jsx'
 import './PwaControls.css'
 
 const DISMISSED_AT_KEY = 'fixora-install-prompt-dismissed-at'
@@ -205,6 +206,7 @@ export default function PwaControls() {
 
   return (
     <>
+      <OverlayPortal lockScroll={promptOpen} open={promptOpen}>
       <dialog
         aria-labelledby="pwa-install-title"
         className="pwa-install-dialog"
@@ -264,15 +266,16 @@ export default function PwaControls() {
           </div>
         </div>
       </dialog>
+      </OverlayPortal>
 
       {updateWorker && (
-        <aside aria-label="Application update available" className="pwa-update-notice" role="status">
+        <OverlayPortal lockScroll={false} open={false}><aside aria-label="Application update available" className="pwa-update-notice" role="status">
           <span>A Fixora update is ready</span>
           <button onClick={applyUpdate} type="button">
             <ArrowClockwise aria-hidden="true" size={18} weight="bold" />
             Reload to update
           </button>
-        </aside>
+        </aside></OverlayPortal>
       )}
       {!online && <aside className="pwa-offline-notice" role="status">You’re offline. Check your connection and retry when it’s back.</aside>}
     </>

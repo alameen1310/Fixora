@@ -467,3 +467,7 @@
 .messages-thread__overflow:not([open]) > div { display:none; }
 @media (max-width:899px) { .messages-thread__view-job,.messages-thread__details { display:none !important; } .messages-thread__overflow summary { width:40px; } .messages-thread__overflow > div { position:fixed; top:auto; right:8px; bottom:calc(var(--visual-viewport-height,100dvh) - 112px); } }
 .messages-system-event { width: fit-content; max-width: min(90%, 620px); margin: 12px auto; padding: 7px 12px; border: 1px solid rgb(20 32 63 / 6%); border-radius: 999px; color: #6d7893; background: rgb(255 255 255 / 78%); font-size: 12px; text-align: center; }
+
+.messages-shell,.messages-main,.messages-thread { min-width:0; max-width:100%; }
+.messages-shell { overflow-x:clip; }
+.messages-welcome { min-width:0; overflow-wrap:anywhere; }

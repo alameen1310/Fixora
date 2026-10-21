@@ -41,7 +41,7 @@ export default function App() {
         <ToastProvider>
           <ScrollToTop />
           <PwaControls />
-          <Suspense fallback={<main className="account-state"><p role="status">Loading Fixora…</p></main>}>
+          <AuthenticatedRouteBoundary><Suspense fallback={<main className="account-state"><p role="status">Loading Fixora…</p></main>}>
             <Routes>
             <Route element={<LandingPage />} path="/" />
             <Route element={<Navigate replace to="/signup/customer" />} path="/customer" />
@@ -75,6 +75,7 @@ export default function App() {
             <Route element={<NotFoundPage />} path="*" />
             </Routes>
           </Suspense>
+          </AuthenticatedRouteBoundary>
         </ToastProvider>
       </AuthProvider>
     </BrowserRouter>

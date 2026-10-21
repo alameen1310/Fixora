@@ -1,13 +1,11 @@
-import { ArrowLeft, ArrowRight, Briefcase, CalendarBlank, CaretRight, Drop, Hammer, Lightning, MapPin, PaintBrush, Wrench } from '@phosphor-icons/react'
+import { ArrowLeft, ArrowRight, CalendarBlank, CaretRight, MapPin } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { Avatar, Badge, Skeleton } from './UiPrimitives.jsx'
 import { formatPostBudget, formatRelativeTime } from '../lib/postQueries.js'
 import { avatarUrl } from '../lib/avatarImages.js'
 import { useMemo, useState } from 'react'
 import './Posts.css'
-
-const categoryColors = ['#eaf0ff', '#e5f4f5', '#f1eafa', '#fff3dc', '#e8f4ec', '#faeaf0']
-const categoryIcons = { plumbing: Drop, electrical: Lightning, installations: Hammer, renovation: PaintBrush, repairs: Wrench, maintenance: Wrench }
+import PostThumb from './PostThumb.jsx'
 
 function postTiming(post) {
   if (post.timing === 'specific_date' && post.target_date) {
@@ -32,8 +30,6 @@ export function PostCardSkeleton() {
 
 export default function PostCard({ authorName, authorAvatarPath, coverUrl = '', photoUrls = {}, post, priority = false, showOwnerBadge = false }) {
   const [activePhoto, setActivePhoto] = useState(0)
-  const [loadedPhotos, setLoadedPhotos] = useState(() => new Set())
-  const [hiddenPhotos, setHiddenPhotos] = useState(() => new Set())
   const photos = useMemo(() => [...(post.problem_post_images ?? [])]
     .filter((image) => image.kind === 'before')
     .sort((first, second) => first.sort_order - second.sort_order), [post.problem_post_images])
@@ -41,28 +37,13 @@ export default function PostCard({ authorName, authorAvatarPath, coverUrl = '', 
   const currentPhoto = photos[activePhoto]
   const currentPhotoUrl = currentPhoto ? photoUrls[currentPhoto.storage_path] || (activePhoto === 0 ? coverUrl : '') : coverUrl
   const category = post.service_categories
-  const categoryKey = (category?.slug || '').toLowerCase().replace(/[^a-z]/g, '')
-  const Icon = categoryIcons[categoryKey] || Briefcase
   const location = [post.city, post.region].filter(Boolean).join(', ')
 
   return (
     <article className="post-card">
-      <div className={`post-card__cover${loadedPhotos.has(currentPhoto?.storage_path) ? ' is-loaded' : ''}`}>
+      <div className="post-card__cover">
         <Link aria-label={`Open post: ${post.title}`} className="post-card__cover-link" tabIndex={-1} to={`/app/posts/${post.id}`}>
-        {currentPhotoUrl && !hiddenPhotos.has(currentPhoto?.storage_path) ? (
-          <img
-            alt={`${post.title} cover`}
-            fetchPriority={priority ? 'high' : 'auto'}
-            loading={priority ? 'eager' : 'lazy'}
-            onError={() => setHiddenPhotos((current) => new Set(current).add(currentPhoto?.storage_path))}
-            onLoad={() => setLoadedPhotos((current) => new Set(current).add(currentPhoto?.storage_path))}
-            src={currentPhotoUrl}
-          />
-        ) : (
-          <div className="post-card__cover-placeholder" style={{ '--post-tint': categoryColors[categoryKey.length % categoryColors.length] }}>
-            <Icon aria-hidden="true" size={30} weight="duotone" />
-          </div>
-        )}
+        <PostThumb alt={`${post.title} cover`} category={category} className="post-card__thumb" loading={priority ? 'eager' : 'lazy'} src={currentPhotoUrl} />
         </Link>
         {photoCount > 1 && (
           <>

@@ -185,9 +185,9 @@ export function PostsFeed({ userId, showOwnLatest = false, categorySlug = '' }) 
       {empty && (
         <EmptyState
           icon={ClipboardText}
-          message="Open requests from customers will show up here."
-          title="No open posts yet"
-          action={<div className="posts-empty-actions">{showOwnLatest && <Button as={Link} to="/app/posts/new">Post a problem</Button>}<Button onClick={() => void loadFirstPage()} variant="secondary">Retry</Button><Button as={Link} to="/app/discover" variant="secondary">Discover professionals</Button></div>}
+          message={showOwnLatest ? 'Be the first to post a problem and get help from a local professional.' : 'Open requests from customers will show up here.'}
+          title={showOwnLatest ? 'No requests yet' : 'No open requests yet'}
+          action={<div className="posts-empty-actions">{showOwnLatest ? <Button as={Link} to="/app/posts/new">Post a problem</Button> : <Button onClick={() => void loadFirstPage()} variant="secondary">Retry</Button>}</div>}
         />
       )}
       {noOtherPosts && ownLatest && (
@@ -261,7 +261,7 @@ export function MyPostsList({ userId }) {
   if (loading) return <div aria-label="Loading your posts" className="posts-grid" role="status"><PostCardSkeleton /><PostCardSkeleton /><PostCardSkeleton /></div>
   if (error && posts.length === 0) return <section className="posts-feed__error" role="alert"><p>{error}</p><Button onClick={() => void loadPage()} variant="secondary">Retry</Button></section>
   if (posts.length === 0) {
-    return <EmptyState icon={ClipboardText} message="Posts you publish will be listed here." title="No posts yet" />
+    return <EmptyState action={<Button as={Link} to="/app/posts/new">Post a problem</Button>} icon={ClipboardText} message="Your published requests and their status will appear here." title="No posts yet" />
   }
   return (
     <>

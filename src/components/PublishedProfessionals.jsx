@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { CaretRight, MapPin, Star } from '@phosphor-icons/react'
+import { CaretRight, MapPin, Star, UsersThree } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { publishedProviderSelection } from '../lib/providerQueries.js'
 import { avatarUrl } from '../lib/avatarImages.js'
 import { appQueryCache } from '../lib/postListCache.js'
-import { Avatar, Badge, Button, Skeleton } from './UiPrimitives.jsx'
+import { Avatar, Badge, Button, EmptyState, Skeleton } from './UiPrimitives.jsx'
 import { usePresence } from './PresenceProvider.jsx'
 import './PublishedProfessionals.css'
 
@@ -125,10 +125,7 @@ export default function PublishedProfessionals({ categorySlug = '', limit = 12, 
 
   if (!filteredProfiles.length) {
     return (
-      <div className="professional-feed__state">
-        <p>No professionals match your filters.</p>
-        <span>Try selecting another service or clearing your search.</span>
-      </div>
+      <div className="professional-feed__state"><EmptyState icon={UsersThree} title="No professionals to show yet" message="Try another service or clear your search. New local profiles will appear here as professionals join." /></div>
     )
   }
 

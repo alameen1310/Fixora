@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, CaretRight, CircleNotch, LockKey } from '@phosphor-icons/react'
+import OverlayPortal from './OverlayPortal.jsx'
 import './UiPrimitives.css'
 
 export function Button({ as: Element = 'button', children, className = '', loading = false, type, variant = 'primary', wide = false, ...props }) {
@@ -125,6 +126,17 @@ export function InputField({ error, hint, label, id, ...props }) {
   )
 }
 
+export function TextareaField({ error, hint, label, id, ...props }) {
+  const errorId = error ? `${id}-error` : undefined
+  const hintId = hint ? `${id}-hint` : undefined
+  return <label className={`ui-field${error ? ' ui-field--error' : ''}`} htmlFor={id}>
+    <span className="ui-field__label">{label}</span>
+    <textarea aria-describedby={[hintId, errorId].filter(Boolean).join(' ') || undefined} aria-invalid={Boolean(error)} id={id} {...props} />
+    {hint && <small className="ui-field__hint" id={hintId}>{hint}</small>}
+    {error && <small className="ui-field__error" id={errorId} role="alert">{error}</small>}
+  </label>
+}
+
 export function SelectField({ children, error, hint, label, id, ...props }) {
   const errorId = error ? `${id}-error` : undefined
   const hintId = hint ? `${id}-hint` : undefined
@@ -236,6 +248,7 @@ export function ActionSheet({ busy = false, cancelLabel = 'Cancel', confirmLabel
 
   if (!open) return null
   return (
+    <OverlayPortal>
     <div aria-modal="true" className="ui-sheet-backdrop" onClick={(event) => event.target === event.currentTarget && !busy && onCancel?.()} role="dialog">
       <section aria-labelledby="ui-sheet-title" className="ui-action-sheet">
         <h2 id="ui-sheet-title">{title}</h2>
@@ -250,5 +263,6 @@ export function ActionSheet({ busy = false, cancelLabel = 'Cancel', confirmLabel
         </div>
       </section>
     </div>
+    </OverlayPortal>
   )
 }

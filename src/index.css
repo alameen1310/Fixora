@@ -215,6 +215,9 @@ nav a {
 
 @media (max-width: 767px) {
   :root { --gutter: 16px; }
+  input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']),
+  textarea,
+  select { font-size: max(16px, 1em) !important; }
 }
 
 @media (prefers-contrast: more) {

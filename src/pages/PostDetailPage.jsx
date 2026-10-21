@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, CalendarBlank, DotsThree, Flag, MapPin, Wrench } from '@phosphor-icons/react'
 import { Star } from '@phosphor-icons/react'
 import { Link, useParams } from 'react-router-dom'
-import { ActionSheet, Avatar, Badge, Button, Skeleton } from '../components/UiPrimitives.jsx'
+import { ActionSheet, Avatar, Badge, Button, InputField, Skeleton, TextareaField } from '../components/UiPrimitives.jsx'
 import { fetchProblemPost, formatNaira, formatPostBudget, formatRelativeTime } from '../lib/postQueries.js'
 import { getPostImageUrl } from '../lib/postImages.js'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -40,6 +40,7 @@ export default function PostDetailPage() {
   const [providerPublished, setProviderPublished] = useState(false)
   const [applicationCount, setApplicationCount] = useState(0)
   const [applicationMessage, setApplicationMessage] = useState('')
+  const [applicationQuote, setApplicationQuote] = useState('')
   const [completion, setCompletion] = useState(null)
   const [reportOpen, setReportOpen] = useState(false)
 
@@ -127,10 +128,15 @@ export default function PostDetailPage() {
 
   async function applyToPost() {
     if (actionBusy || !supabase) return
+    const quoteValue = applicationQuote.replace(/\D/g, '')
+    if (quoteValue && (!Number.isSafeInteger(Number(quoteValue)) || Number(quoteValue) < 1 || Number(quoteValue) > 100000000000)) {
+      showToast({ type: 'error', message: 'Enter a positive whole Naira quote of ₦100,000,000,000 or less.' })
+      return
+    }
     setActionBusy(true)
     const { data, error: applyError } = await supabase.from('problem_post_applications')
-      .insert({ post_id: post.id, professional_id: user.id, message: applicationMessage.trim() || null })
-      .select('id, post_id, professional_id, message, status, created_at, updated_at').single()
+      .insert({ post_id: post.id, professional_id: user.id, message: applicationMessage.trim() || null, quote_naira: quoteValue ? Number(quoteValue) : null })
+      .select('id, post_id, professional_id, message, quote_naira, status, created_at, updated_at').single()
     setActionBusy(false)
     if (applyError) {
       console.error('[marketplace-write]', { step: 'apply', postId: post.id, code: applyError.code, message: applyError.message })
@@ -227,12 +233,15 @@ export default function PostDetailPage() {
           && <Button as={Link} to={`/app/messages?postId=${post.id}`} variant="primary">Message</Button>}
         {post.status !== 'completed' && post.author_id !== user?.id && profile?.account_type === 'provider' && <section aria-label="Your application" className="post-application-panel">
           {application ? <>
-            <div className="post-application-panel__heading"><h2>Your application</h2><Badge tone={application.status === 'hired' ? 'success' : application.status === 'pending' ? 'info' : 'neutral'}>{({ pending: 'Pending', hired: 'Selected', not_selected: 'Not selected', withdrawn: 'Withdrawn' })[application.status]}</Badge></div>
+            <div className="post-application-panel__heading"><h2>{application.status === 'pending' ? 'Application sent' : 'Your application'}</h2><Badge tone={application.status === 'hired' ? 'success' : application.status === 'pending' ? 'info' : 'neutral'}>{({ pending: 'Applied', hired: 'Selected', not_selected: 'Not selected', withdrawn: 'Withdrawn' })[application.status]}</Badge></div>
+            {application.status === 'pending' && <><p>Your application is with the customer. You can review its status in Activity.</p><Button as={Link} to="/app/activity?segment=applied" variant="secondary">Go to Activity</Button></>}
+            {application.quote_naira && <strong className="post-application-panel__quote">Your quote: {formatNaira(application.quote_naira)}</strong>}
             {application.message && <p>{application.message}</p>}
             {application.status === 'pending' && post.status === 'open' && <Button disabled={actionBusy} onClick={() => void withdrawApplication()} variant="secondary">Withdraw application</Button>}
           </> : post.status === 'open' && post.published_at && providerPublished ? <>
             <h2>Apply to this request</h2>
-            <label className="ui-field" htmlFor="application-message"><span className="ui-field__label">Short message <small>(optional)</small></span><textarea id="application-message" maxLength={1000} onChange={(event) => setApplicationMessage(event.target.value)} placeholder="Share how you can help with this work." rows={3} value={applicationMessage} /></label>
+            <InputField id="application-quote" inputMode="numeric" label="Your quote (₦) · optional" onChange={(event) => setApplicationQuote(event.target.value.replace(/\D/g, '').slice(0, 12))} placeholder="Enter a whole Naira amount" value={applicationQuote ? new Intl.NumberFormat('en-NG').format(Number(applicationQuote)) : ''} />
+            <TextareaField id="application-message" label={<>Short message <small>(optional)</small></>} maxLength={1000} onChange={(event) => setApplicationMessage(event.target.value)} placeholder="Share how you can help with this work." rows={3} value={applicationMessage} />
             <Button disabled={actionBusy} loading={actionBusy} onClick={() => void applyToPost()}>Send application</Button>
           </> : post.status === 'open' && post.published_at ? <><h2>Publish your professional profile to apply</h2><p>Customers need to see your services and service areas before they can review an application.</p></> : <><h2>Applications closed</h2><p>This request is no longer accepting applications.</p></>}
         </section>}

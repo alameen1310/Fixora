@@ -42,7 +42,10 @@ export default function CompleteJobPage() {
         path: image.storage_path, sort_order: image.sort_order, url: getPostImageUrl(image.storage_path),
         existing: true, name: `After photo ${image.sort_order + 1}`,
       })))
-      if (!price && result.budget_type === 'fixed' && result.budget_min_naira) setPrice(String(result.budget_min_naira))
+      const { data: hiredApplication, error: applicationError } = await supabase.from('problem_post_applications').select('quote_naira').eq('post_id', result.id).eq('professional_id', result.hired_professional_id).maybeSingle()
+      if (applicationError) throw applicationError
+      const suggestedPrice = hiredApplication?.quote_naira || (result.budget_type === 'fixed' ? result.budget_min_naira : null)
+      if (suggestedPrice) setPrice((current) => current || String(suggestedPrice))
     } catch {
       setError('We couldn’t load this job. Check your connection and retry.')
     } finally { setLoading(false) }
