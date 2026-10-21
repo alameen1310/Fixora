@@ -66,7 +66,6 @@ export default function ProfessionalProfilePage() {
               <Skeleton style={{ width: '70%', height: '1.8rem', marginTop: '0.4rem' }} />
             </div>
           </header>
-          {provider.profile_id !== user?.id && <details className="professional-profile__menu"><summary aria-label="Profile actions"><DotsThree aria-hidden="true" size={22} /></summary><div><button onClick={(event) => { event.currentTarget.closest('details').open = false; setReportOpen(true) }} type="button"><Flag aria-hidden="true" size={16} />Report profile</button></div></details>}
           <Skeleton style={{ width: '100%', height: '4rem', marginTop: '1.5rem' }} />
         </article>
       ) : error ? (
@@ -95,6 +94,8 @@ export default function ProfessionalProfilePage() {
               {isOnline(provider.profile_id) && <span className="app-public-profile__online">Online now</span>}
             </div>
           </header>
+
+          {provider.profile_id !== user?.id && <details className="professional-profile__menu"><summary aria-label="Profile actions"><DotsThree aria-hidden="true" size={22} /></summary><div><button onClick={(event) => { event.currentTarget.closest('details').open = false; setReportOpen(true) }} type="button"><Flag aria-hidden="true" size={16} />Report profile</button></div></details>}
 
           {provider.service_description && (
             <div className="app-public-profile__section">
