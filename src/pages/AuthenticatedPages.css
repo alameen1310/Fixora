@@ -1064,7 +1064,7 @@
     height: auto;
     min-height: 0;
     max-height: none;
-    aspect-ratio: 16 / 10;
+    aspect-ratio: 1.85 / 1;
   }
   .app-home__main .post-card__body { align-content: start; padding: clamp(18px, 2vw, 26px); }
 }
