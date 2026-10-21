@@ -1029,6 +1029,44 @@
 .app-page.app-page--activity { max-width:var(--page-max) !important; }
 .app-page.post-detail { max-width:var(--page-max) !important; }
 .app-page.applicants-page { max-width:var(--page-max) !important; }
+
+/* Keep customer home requests visually consistent from the latest post onward. */
+.app-home__main .posts-own-latest { width: 100%; max-width: none; margin-bottom: 24px; }
+.app-home__main .posts-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.app-home__main .posts-grid .post-card,
+.app-home__main .posts-own-latest .post-card {
+  display: block;
+  min-width: 0;
+  border: 1px solid rgb(25 45 94 / 7%);
+  border-radius: 20px;
+}
+.app-home__main .posts-grid .post-card__cover,
+.app-home__main .posts-own-latest .post-card__cover {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: 16 / 9;
+}
+.app-home__main .post-card__cover > img { display: block; object-fit: cover; }
+.app-home__main .post-card__body { min-width: 0; gap: 8px; padding: 18px 20px 20px; }
+.app-home__main .post-card__title { white-space: normal; overflow-wrap: anywhere; }
+.app-home__main .post-card__description { max-width: 68ch; }
+
+@media (min-width: 768px) {
+  .app-home__main .posts-grid .post-card,
+  .app-home__main .posts-own-latest .post-card {
+    display: grid;
+    grid-template-columns: minmax(220px, 32%) minmax(0, 1fr);
+    align-items: stretch;
+  }
+  .app-home__main .posts-grid .post-card__cover,
+  .app-home__main .posts-own-latest .post-card__cover {
+    height: 100%;
+    aspect-ratio: 4 / 3;
+  }
+  .app-home__main .post-card__body { align-content: center; padding: clamp(18px, 2vw, 26px); }
+}
 @media (min-width:1024px) { .post-detail__layout { grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr); } }
 
 .fixora-app .page-container .app-page:not(.complete-job-page) {
