@@ -38,7 +38,7 @@ export default function usePullToRefresh(refresh) {
     const root = containerRef.current
     if (!root) return undefined
     const onStart = (event) => {
-      if (refreshing || event.touches.length !== 1 || event.target.closest?.('[data-no-pull],button,a,input,textarea,select,[contenteditable="true"]')) return
+      if (refreshing || event.touches.length !== 1 || event.target.closest?.('[data-no-pull],button,input,textarea,select,[contenteditable="true"]')) return
       if (!atTop(event.target)) return
       startY.current = event.touches[0].clientY
       active.current = true
@@ -54,7 +54,7 @@ export default function usePullToRefresh(refresh) {
       if (atTop(event.target)) event.preventDefault()
     }
     const onEnd = () => {
-      const shouldRefresh = active.current && !refreshing && distanceRef.current >= 58
+      const shouldRefresh = active.current && !refreshing && distanceRef.current >= 42
       active.current = false
       startY.current = null
       if (shouldRefresh) void trigger()
@@ -68,7 +68,7 @@ export default function usePullToRefresh(refresh) {
   }, [refreshing, trigger])
 
   const indicator = distance > 0 || refreshing
-    ? <div aria-live="polite" className={`pull-refresh-indicator${refreshing ? ' is-refreshing' : ''}${!refreshing && distance >= 58 ? ' is-ready' : ''}`} style={{ '--pull-distance': `${distance}px` }}><span aria-hidden="true" className="pull-refresh-indicator__spinner" />{refreshing ? <span>Refreshing</span> : distance >= 58 ? <span>Release to refresh</span> : <span>Pull to refresh</span>}</div>
+    ? <div aria-live="polite" className={`pull-refresh-indicator${refreshing ? ' is-refreshing' : ''}${!refreshing && distance >= 42 ? ' is-ready' : ''}`} style={{ '--pull-distance': `${distance}px` }}><span aria-hidden="true" className="pull-refresh-indicator__spinner" />{refreshing ? <span>Refreshing</span> : distance >= 42 ? <span>Release to refresh</span> : <span>Pull to refresh</span>}</div>
     : null
   return { containerRef, indicator }
 }
