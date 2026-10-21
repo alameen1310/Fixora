@@ -1119,6 +1119,19 @@
 .fixora-app .page-container .app-home-layout > * { min-width: 0; }
 .fixora-app .page-container .app-home__main.app-page { width: 100%; max-width: none; }
 .fixora-app .page-container .marketplace-rail { width: 100%; min-width: 0; }
+.fixora-app .page-container .marketplace-rail,
+.fixora-app .page-container .marketplace-rail__card,
+.fixora-app .page-container .marketplace-rail__post { min-width: 0; max-width: 100%; }
+.fixora-app .page-container .marketplace-rail__post { width: 100%; }
+.fixora-app .page-container .marketplace-rail__post > span {
+  min-width: 0;
+  flex: 1 1 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
 @media (min-width: 1600px) {
   .fixora-app .page-container .app-home-layout {
     grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
