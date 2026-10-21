@@ -1,5 +1,5 @@
-const SHELL_CACHE = 'fixora-shell-v4'
-const ASSET_CACHE = 'fixora-assets-v4'
+const SHELL_CACHE = 'fixora-shell-v5'
+const ASSET_CACHE = 'fixora-assets-v5'
 const APP_ROOT = new URL('./', self.registration.scope)
 const APP_BASE_PATH = APP_ROOT.pathname
 const appUrl = (path) => new URL(path, APP_ROOT).href
@@ -61,7 +61,13 @@ self.addEventListener('fetch', (event) => {
     const cache = await caches.open(ASSET_CACHE)
     try {
       const response = await fetch(request)
-      if (response.ok && response.type === 'basic') await cache.put(request, response.clone())
+      const contentType = response.headers.get('content-type') || ''
+      if (isAppAsset && response.ok && response.type === 'basic' && !contentType.includes('text/html')) {
+        await cache.put(request, response.clone())
+      }
+      // SPA rewrites can return index.html with status 200 for a missing lazy chunk.
+      // Never hand that HTML to the JS module loader or save it under an asset URL.
+      if (isAppAsset && contentType.includes('text/html')) throw new Error('Fixora asset URL returned the app shell.')
       return response
     } catch {
       const cached = await cache.match(request)

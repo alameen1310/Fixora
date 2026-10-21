@@ -3,19 +3,36 @@ import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 
-const staleChunkReloadKey = 'fixora-stale-chunk-reloaded'
-let storageUnavailableRecoveryUsed = false
+const staleChunkReloadKey = 'fixora-stale-chunk-reloaded-at'
+const staleChunkRetryParam = '__fixora_chunk_retry'
+const STALE_CHUNK_RETRY_WINDOW_MS = 12_000
+const staleChunkPageUrl = new URL(window.location.href)
+const staleChunkPageRetry = staleChunkPageUrl.searchParams.get(staleChunkRetryParam)
+window.addEventListener('load', () => {
+  window.setTimeout(() => {
+    try { sessionStorage.removeItem(staleChunkReloadKey) } catch { /* storage can be unavailable in private contexts */ }
+    if (staleChunkPageRetry) {
+      const current = new URL(window.location.href)
+      if (current.searchParams.get(staleChunkRetryParam) === staleChunkPageRetry) {
+        current.searchParams.delete(staleChunkRetryParam)
+        window.history.replaceState(window.history.state, '', current)
+      }
+    }
+  }, STALE_CHUNK_RETRY_WINDOW_MS)
+}, { once: true })
+
 window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault()
+  const now = Date.now()
   try {
-    if (sessionStorage.getItem(staleChunkReloadKey)) {
-      console.error('Fixora could not load a refreshed app asset. Please reload the page once more.')
-      return
-    }
-    sessionStorage.setItem(staleChunkReloadKey, '1')
+    const lastRecoveryAt = Number(sessionStorage.getItem(staleChunkReloadKey))
+    if (lastRecoveryAt && now - lastRecoveryAt < STALE_CHUNK_RETRY_WINDOW_MS) return
+    sessionStorage.setItem(staleChunkReloadKey, String(now))
   } catch {
-    if (storageUnavailableRecoveryUsed) return
-    storageUnavailableRecoveryUsed = true
+    const lastRecoveryAt = Number(staleChunkPageUrl.searchParams.get(staleChunkRetryParam))
+    if (lastRecoveryAt && now - lastRecoveryAt < STALE_CHUNK_RETRY_WINDOW_MS) return
+    staleChunkPageUrl.searchParams.set(staleChunkRetryParam, String(now))
+    window.history.replaceState(window.history.state, '', staleChunkPageUrl)
   }
   window.location.reload()
 })
