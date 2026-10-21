@@ -13,7 +13,7 @@ function postTiming(post) {
   if (post.timing === 'specific_date' && post.target_date) {
     return new Intl.DateTimeFormat('en-NG', { day: 'numeric', month: 'short' }).format(new Date(`${post.target_date}T00:00:00`))
   }
-  return post.timing.replaceAll('_', ' ')
+  return (post.timing || 'flexible').replaceAll('_', ' ')
 }
 
 export function PostCardSkeleton() {

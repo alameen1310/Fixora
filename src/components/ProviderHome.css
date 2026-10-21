@@ -17,19 +17,21 @@
 .provider-stat:hover { background: #f8faff; }
 .provider-home__section { display: grid; gap: 12px; }
 .provider-home__section-head h2,.provider-rail-block h2 { margin: 0; font-size: 19px; letter-spacing: -.025em; }
+.provider-home__section-head > div { display: grid; gap: 4px; }
+.provider-home__section-head > div > p { margin: 0; color: var(--color-text-secondary); font-size: 13px; }
 .provider-home__section-head a,.provider-public-mini > a { display: inline-flex; align-items: center; gap: 5px; color: var(--color-primary); font-size: 13px; font-weight: 650; text-decoration: none; }
 .provider-request-list,.provider-job-list { overflow: hidden; border: 1px solid var(--color-separator); border-radius: 14px; background: #fff; }
-.provider-request-row { display: grid; min-width: 0; grid-template-columns: 72px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 12px 14px; color: inherit; text-decoration: none; }
-.provider-request-row + .provider-request-row,.provider-job-row + .provider-job-row { border-top: 1px solid var(--color-separator); }
-.provider-request-row:hover,.provider-job-row:hover { background: #f8faff; }
-.provider-request-row__image { display: grid; width: 72px; height: 60px; place-items: center; overflow: hidden; border-radius: 10px; color: #5274bd; background: #edf2ff; }
-.provider-request-row__image img { width: 100%; height: 100%; object-fit: cover; }
-.provider-request-row__body { display: grid; min-width: 0; gap: 7px; }
-.provider-request-row__title { display: flex; min-width: 0; align-items: center; gap: 8px; }
-.provider-request-row__title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.provider-request-row__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; color: var(--color-text-secondary); font-size: 12px; }
-.provider-request-row__meta > span:first-child { color: var(--color-text-primary); font-weight: 650; font-variant-numeric: tabular-nums; }
-.provider-request-row__match { color: #4c648d; font-size: 11px; white-space: nowrap; }
+.provider-home__matched-grid { display: grid; min-width: 0; gap: 16px; }
+.provider-home__matched-card { position: relative; min-width: 0; overflow: hidden; border: 1px solid rgb(25 45 94 / 7%); border-radius: 20px; background: #fff; box-shadow: 0 8px 24px rgb(32 56 116 / 8%), 0 2px 6px rgb(32 56 116 / 4%); }
+.provider-home__matched-card > .post-card { display: block; min-width: 0; border: 0; border-radius: 0; box-shadow: none; }
+.provider-home__matched-card .post-card__cover { width: 100%; height: auto; min-height: 0; max-height: none; aspect-ratio: 16 / 9; }
+.provider-home__matched-card .post-card__cover > img { display: block; object-fit: cover; }
+.provider-home__matched-card .post-card__body { min-width: 0; gap: 8px; padding: 18px 20px 20px; }
+.provider-home__matched-card .post-card__title { white-space: normal; overflow-wrap: anywhere; }
+.provider-home__matched-card .post-card__description { max-width: 68ch; }
+.provider-home__applied-badge { position: absolute; z-index: 3; top: 12px; left: 12px; padding: 6px 10px; border: 1px solid rgb(255 255 255 / 65%); border-radius: 999px; color: #183d99; background: rgb(255 255 255 / 94%); box-shadow: 0 2px 8px rgb(15 31 66 / 16%); font-size: 12px; font-weight: 700; }
+.provider-job-row + .provider-job-row { border-top: 1px solid var(--color-separator); }
+.provider-job-row:hover { background: #f8faff; }
 .provider-home__empty { display: flex; align-items: center; gap: 12px; padding: 18px; border: 1px dashed #cbd4e8; border-radius: 14px; color: var(--color-text-secondary); }
 .provider-home__empty p { margin: 0; }
 .provider-home__empty a { color: var(--color-primary); font-weight: 650; }
@@ -54,6 +56,7 @@
 .provider-home__error { display: grid; justify-items: start; gap: 10px; }
 .provider-home__error p { margin: 0; }
 @media (min-width: 700px) { .provider-home__stats { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+@media (min-width: 768px) { .provider-home__matched-card > .post-card { display: grid; grid-template-columns: minmax(220px, 32%) minmax(0, 1fr); align-items: stretch; } .provider-home__matched-card .post-card__cover { height: 100%; aspect-ratio: 4 / 3; } .provider-home__matched-card .post-card__body { align-content: center; padding: clamp(18px, 2vw, 26px); } }
 @media (min-width: 1200px) { .provider-home-layout.has-rail { grid-template-columns: minmax(0,1fr) 340px; } .provider-home__rail { display: grid; } .provider-job-row > .ui-button { min-width: 78px; } }
-@media (max-width: 699px) { .provider-home__stats { grid-template-columns: repeat(2, minmax(0,1fr)); } .provider-stat:nth-child(3) { border-left: 0; border-top: 1px solid var(--color-separator); } .provider-stat:nth-child(4) { border-top: 1px solid var(--color-separator); } .provider-request-row { grid-template-columns: 56px minmax(0,1fr); gap: 10px; padding: 11px; } .provider-request-row__image { width: 56px; height: 56px; } .provider-request-row__title { flex-wrap: wrap; } .provider-request-row__match { display: none; } .provider-job-row { grid-template-columns: 38px minmax(0,1fr) auto; } .provider-job-row > .ui-button { grid-row: 2; } .provider-job-row > .ui-badge { grid-column: 3; } .provider-home__setup { align-items: flex-start; flex-direction: column; } }
-@media (prefers-reduced-motion: reduce) { .provider-stat,.provider-request-row,.provider-job-row { transition: none; } }
+@media (max-width: 699px) { .provider-home__stats { grid-template-columns: repeat(2, minmax(0,1fr)); } .provider-stat:nth-child(3) { border-left: 0; border-top: 1px solid var(--color-separator); } .provider-stat:nth-child(4) { border-top: 1px solid var(--color-separator); } .provider-home__section-head { align-items: flex-start; } .provider-home__section-head > a { flex: 0 0 auto; } .provider-home__matched-card .post-card__body { padding: 16px; } .provider-job-row { grid-template-columns: 38px minmax(0,1fr) auto; } .provider-job-row > .ui-button { grid-row: 2; } .provider-job-row > .ui-badge { grid-column: 3; } .provider-home__setup { align-items: flex-start; flex-direction: column; } }
+@media (prefers-reduced-motion: reduce) { .provider-stat,.provider-job-row { transition: none; } }

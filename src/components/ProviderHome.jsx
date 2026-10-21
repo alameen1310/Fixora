@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, Briefcase, Star, Wrench } from '@phosphor-icons/react'
+import { ArrowRight, Briefcase, Star } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { Avatar, Badge, Button, Skeleton } from './UiPrimitives.jsx'
+import PostCard from './PostCard.jsx'
 import { fetchProviderApplications } from '../lib/applicationQueries.js'
-import { formatPostBudget, formatRelativeTime } from '../lib/postQueries.js'
+import { formatRelativeTime } from '../lib/postQueries.js'
 import { getPostImageUrl } from '../lib/postImages.js'
 import { supabase } from '../lib/supabase.js'
 import { avatarUrl } from '../lib/avatarImages.js'
@@ -13,7 +14,7 @@ import './ProviderHome.css'
 import usePullToRefresh from '../hooks/usePullToRefresh.jsx'
 import ProfileCompleteness from './ProfileCompleteness.jsx'
 
-const columns = 'id, author_id, title, category_id, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, status, hired_professional_id, created_at, completed_at, final_price_naira, service_categories(name), problem_post_images(storage_path, sort_order, kind)'
+const columns = 'id, author_id, title, description, category_id, budget_type, budget_min_naira, budget_max_naira, negotiable, region, city, timing, target_date, schedule_mode, status, hired_professional_id, created_at, completed_at, final_price_naira, service_categories(name, slug), problem_post_images(storage_path, sort_order, kind)'
 
 function normalize(value) { return String(value || '').trim().toLowerCase().replace(/\s+state$/, '') }
 function greeting() {
@@ -61,7 +62,7 @@ export default function ProviderHome() {
         }
         const appByPost = new Map(applications.map((application) => [application.post_id, application]))
         const activeJobs = (activeResult.data ?? []).map((post) => ({ ...post, application: appByPost.get(post.id) }))
-        const postIds = activeJobs.map(({ id }) => id)
+        const postIds = [...new Set([...activeJobs.map(({ id }) => id), ...matched.map(({ id }) => id)])]
         let authorNames = {}; let authorAvatars = {}
         if (postIds.length) {
           const { data: rows, error: namesError } = await supabase.rpc('get_problem_post_author_cards', { requested_post_ids: postIds })
@@ -128,11 +129,15 @@ export default function ProviderHome() {
       {!profileReady && <aside className="provider-home__setup"><div><strong>Your profile needs one more step</strong><span>{setupMessage}</span></div><Button as={Link} to="/onboarding/provider" variant="secondary">Finish profile</Button></aside>}
       {provider && <ProfileCompleteness profile={profile} provider={provider} userId={user.id} />}
       <section aria-label="Your work summary" className="provider-home__stats">{stats.map((stat) => <Link className="provider-stat" key={stat.label} to={stat.to}><span>{stat.label}</span><strong>{stat.value}</strong><small>{stat.hint}</small></Link>)}</section>
-      <section className="provider-home__section"><div className="provider-home__section-head"><h2>Matched to your services</h2><Link to="/app/discover">See all <ArrowRight aria-hidden="true" size={15} /></Link></div>
-        {data?.matched.length ? <div className="provider-request-list">{data.matched.map((post) => {
+      <section className="provider-home__section"><div className="provider-home__section-head"><div><h2>Matched to your services</h2><p>Open requests that fit the work you offer.</p></div><Link to="/app/discover">See all <ArrowRight aria-hidden="true" size={15} /></Link></div>
+        {data?.matched.length ? <div className="provider-home__matched-grid">{data.matched.map((post, index) => {
+          const photoUrls = Object.fromEntries((post.problem_post_images ?? []).map(({ storage_path }) => [storage_path, getPostImageUrl(storage_path)]))
           const cover = post.problem_post_images?.filter((image) => image.kind === 'before').sort((a, b) => a.sort_order - b.sort_order)[0]?.storage_path
           const application = data.applications.find((row) => row.post_id === post.id)
-          return <Link className="provider-request-row" key={post.id} to={`/app/posts/${post.id}`}><div className="provider-request-row__image">{cover ? <img alt="" src={getPostImageUrl(cover)} /> : <Wrench aria-hidden="true" size={22} />}</div><div className="provider-request-row__body"><div className="provider-request-row__title"><strong>{post.title}</strong><Badge tone="info">{post.service_categories?.name || 'Service'}</Badge></div><div className="provider-request-row__meta"><span>{formatPostBudget(post)}</span><span>{[post.city, post.region].filter(Boolean).join(', ')}</span><time>{formatRelativeTime(post.created_at)}</time>{application && <Badge tone="info">Applied</Badge>}</div></div><span className="provider-request-row__match">Matches your services</span></Link>
+          return <div className="provider-home__matched-card" key={post.id}>
+            {application && <span className="provider-home__applied-badge">Applied</span>}
+            <PostCard authorAvatarPath={data.authorAvatars[post.id]} authorName={data.authorNames[post.id]} coverUrl={cover ? photoUrls[cover] : ''} photoUrls={photoUrls} post={post} priority={index === 0} />
+          </div>
         })}</div> : <div className="provider-home__empty"><p>No matching requests right now.</p><Link to="/app/discover">Browse all requests</Link></div>}
       </section>
       {data?.activeJobs.length > 0 && <section className="provider-home__section"><div className="provider-home__section-head"><h2>Active jobs</h2><Link to="/app/activity?segment=selected">View all <ArrowRight aria-hidden="true" size={15} /></Link></div><div className="provider-job-list">{data.activeJobs.map((post) => <article className="provider-job-row" key={post.id}><Avatar name={data.authorNames[post.id] || 'Customer'} size={42} src={avatarUrl(data.authorAvatars?.[post.id])} /><div className="provider-job-row__copy"><strong>{data.authorNames[post.id] || 'Customer'}</strong><Link to={`/app/posts/${post.id}`}>{post.title}</Link></div><Badge tone="success">In progress</Badge><Button as={Link} to={`/app/messages?postId=${post.id}`} variant="secondary">Message</Button><Button as={Link} to={`/app/posts/${post.id}`} variant="ghost">View</Button></article>)}</div></section>}
