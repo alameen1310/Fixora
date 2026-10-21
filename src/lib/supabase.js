@@ -22,8 +22,26 @@ function getTabAuthStorageKey() {
     const tabId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`
     key = `fixora-auth-${tabId}`
     tabAuthStorage.setItem(TAB_AUTH_STORAGE_KEY, key)
+    migrateLegacySession(key)
   }
   return key
+}
+
+function migrateLegacySession(tabStorageKey) {
+  if (!supabaseUrl) return
+  try {
+    const projectRef = new URL(supabaseUrl).hostname.split('.')[0]
+    const legacyKey = `sb-${projectRef}-auth-token`
+    for (const key of Object.keys(window.localStorage)) {
+      if (key === legacyKey || key.startsWith(`${legacyKey}-`)) {
+        const value = window.localStorage.getItem(key)
+        if (value !== null) tabAuthStorage.setItem(`${tabStorageKey}${key.slice(legacyKey.length)}`, value)
+        window.localStorage.removeItem(key)
+      }
+    }
+  } catch {
+    // The user can still sign in again if legacy browser storage is unavailable.
+  }
 }
 
 export const supabase = supabaseUrl && supabasePublishableKey
