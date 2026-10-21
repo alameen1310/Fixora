@@ -1,0 +1,7 @@
+.language-selector { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; color: #19284a; font-size: .92rem; font-weight: 600; }
+.language-selector__label { display: inline-flex; align-items: center; gap: 9px; }
+.language-selector select { min-width: 132px; max-width: 58%; min-height: 42px; padding: 0 34px 0 12px; border: 1px solid #dce5f6; border-radius: 11px; background: #f7f9fe; color: #19284a; font: inherit; }
+.language-selector select:focus-visible { outline: 3px solid #9db8ff; outline-offset: 2px; }
+.language-selector--compact { gap: 8px; }
+.language-selector--compact .language-selector__current { display: none; }
+@media (max-width: 480px) { .language-selector:not(.language-selector--compact) { align-items: stretch; flex-direction: column; gap: 8px; } .language-selector:not(.language-selector--compact) select { width: 100%; max-width: none; } }

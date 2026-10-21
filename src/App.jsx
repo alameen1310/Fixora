@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute.jsx'
 import PostRoleGuard from './components/PostRoleGuard.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { PresenceProvider } from './components/PresenceProvider.jsx'
+import { LanguageProvider } from './i18n/LanguageContext.jsx'
 
 const CustomerSignupPage = lazy(() => import('./pages/CustomerSignupPage.jsx'))
 const ProviderSignupPage = lazy(() => import('./pages/ProviderSignupPage.jsx'))
@@ -38,6 +39,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <LanguageProvider>
         <ToastProvider>
           <ScrollToTop />
           <PwaControls />
@@ -77,6 +79,7 @@ export default function App() {
           </Suspense>
           </AuthenticatedRouteBoundary>
         </ToastProvider>
+        </LanguageProvider>
       </AuthProvider>
     </BrowserRouter>
   )

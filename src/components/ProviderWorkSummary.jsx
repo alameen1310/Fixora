@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase.js'
 import BeforeAfterCard from './BeforeAfterCard.jsx'
 import { Button } from './UiPrimitives.jsx'
 import './ProviderWorkSummary.css'
+import TranslatedText from '../i18n/TranslatedText.jsx'
 
 function Stars({ rating }) {
   return <span aria-label={`${rating} out of 5 stars`} className="provider-review-stars">{[1, 2, 3, 4, 5].map((value) => <Star aria-hidden="true" key={value} size={15} weight={Number(rating) >= value - .5 ? 'fill' : 'regular'} />)}</span>
@@ -55,6 +56,6 @@ export default function ProviderWorkSummary({ avatarPath, displayName, profileId
   return <section className="provider-work-summary">
     {showReputation && <div className="provider-reputation"><div><span>Overall rating</span>{reviewCount ? <><strong>{average.toFixed(1)}</strong><Stars rating={average} /><p>{reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}</p></> : <><strong className="provider-reputation__new">–</strong><p>No reviews yet</p></>}</div><div><span>Jobs completed</span><strong>{jobs}</strong></div></div>}
     <section className="provider-work-summary__section" id="completed-work"><h2>Completed work</h2>{posts.length ? <div className="provider-work-grid">{posts.map((post) => <BeforeAfterCard key={post.id} post={{ ...post, provider: { display_name: displayName }, rating: summary }} />)}</div> : <p className="provider-work-summary__empty">Finished jobs appear here as before-and-after posts.</p>}</section>
-    <section className="provider-work-summary__section" id="reviews"><h2>Reviews</h2>{reviews.length ? <div className="provider-review-list">{reviews.map((review) => <article className="provider-review" key={review.id}><div className="provider-review__head"><strong>{review.customer_display_name}</strong><Stars rating={review.rating} /><time>{new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium' }).format(new Date(review.created_at))}</time></div>{review.comment && <p>{review.comment}</p>}<span>{review.problem_posts?.title || 'Completed project'}</span></article>)}</div> : <p className="provider-work-summary__empty">No reviews yet.</p>}</section>
+    <section className="provider-work-summary__section" id="reviews"><h2>Reviews</h2>{reviews.length ? <div className="provider-review-list">{reviews.map((review) => <article className="provider-review" key={review.id}><div className="provider-review__head"><strong>{review.customer_display_name}</strong><Stars rating={review.rating} /><time>{new Intl.DateTimeFormat('en-NG', { dateStyle: 'medium' }).format(new Date(review.created_at))}</time></div>{review.comment && <p><TranslatedText>{review.comment}</TranslatedText></p>}<span><TranslatedText>{review.problem_posts?.title || 'Completed project'}</TranslatedText></span></article>)}</div> : <p className="provider-work-summary__empty">No reviews yet.</p>}</section>
   </section>
 }

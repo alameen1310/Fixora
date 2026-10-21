@@ -10,6 +10,8 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { nigerianLocations } from '../lib/nigerianLocations.js'
 import { supabase } from '../lib/supabase.js'
 import './OnboardingPage.css'
+import LanguageSelector from '../i18n/LanguageSelector.jsx'
+import { useLanguage } from '../i18n/LanguageContext.jsx'
 
 const providerSteps = ['Contact details', 'Professional profile', 'Services', 'Service areas', 'Review', 'Add a profile photo']
 const customerSteps = ['Contact details', 'Add a profile photo']
@@ -81,6 +83,7 @@ export default function OnboardingPage({ audience }) {
   const isProvider = audience === 'provider'
   const navigate = useNavigate()
   const { user, profile, setProfile, signOut } = useAuth()
+  const { t } = useLanguage()
   const { showToast } = useToast()
   const [step, setStep] = useState(1)
   const [photoPath, setPhotoPath] = useState(profile?.avatar_path || '')
@@ -326,8 +329,9 @@ export default function OnboardingPage({ audience }) {
     <main className="onboarding-page">
       <header className="onboarding-header">
         <Logo to="/" />
+        <LanguageSelector compact />
         <button className="onboarding-signout" onClick={handleSignOut} type="button">
-          <SignOut aria-hidden="true" size={18} /> Sign out
+          <SignOut aria-hidden="true" size={18} /> {t('Sign out')}
         </button>
       </header>
 
@@ -341,15 +345,15 @@ export default function OnboardingPage({ audience }) {
             <span className="onboarding-context__node onboarding-context__node--bottom"><Wrench size={16} weight="bold" /></span>
           </div>
           <div className="onboarding-context__copy">
-            <p className="onboarding-context__eyebrow">Your Fixora profile</p>
-            <h2>{context.title}</h2>
-            <p>{context.description}</p>
+            <p className="onboarding-context__eyebrow">{t('Your Fixora profile')}</p>
+            <h2>{t(context.title)}</h2>
+            <p>{t(context.description)}</p>
           </div>
           <ol aria-label={isProvider ? 'Provider setup progress' : 'Account setup progress'} className="onboarding-context__steps">
             {progress.map(({ label, number, complete: isComplete }) => (
               <li aria-current={number === currentStep ? 'step' : undefined} className={number === currentStep ? 'is-current' : isComplete ? 'is-complete' : ''} key={label}>
                 <span>{isComplete ? <Check aria-hidden="true" size={14} weight="bold" /> : number}</span>
-                <small>{label}</small>
+                <small>{t(label)}</small>
               </li>
             ))}
           </ol>
@@ -367,29 +371,29 @@ export default function OnboardingPage({ audience }) {
               </div>
             <div className="onboarding-step-meta">
               <span className="onboarding-step-count">Step {currentStep} of {steps.length}</span>
-              <span className="onboarding-step-name">{steps[currentStep - 1]}</span>
+              <span className="onboarding-step-name">{t(steps[currentStep - 1])}</span>
             </div>
           </div>
 
           <p className="onboarding-kicker">Step {currentStep} of {steps.length}</p>
-          <h1 id="onboarding-title">{steps[currentStep - 1]}</h1>
+          <h1 id="onboarding-title">{t(steps[currentStep - 1])}</h1>
           <p className="onboarding-intro">{currentStep === 1
-            ? 'Your name and contact number are saved with your account. Add or update them here if needed.'
+            ? t('Your name and contact number are saved with your account. Add or update them here if needed.')
             : currentStep === 2 && isProvider
-              ? 'Create the professional profile customers will discover.'
+              ? t('Create the professional profile customers will discover.')
               : currentStep === 3
-                ? 'Choose the services that best reflect the work you take on.'
+                ? t('Choose the services that best reflect the work you take on.')
                 : currentStep === 4
-                  ? 'Add the cities and regions where you are available.'
+                  ? t('Add the cities and regions where you are available.')
                   : currentStep === 5
-                    ? 'Review the details you have shared before finishing setup.'
-                    : 'A profile photo is optional. You can add it now or skip and come back later.'}</p>
+                    ? t('Review the details you have shared before finishing setup.')
+                    : t('A profile photo is optional. You can add it now or skip and come back later.')}</p>
 
           {loadFailed ? (
             <div className="onboarding-load-error" role="alert">
-              <h2>We couldn’t load your saved details.</h2>
-              <p>Your current entries are still here. Check your connection and retry loading before continuing.</p>
-              <button className="onboarding-secondary" onClick={() => setLoadAttempt((attempt) => attempt + 1)} type="button">Try loading again</button>
+              <h2>{t('We couldn’t load your saved details.')}</h2>
+              <p>{t('Your current entries are still here. Check your connection and retry loading before continuing.')}</p>
+              <button className="onboarding-secondary" onClick={() => setLoadAttempt((attempt) => attempt + 1)} type="button">{t('Try loading again')}</button>
             </div>
           ) : (
             <form className="onboarding-form" noValidate onSubmit={next}>
@@ -410,7 +414,7 @@ export default function OnboardingPage({ audience }) {
                   </div>
                 ) : (
                   <div className="onboarding-contact-fields">
-                    <Field error={fieldErrors.fullName} id="onboarding-full-name" label="Full name" onChange={(value) => update('fullName', value)} value={values.fullName} />
+                    <Field error={fieldErrors.fullName} id="onboarding-full-name" label={t('Full name')} onChange={(value) => update('fullName', value)} value={values.fullName} />
                     {user?.user_metadata?.name && !profile?.full_name && <p className="onboarding-hint">Suggested from your Google account; change it if needed. It isn’t identity verification.</p>}
                     <PhoneNumberField className="onboarding-phone-field" country={values.phoneCountry} error={fieldErrors.phone} onChange={(value) => update('phone', value)} onCountryChange={(value) => update('phoneCountry', value)} value={values.phone} />
                     <p className="onboarding-hint">Your phone number is saved securely and privately with your account. It is never displayed publicly.</p>
@@ -429,8 +433,8 @@ export default function OnboardingPage({ audience }) {
 
               {currentStep === 3 && (
                 <fieldset aria-describedby={fieldErrors.categoryIds ? 'onboarding-categories-error' : undefined} aria-invalid={Boolean(fieldErrors.categoryIds)} className={`onboarding-categories${fieldErrors.categoryIds ? ' has-error' : ''}`}>
-                  <legend>Services you offer</legend>
-                  <p className="onboarding-sublegend">Select all that apply to your work.</p>
+                  <legend>{t('Services you offer')}</legend>
+                  <p className="onboarding-sublegend">{t('Select all that apply to your work.')}</p>
                   <div className="onboarding-category-grid">{categories.map((category) => {
                     const isSelected = values.categoryIds.includes(category.id)
                     return (

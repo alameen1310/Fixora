@@ -6,6 +6,7 @@ import { avatarUrl } from '../lib/avatarImages.js'
 import { useMemo, useState } from 'react'
 import './Posts.css'
 import PostThumb from './PostThumb.jsx'
+import TranslatedText from '../i18n/TranslatedText.jsx'
 
 function postTiming(post) {
   if (post.timing === 'specific_date' && post.target_date) {
@@ -60,9 +61,9 @@ export default function PostCard({ authorName, authorAvatarPath, coverUrl = '', 
       </div>
       <Link aria-label={`Open post: ${post.title}`} className="post-card__body-link" to={`/app/posts/${post.id}`}>
       <div className="post-card__body">
-        {category?.name && <span className="post-card__category">{category.name}</span>}
-        <h2 className="post-card__title">{post.title}</h2>
-        <p className="post-card__description">{post.description}</p>
+        {category?.name && <span className="post-card__category"><TranslatedText>{category.name}</TranslatedText></span>}
+        <h2 className="post-card__title"><TranslatedText>{post.title}</TranslatedText></h2>
+        <p className="post-card__description"><TranslatedText>{post.description}</TranslatedText></p>
         <p className="post-card__budget">{formatPostBudget(post)}</p>
         <div className="post-card__meta">
           {location && <span><MapPin aria-hidden="true" size={15} />{location}</span>}

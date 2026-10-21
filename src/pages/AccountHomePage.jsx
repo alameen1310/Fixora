@@ -10,9 +10,12 @@ import CustomerFirstRunChecklist from '../components/CustomerFirstRunChecklist.j
 import { supabase } from '../lib/supabase.js'
 import usePullToRefresh from '../hooks/usePullToRefresh.jsx'
 import './AuthenticatedPages.css'
+import { useLanguage } from '../i18n/LanguageContext.jsx'
+import TranslatedText from '../i18n/TranslatedText.jsx'
 
 export default function AccountHomePage() {
   const { profile, user } = useAuth()
+  const { t } = useLanguage()
   const isProvider = profile?.account_type === 'provider'
   const firstName = profile?.full_name?.trim().split(/\s+/)[0] || 'there'
   const [feedTab, setFeedTab] = useState('requests')
@@ -32,12 +35,12 @@ export default function AccountHomePage() {
   return <div className="app-home-layout" ref={pullRefresh.containerRef}>
     {pullRefresh.indicator}
     <main className="app-page app-home app-home__main">
-      <header className="customer-home__header"><h1>{new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening'}, {firstName}</h1></header>
+      <header className="customer-home__header"><h1>{t(new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening')}, {firstName}</h1></header>
       <CustomerFirstRunChecklist />
-      <nav aria-label="Filter requests by service" className="customer-home__services"><button aria-pressed={!selectedCategory} onClick={() => setSelectedCategory('')} type="button">All</button>{categories.map(({ name, slug }) => <button aria-pressed={selectedCategory === slug} key={slug} onClick={() => setSelectedCategory((current) => current === slug ? '' : slug)} type="button">{name}</button>)}</nav>
+      <nav aria-label="Filter requests by service" className="customer-home__services"><button aria-pressed={!selectedCategory} onClick={() => setSelectedCategory('')} type="button">{t('All')}</button>{categories.map(({ name, slug }) => <button aria-pressed={selectedCategory === slug} key={slug} onClick={() => setSelectedCategory((current) => current === slug ? '' : slug)} type="button"><TranslatedText>{name}</TranslatedText></button>)}</nav>
       <section aria-labelledby="home-posts-title" className="app-section">
-        <div className="app-section__heading"><h2 id="home-posts-title">Posts</h2><Link className="app-text-link" to="/app/my-posts">My Posts <ArrowRight aria-hidden="true" size={16} /></Link></div>
-        <div aria-label="Home feed" className="home-feed-tabs" role="group"><button aria-pressed={feedTab === 'requests'} onClick={() => setFeedTab('requests')} type="button">Requests</button><button aria-pressed={feedTab === 'completed'} onClick={() => setFeedTab('completed')} type="button">Before &amp; after</button></div>
+        <div className="app-section__heading"><h2 id="home-posts-title">{t('Posts')}</h2><Link className="app-text-link" to="/app/my-posts">{t('My Posts')} <ArrowRight aria-hidden="true" size={16} /></Link></div>
+        <div aria-label="Home feed" className="home-feed-tabs" role="group"><button aria-pressed={feedTab === 'requests'} onClick={() => setFeedTab('requests')} type="button">{t('Requests')}</button><button aria-pressed={feedTab === 'completed'} onClick={() => setFeedTab('completed')} type="button">{t('Before & after')}</button></div>
         {feedTab === 'requests' ? <PostsFeed categorySlug={selectedCategory} showOwnLatest userId={user.id} /> : <CompletedWorkFeed />}
       </section>
     </main>

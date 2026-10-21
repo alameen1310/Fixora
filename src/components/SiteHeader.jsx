@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowUpRight } from '@phosphor-icons/react'
 import './SiteHeader.css'
+import LanguageSelector from '../i18n/LanguageSelector.jsx'
 
 const links = [
   { label: 'Discover', href: '#discovery' },
@@ -62,6 +63,7 @@ export default function SiteHeader() {
           id="primary-navigation"
         >
           <div className="primary-navigation__links">
+            <LanguageSelector compact />
             {links.map((link) => (
               <a href={link.href} key={link.href} onClick={closeMenu}>
                 {link.label}

@@ -3,12 +3,23 @@ import { authConfigured, supabase } from '../lib/supabase.js'
 import { clearUserAppState } from '../lib/postListCache.js'
 
 const AuthContext = createContext(null)
-const profileColumns = 'id, full_name, phone_number, phone_verified_at, account_type, onboarding_completed_at, avatar_path, location_region, location_city, created_at'
+const profileColumns = 'id, full_name, phone_number, phone_verified_at, account_type, onboarding_completed_at, avatar_path, location_region, location_city, preferred_language, created_at'
+const profileColumnsWithoutLanguage = 'id, full_name, phone_number, phone_verified_at, account_type, onboarding_completed_at, avatar_path, location_region, location_city, created_at'
 const SESSION_TIMEOUT_MS = 12000
 const PROFILE_TIMEOUT_MS = 12000
 
 function isCurrentSession(current, expected) {
   return current?.user?.id === expected?.user?.id
+}
+
+async function readProfile(userId, signal) {
+  const result = await supabase.from('profiles').select(profileColumns).eq('id', userId).abortSignal(signal).maybeSingle()
+  if (result.error && (result.error.code === '42703' || /preferred_language.*(column|field)|column.*preferred_language/i.test(result.error.message || ''))) {
+    const fallback = await supabase.from('profiles').select(profileColumnsWithoutLanguage).eq('id', userId).abortSignal(signal).maybeSingle()
+    if (fallback.data) fallback.data.preferred_language = null
+    return fallback
+  }
+  return result
 }
 
 function profileMessage(error, missing = false) {
@@ -112,12 +123,7 @@ export function AuthProvider({ children }) {
     setProfileLoading(true)
     setProfileError('')
 
-    supabase
-      .from('profiles')
-      .select(profileColumns)
-      .eq('id', currentSession.user.id)
-      .abortSignal(controller.signal)
-      .maybeSingle()
+    readProfile(currentSession.user.id, controller.signal)
       .then(({ data, error }) => {
         if (!alive || requestId !== profileRequest.current || !isCurrentSession(sessionRef.current, currentSession)) return
         if (error || !data) {
@@ -191,12 +197,7 @@ export function AuthProvider({ children }) {
     setProfileLoading(true)
     setProfileError('')
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(profileColumns)
-        .eq('id', currentSession.user.id)
-        .abortSignal(controller.signal)
-        .maybeSingle()
+      const { data, error } = await readProfile(currentSession.user.id, controller.signal)
       if (requestId !== profileRequest.current || !isCurrentSession(sessionRef.current, currentSession)) {
         return { data: null, error: new Error('The active session changed while the profile was loading.') }
       }

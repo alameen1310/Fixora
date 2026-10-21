@@ -10,9 +10,11 @@ import { supabase } from '../lib/supabase.js'
 import './AuthenticatedPages.css'
 import ProviderFindWork from '../components/ProviderFindWork.jsx'
 import usePullToRefresh from '../hooks/usePullToRefresh.jsx'
+import { useLanguage } from '../i18n/LanguageContext.jsx'
 
 export default function DiscoverPage() {
   const { profile, user } = useAuth()
+  const { t } = useLanguage()
   const isProvider = profile?.account_type === 'provider'
   const [searchParams, setSearchParams] = useSearchParams()
   const initialCategory = searchParams.get('category') || ''
@@ -83,18 +85,18 @@ export default function DiscoverPage() {
     <main className="app-page app-page--discover" ref={pullRefresh.containerRef}>
       {pullRefresh.indicator}
       <header className="app-page__heading">
-        <h1 className="text-large-title">Discover professionals</h1>
+        <h1 className="text-large-title">{t('Discover professionals')}</h1>
       </header>
 
       <div className="discover-controls">
       <div className="discover-search-wrap">
         <label className="app-search-field" htmlFor="discover-search">
           <MagnifyingGlass aria-hidden="true" size={20} />
-          <span className="visually-hidden">Search professionals</span>
+          <span className="visually-hidden">{t('Search professionals')}</span>
           <input
             id="discover-search"
             onChange={handleQueryChange}
-            placeholder="Search by name, service, or city"
+            placeholder={t('Search by name, service, or city')}
             ref={searchInputRef}
             type="search"
             value={query}
@@ -122,7 +124,7 @@ export default function DiscoverPage() {
           onClick={() => handleCategorySelect('')}
           selected={!selectedCategory}
         >
-          All services
+          {t('All services')}
         </Chip>
         {categories.map((category) => (
           <Chip
@@ -138,7 +140,7 @@ export default function DiscoverPage() {
 
       <section aria-labelledby="discover-pros-title" className="app-section">
         <div className="app-section__heading">
-          <h2 id="discover-pros-title">Available professionals</h2>
+          <h2 id="discover-pros-title">{t('Available professionals')}</h2>
           {!resultsLoading && !resultsError && resultCount !== null && (
             <span className="discover-results-count">
               {resultCount} {resultCount === 1 ? 'professional' : 'professionals'}
@@ -156,19 +158,19 @@ export default function DiscoverPage() {
         {!resultsLoading && !resultsError && (selectedCategory || query) && resultCount === 0 && (
           <div className="discover-empty-actions">
             <button className="ui-button ui-button--secondary" onClick={clearAllFilters} type="button">
-              Clear filters
+              {t('Clear filters')}
             </button>
           </div>
         )}
       </section>
 
       {!isProvider && <section className="discover-fit-cta">
-        <div><h2>Can’t find the right fit?</h2><p>Post a problem and let local professionals understand what you need.</p></div>
-        <Link to="/app/posts/new">Post a problem</Link>
+        <div><h2>{t('Can’t find the right fit?')}</h2><p>{t('Post a problem and let local professionals understand what you need.')}</p></div>
+        <Link to="/app/posts/new">{t('Post a problem')}</Link>
       </section>}
 
       {isProvider && <section aria-labelledby="discover-requests-title" className="app-section discover-requests">
-        <div className="app-section__heading"><h2 id="discover-requests-title">Open customer requests</h2><span className="home-read-only-label">Apply from the request page</span></div>
+        <div className="app-section__heading"><h2 id="discover-requests-title">{t('Open customer requests')}</h2><span className="home-read-only-label">{t('Apply from the request page')}</span></div>
         <PostsFeed categorySlug={selectedCategory} showOwnLatest={false} userId={user.id} />
       </section>}
     </main>

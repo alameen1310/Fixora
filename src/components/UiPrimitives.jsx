@@ -3,8 +3,12 @@ import { Link } from 'react-router-dom'
 import { ArrowLeft, CaretRight, CircleNotch, LockKey } from '@phosphor-icons/react'
 import OverlayPortal from './OverlayPortal.jsx'
 import './UiPrimitives.css'
+import { useLanguage } from '../i18n/LanguageContext.jsx'
+
+function translateChild(value, t) { return typeof value === 'string' ? t(value) : value }
 
 export function Button({ as: Element = 'button', children, className = '', loading = false, type, variant = 'primary', wide = false, ...props }) {
+  const { t } = useLanguage()
   const shared = {
     className: `ui-button ui-button--${variant}${wide ? ' ui-button--wide' : ''}${className ? ` ${className}` : ''}`,
     'aria-busy': loading || undefined,
@@ -15,14 +19,14 @@ export function Button({ as: Element = 'button', children, className = '', loadi
     return (
       <Link {...shared}>
         {loading ? <CircleNotch aria-hidden="true" className="ui-button__spinner" size={18} /> : null}
-        <span className="ui-button__text">{children}</span>
+        <span className="ui-button__text">{translateChild(children, t)}</span>
       </Link>
     )
   }
   return (
     <Element {...shared} type={type || (Element === 'button' ? 'button' : undefined)}>
       {loading ? <CircleNotch aria-hidden="true" className="ui-button__spinner" size={18} /> : null}
-      <span className="ui-button__text">{children}</span>
+      <span className="ui-button__text">{translateChild(children, t)}</span>
     </Element>
   )
 }
@@ -109,16 +113,18 @@ export function PrivacyValue({ children }) {
 }
 
 export function InputField({ error, hint, label, id, ...props }) {
+  const { t } = useLanguage()
   const errorId = error ? `${id}-error` : undefined
   const hintId = hint ? `${id}-hint` : undefined
   return (
     <label className={`ui-field${error ? ' ui-field--error' : ''}`} htmlFor={id}>
-      <span className="ui-field__label">{label}</span>
+      <span className="ui-field__label">{t(label)}</span>
       <input
         aria-describedby={[hintId, errorId].filter(Boolean).join(' ') || undefined}
         aria-invalid={Boolean(error)}
         id={id}
         {...props}
+        placeholder={props.placeholder ? t(props.placeholder) : undefined}
       />
       {hint ? <small className="ui-field__hint" id={hintId}>{hint}</small> : null}
       {error ? <small className="ui-field__error" id={errorId} role="alert">{error}</small> : null}
@@ -127,11 +133,12 @@ export function InputField({ error, hint, label, id, ...props }) {
 }
 
 export function TextareaField({ error, hint, label, id, ...props }) {
+  const { t } = useLanguage()
   const errorId = error ? `${id}-error` : undefined
   const hintId = hint ? `${id}-hint` : undefined
   return <label className={`ui-field${error ? ' ui-field--error' : ''}`} htmlFor={id}>
-    <span className="ui-field__label">{label}</span>
-    <textarea aria-describedby={[hintId, errorId].filter(Boolean).join(' ') || undefined} aria-invalid={Boolean(error)} id={id} {...props} />
+    <span className="ui-field__label">{t(label)}</span>
+    <textarea aria-describedby={[hintId, errorId].filter(Boolean).join(' ') || undefined} aria-invalid={Boolean(error)} id={id} {...props} placeholder={props.placeholder ? t(props.placeholder) : undefined} />
     {hint && <small className="ui-field__hint" id={hintId}>{hint}</small>}
     {error && <small className="ui-field__error" id={errorId} role="alert">{error}</small>}
   </label>
@@ -182,9 +189,10 @@ export function SegmentedControl({ label, options, value, onChange }) {
 }
 
 export function Chip({ children, selected = false, ...props }) {
+  const { t } = useLanguage()
   return (
     <button aria-pressed={selected} className={`ui-chip${selected ? ' is-selected' : ''}`} type="button" {...props}>
-      {children}
+      {translateChild(children, t)}
     </button>
   )
 }
@@ -208,7 +216,8 @@ export function Avatar({ name = '', size = 44, src = '', presence = false, class
 }
 
 export function Badge({ children, tone = 'neutral' }) {
-  return <span className={`ui-badge ui-badge--${tone}`}>{children}</span>
+  const { t } = useLanguage()
+  return <span className={`ui-badge ui-badge--${tone}`}>{translateChild(children, t)}</span>
 }
 
 export function Skeleton({ className = '' }) {

@@ -2,6 +2,7 @@ import { LockKey, MapPin, UsersThree } from '@phosphor-icons/react'
 import { AuthHeader, Logo } from './UiPrimitives.jsx'
 import heroPhoto from '../assets/plumber-at-work.png'
 import './AuthLayout.css'
+import LanguageSelector from '../i18n/LanguageSelector.jsx'
 
 const benefits = [
   { icon: MapPin, text: 'Find professionals by service and location' },
@@ -34,6 +35,7 @@ export default function AuthLayout({ children, wide = false, backTo = '/', backL
           <AuthHeader backLabel={backLabel} backTo={backTo} className="auth-layout__mobile-header" /><p>The right professional for every home fix.</p>
         </div>
         <div className={`auth-layout__content${wide ? ' auth-layout__content--wide' : ''}${login ? ' auth-layout__content--login' : ''}`}>
+          <LanguageSelector compact />
           <AuthHeader backLabel={backLabel} backTo={backTo} className="auth-layout__header" />
           {login ? <div className="auth-layout__login-content">{children}</div> : children}
         </div>

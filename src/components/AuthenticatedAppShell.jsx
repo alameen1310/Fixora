@@ -14,6 +14,8 @@ import CommandPalette from './CommandPalette.jsx'
 import OverlayPortal from './OverlayPortal.jsx'
 import { useToast } from './ToastProvider.jsx'
 import { supabase } from '../lib/supabase.js'
+import LanguageSelector from '../i18n/LanguageSelector.jsx'
+import { useLanguage } from '../i18n/LanguageContext.jsx'
 import './AuthenticatedAppShell.css'
 
 const MOBILE_TABS = {
@@ -34,6 +36,7 @@ const MOBILE_TABS = {
 
 export default function AuthenticatedAppShell() {
   const { profile, user } = useAuth()
+  const { t } = useLanguage()
   const location = useLocation()
   const unreadMessages = useUnreadMessageCount(FEATURES.chat ? user?.id : null)
   const unreadActivity = useUnreadActivityCount(user?.id, profile?.account_type)
@@ -191,12 +194,12 @@ export default function AuthenticatedAppShell() {
         <Logo className="fixora-app__sidebar-brand" to="/app" />
         <nav aria-label="Main navigation" className="fixora-app__side-nav">
           {destinations.map(({ label, to, icon: Icon, end }) => (
-            <NavLink aria-label={label} className={to === '/app/messages' ? 'fixora-app__messages-nav' : to === '/app/activity' ? 'fixora-app__activity-nav' : undefined} end={end} key={label} title={label} to={to}>
-              {({ isActive }) => <><Icon aria-hidden="true" size={22} weight={isActive ? 'fill' : 'regular'} /><span>{label}</span>{to === '/app/messages' && unreadMessages > 0 && <span aria-label={`${unreadMessages} unread messages`} className="fixora-app__unread-badge">{unreadMessages > 99 ? '99+' : unreadMessages}</span>}{to === '/app/activity' && unreadActivity > 0 && <span aria-label={`${unreadActivity} unread updates`} className="fixora-app__unread-badge">{unreadActivity > 99 ? '99+' : unreadActivity}</span>}</>}
+          <NavLink aria-label={t(label)} className={to === '/app/messages' ? 'fixora-app__messages-nav' : to === '/app/activity' ? 'fixora-app__activity-nav' : undefined} end={end} key={label} title={t(label)} to={to}>
+              {({ isActive }) => <><Icon aria-hidden="true" size={22} weight={isActive ? 'fill' : 'regular'} /><span>{t(label)}</span>{to === '/app/messages' && unreadMessages > 0 && <span aria-label={`${unreadMessages} unread messages`} className="fixora-app__unread-badge">{unreadMessages > 99 ? '99+' : unreadMessages}</span>}{to === '/app/activity' && unreadActivity > 0 && <span aria-label={`${unreadActivity} unread updates`} className="fixora-app__unread-badge">{unreadActivity > 99 ? '99+' : unreadActivity}</span>}</>}
             </NavLink>
           ))}
         </nav>
-        {showPostAction ? <div className="fixora-app__post-slot"><Link aria-label="Post a problem" className="fixora-app__post-button" title="Post a problem" to="/app/posts/new"><Plus aria-hidden="true" size={20} />Post a problem</Link></div> : isProvider && <div className="fixora-app__post-slot"><Link aria-label="Find work" className="fixora-app__post-button" title="Find work" to="/app/discover"><Briefcase aria-hidden="true" size={20} />Find work</Link></div>}
+        {showPostAction ? <div className="fixora-app__post-slot"><Link aria-label={t('Post a problem')} className="fixora-app__post-button" title={t('Post a problem')} to="/app/posts/new"><Plus aria-hidden="true" size={20} />{t('Post a problem')}</Link></div> : isProvider && <div className="fixora-app__post-slot"><Link aria-label={t('Find work')} className="fixora-app__post-button" title={t('Find work')} to="/app/discover"><Briefcase aria-hidden="true" size={20} />{t('Find work')}</Link></div>}
         <AccountMenu firstName={firstName} isProvider={isProvider} profile={profile} user={user} />
       </aside>
 
@@ -222,7 +225,7 @@ export default function AuthenticatedAppShell() {
           </Link>
         ) : (
           <NavLink className={({ isActive }) => `fixora-app__mobile-link${isActive ? ' is-active' : ''}`} end={end} key={label} onClick={() => handleTabClick(to)} to={to}>
-            {({ isActive }) => <><Icon aria-hidden="true" size={24} weight={isActive ? 'fill' : 'regular'} /><span>{label}</span>{to === '/app/messages' && unreadMessages > 0 && <span aria-label={`${unreadMessages} unread messages`} className="fixora-app__unread-badge">{unreadMessages > 9 ? '9+' : unreadMessages}</span>}{to === '/app/activity' && unreadActivity > 0 && <span aria-label={`${unreadActivity} unread updates`} className="fixora-app__unread-badge">{unreadActivity > 9 ? '9+' : unreadActivity}</span>}</>}
+        {({ isActive }) => <><Icon aria-hidden="true" size={24} weight={isActive ? 'fill' : 'regular'} /><span>{t(label)}</span>{to === '/app/messages' && unreadMessages > 0 && <span aria-label={`${unreadMessages} unread messages`} className="fixora-app__unread-badge">{unreadMessages > 9 ? '9+' : unreadMessages}</span>}{to === '/app/activity' && unreadActivity > 0 && <span aria-label={`${unreadActivity} unread updates`} className="fixora-app__unread-badge">{unreadActivity > 9 ? '9+' : unreadActivity}</span>}</>}
           </NavLink>
         ))}
       </nav>
@@ -255,10 +258,12 @@ function AccountMenu({ firstName, isProvider, mobile = false, onOpenChange, prof
 }
 
 function AccountMenuPanel({ closeMenu, firstName, isProvider, mobile = false, profile, user }) {
+  const { t } = useLanguage()
   return <section aria-label="Account menu" aria-modal={mobile || undefined} className="account-menu__panel" role="dialog">
     <button aria-label="Close account menu" className="account-menu__close" onClick={closeMenu} type="button"><X size={18} /></button>
     <div className="account-menu__identity"><Avatar name={profile?.full_name || firstName} size={56} src={avatarUrl(profile?.avatar_path)} /><div><strong>{profile?.full_name || firstName}</strong><small>{user?.email}</small>{!isProvider && <span className="account-menu__role">Customer</span>}</div></div>
-    <nav aria-label="Account" className="account-menu__links"><Link onClick={closeMenu} to="/app/profile"><UserCircle size={18} />View profile</Link><Link onClick={closeMenu} to="/app/profile/edit"><Briefcase size={18} />Edit profile</Link></nav>
+    <nav aria-label={t('Account')} className="account-menu__links"><Link onClick={closeMenu} to="/app/profile"><UserCircle size={18} />{t('View profile')}</Link><Link onClick={closeMenu} to="/app/profile/edit"><Briefcase size={18} />{t('Edit profile')}</Link></nav>
+    <div className="account-menu__language"><LanguageSelector /></div>
     <SignOutAction className="account-menu__signout" location="profile" />
   </section>
 }

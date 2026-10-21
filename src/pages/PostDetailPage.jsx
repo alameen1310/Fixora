@@ -17,6 +17,7 @@ import { usePresence } from '../components/PresenceProvider.jsx'
 import './AuthenticatedPages.css'
 import '../components/Posts.css'
 import PhotoLightbox from '../components/PhotoLightbox.jsx'
+import TranslatedText from '../i18n/TranslatedText.jsx'
 
 function ReviewStars({ rating }) {
   return <span aria-label={`${rating} out of 5 stars`} className="completed-post-review__stars">{[1, 2, 3, 4, 5].map((value) => <Star aria-hidden="true" key={value} size={16} weight={rating >= value ? 'fill' : 'regular'} />)}</span>
@@ -202,7 +203,7 @@ export default function PostDetailPage() {
           {post.service_categories?.name && <span className="post-card__category">{post.service_categories.name}</span>}
           {post.status !== 'open' && <Badge tone={post.hired_professional_id ? 'success' : 'neutral'}>{post.hired_professional_id ? 'Professional hired' : post.status === 'closed' ? 'Closed' : 'Removed'}</Badge>}
         </div>
-        <h1>{post.title}</h1>
+        <h1><TranslatedText>{post.title}</TranslatedText></h1>
         <p className="post-detail__budget">{formatPostBudget(post)}{post.negotiable && post.budget_type === 'range' ? ' · Negotiable' : ''}</p>
         <div className="post-detail__meta">
           {location && <span><MapPin aria-hidden="true" size={18} />{location}</span>}
@@ -213,7 +214,7 @@ export default function PostDetailPage() {
         {post.status === 'completed' && <section className="completed-post-paid"><span>Paid</span><strong>{formatNaira(post.final_price_naira)}</strong></section>}
         <section className="post-detail__section">
           <h2>{post.status === 'completed' ? 'The problem' : 'Details'}</h2>
-          <p className="post-detail__description">{post.description}</p>
+          <p className="post-detail__description"><TranslatedText>{post.description}</TranslatedText></p>
         </section>
         <section className="post-detail__author">
           <Avatar name={post.authorName || 'Fixora member'} size={44} src={avatarUrl(post.authorAvatarPath)} />

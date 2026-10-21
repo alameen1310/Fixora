@@ -10,6 +10,7 @@ import ReportDialog from '../components/ReportDialog.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { usePresence } from '../components/PresenceProvider.jsx'
 import './AuthenticatedPages.css'
+import TranslatedText from '../i18n/TranslatedText.jsx'
 
 export default function ProfessionalProfilePage() {
   const { professionalId } = useParams()
@@ -100,7 +101,7 @@ export default function ProfessionalProfilePage() {
           {provider.service_description && (
             <div className="app-public-profile__section">
               <h2 className="app-section-title">About the work</h2>
-              <p className="app-public-profile__description">{provider.service_description}</p>
+              <p className="app-public-profile__description"><TranslatedText>{provider.service_description}</TranslatedText></p>
             </div>
           )}
 

@@ -7,6 +7,7 @@ import { authConfigured, supabase } from '../lib/supabase.js'
 import { Button } from '../components/UiPrimitives.jsx'
 import AuthLayout from '../components/AuthLayout.jsx'
 import './AuthPage.css'
+import { useLanguage } from '../i18n/LanguageContext.jsx'
 
 const modes = {
   login: {
@@ -34,6 +35,7 @@ function safeReturnTo(value) {
 
 export default function AuthPage({ mode = 'login' }) {
   const config = modes[mode]
+  const { t } = useLanguage()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -160,8 +162,8 @@ export default function AuthPage({ mode = 'login' }) {
     <AuthLayout backLabel={mode === 'login' ? 'Back to sign up' : 'Back to sign in'} backTo={mode === 'login' ? '/signup/customer' : '/auth/login'} login={mode === 'login'}>
         <section aria-labelledby="auth-title" className="auth-card">
           <div className="auth-heading">
-            <h1 className="text-large-title" id="auth-title">{config.title}</h1>
-            <p className="auth-description">{config.description}</p>
+            <h1 className="text-large-title" id="auth-title">{t(config.title)}</h1>
+            <p className="auth-description">{t(config.description)}</p>
           </div>
 
           {mode === 'login' && (
@@ -173,20 +175,20 @@ export default function AuthPage({ mode = 'login' }) {
             >
               <GoogleLogo aria-hidden="true" size={20} weight="bold" />
               {busyAction === 'google' && <CircleNotch aria-hidden="true" className="ui-button__spinner" size={18} />}
-              <span>{busyAction === 'google' ? 'Connecting…' : 'Continue with Google'}</span>
+              <span>{t(busyAction === 'google' ? 'Connecting…' : 'Continue with Google')}</span>
             </button>
           )}
 
           {mode === 'login' && (
             <div className="auth-divider">
-              <span>or use your email</span>
+              <span>{t('or use your email')}</span>
             </div>
           )}
 
           <form className="auth-form" noValidate onSubmit={handleSubmit}>
             {mode !== 'reset' && (
               <div className="auth-field">
-                <label htmlFor="auth-email">Email address</label>
+                <label htmlFor="auth-email">{t('Email address')}</label>
                 <input
                   autoCapitalize="none"
                   disabled={busy}
@@ -205,7 +207,7 @@ export default function AuthPage({ mode = 'login' }) {
             {mode !== 'forgot' && (
               <div className="auth-field">
                 <label htmlFor="auth-password">
-                  {mode === 'reset' ? 'New password' : 'Password'}
+                  {t(mode === 'reset' ? 'New password' : 'Password')}
                 </label>
                 <div className="auth-password-control">
                   <input
@@ -214,7 +216,7 @@ export default function AuthPage({ mode = 'login' }) {
                     id="auth-password"
                     minLength={mode === 'reset' ? 8 : undefined}
                     onChange={(event) => setPassword(event.target.value)}
-                    placeholder="Enter password"
+                    placeholder={t('Enter password')}
                     required
                     type={visible ? 'text' : 'password'}
                     value={password}
@@ -234,13 +236,13 @@ export default function AuthPage({ mode = 'login' }) {
 
             {mode === 'reset' && (
               <div className="auth-field">
-                <label htmlFor="auth-confirm-password">Confirm new password</label>
+              <label htmlFor="auth-confirm-password">{t('Confirm new password')}</label>
                 <div className="auth-password-control">
                   <input
                     autoComplete="new-password"
                     id="auth-confirm-password"
                     onChange={(event) => setConfirmPassword(event.target.value)}
-                    placeholder="Repeat new password"
+                    placeholder={t('Repeat new password')}
                     required
                     type={confirmVisible ? 'text' : 'password'}
                     value={confirmPassword}
