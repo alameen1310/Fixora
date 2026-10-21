@@ -514,3 +514,9 @@
 @media (max-width: 767px) {
   .fixora-app.is-chat-route .fixora-app__viewport { padding: 0; }
 }
+
+@media (max-width: 767px) {
+  /* The account sheet is rendered inside the sticky header's stacking context. */
+  .fixora-app.is-account-menu-open .fixora-app__topbar { z-index: 70; }
+  .account-menu__panel { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+}

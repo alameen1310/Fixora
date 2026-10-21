@@ -1037,6 +1037,12 @@
   margin: 0 !important;
   padding: 0 !important;
 }
+@media (max-width: 767px) {
+  /* The post wizard's fixed action bar otherwise covers the last options. */
+  .fixora-app .page-container .app-page.post-form-page:not(.complete-job-page) {
+    padding-bottom: calc(140px + env(safe-area-inset-bottom)) !important;
+  }
+}
 .fixora-app .page-container .app-page.complete-job-page {
   width: min(100%, 560px) !important;
   max-width: 560px !important;

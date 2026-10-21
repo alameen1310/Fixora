@@ -50,6 +50,7 @@ export default function AuthenticatedAppShell() {
     || /^\/app\/posts\/[^/]+\/(edit|complete)$/.test(location.pathname)
     || /^\/app\/messages\/[^/]+$/.test(location.pathname)
   const [keyboardOpen, setKeyboardOpen] = useState(false)
+  const [mobileAccountOpen, setMobileAccountOpen] = useState(false)
   const hideTabBar = keyboardOpen || isFullScreenFlow
   const scrollPositions = useRef({})
   const activePath = useRef(location.pathname)
@@ -149,7 +150,7 @@ export default function AuthenticatedAppShell() {
   }, [location.pathname])
 
   return (
-    <div className={`fixora-app${isChatRoute ? ' is-chat-route' : ''}${location.pathname === '/app/messages' ? ' is-messages-root' : ''}`} style={{ '--tabbar-space': isFullScreenFlow ? '0px' : undefined }}>
+    <div className={`fixora-app${isChatRoute ? ' is-chat-route' : ''}${location.pathname === '/app/messages' ? ' is-messages-root' : ''}${mobileAccountOpen ? ' is-account-menu-open' : ''}`} style={{ '--tabbar-space': isFullScreenFlow ? '0px' : undefined }}>
       <a className="fixora-app__skip" href="#app-content">Skip to content</a>
 
       <aside aria-label="Application navigation" className="fixora-app__sidebar">
@@ -168,7 +169,7 @@ export default function AuthenticatedAppShell() {
       <header className={`fixora-app__topbar${!isTabRoute ? ' is-subroute' : ''}`}>
         <Logo className="fixora-app__brand" to="/app" />
         <div className="fixora-app__account">
-          <AccountMenu firstName={firstName} isProvider={isProvider} mobile profile={profile} user={user} />
+        <AccountMenu firstName={firstName} isProvider={isProvider} mobile onOpenChange={setMobileAccountOpen} profile={profile} user={user} />
         </div>
       </header>
 
@@ -195,22 +196,31 @@ export default function AuthenticatedAppShell() {
   )
 }
 
-function AccountMenu({ firstName, isProvider, mobile = false, profile, user }) {
+function AccountMenu({ firstName, isProvider, mobile = false, onOpenChange, profile, user }) {
   const [open, setOpen] = useState(false)
   const boundaryRef = useRef(null)
-  useDismissable({ boundaryRef, open, onDismiss: () => setOpen(false) })
+  const closeMenu = () => {
+    setOpen(false)
+    if (mobile) onOpenChange?.(false)
+  }
+  useDismissable({ boundaryRef, open, onDismiss: closeMenu })
+  const toggleMenu = () => {
+    const nextOpen = !open
+    setOpen(nextOpen)
+    if (mobile) onOpenChange?.(nextOpen)
+  }
   return <div className={`account-menu${mobile ? ' is-mobile' : ''}`} ref={boundaryRef}>
-    <button aria-expanded={open} aria-haspopup="dialog" aria-label={mobile ? 'Open account menu' : 'Account actions'} className={mobile ? 'fixora-app__profile-link' : 'fixora-app__sidebar-account'} onClick={() => setOpen((value) => !value)} type="button">
+    <button aria-expanded={open} aria-haspopup="dialog" aria-label={mobile ? 'Open account menu' : 'Account actions'} className={mobile ? 'fixora-app__profile-link' : 'fixora-app__sidebar-account'} onClick={toggleMenu} type="button">
       {!mobile && <Avatar name={profile?.full_name || firstName} size={40} src={avatarUrl(profile?.avatar_path)} />}
       <span className="fixora-app__account-name">{firstName}</span>
       {mobile && <Avatar name={profile?.full_name || firstName} size={40} src={avatarUrl(profile?.avatar_path)} />}
     </button>
     {open && <>
-      {mobile && <button aria-label="Close account menu" className="account-menu__backdrop" onClick={() => setOpen(false)} type="button" />}
+      {mobile && <button aria-label="Close account menu" className="account-menu__backdrop" onClick={closeMenu} type="button" />}
       <section aria-label="Account menu" aria-modal={mobile || undefined} className="account-menu__panel" role="dialog">
-        <button aria-label="Close account menu" className="account-menu__close" onClick={() => setOpen(false)} type="button"><X size={18} /></button>
+        <button aria-label="Close account menu" className="account-menu__close" onClick={closeMenu} type="button"><X size={18} /></button>
         <div className="account-menu__identity"><Avatar name={profile?.full_name || firstName} size={56} src={avatarUrl(profile?.avatar_path)} /><div><strong>{profile?.full_name || firstName}</strong><small>{user?.email}</small>{!isProvider && <span className="account-menu__role">Customer</span>}</div></div>
-        <nav aria-label="Account" className="account-menu__links"><Link onClick={() => setOpen(false)} to="/app/profile"><UserCircle size={18} />View profile</Link><Link onClick={() => setOpen(false)} to="/app/profile/edit"><Briefcase size={18} />Edit profile</Link></nav>
+        <nav aria-label="Account" className="account-menu__links"><Link onClick={closeMenu} to="/app/profile"><UserCircle size={18} />View profile</Link><Link onClick={closeMenu} to="/app/profile/edit"><Briefcase size={18} />Edit profile</Link></nav>
         <SignOutAction className="account-menu__signout" location="profile" />
       </section>
     </>}
