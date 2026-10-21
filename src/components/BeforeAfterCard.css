@@ -1,8 +1,11 @@
-.before-after-card { display:grid; overflow:hidden; min-width:0; border:1px solid rgba(18,38,110,.07); border-radius:20px; color:var(--color-text-primary); background:#fff; box-shadow:0 1px 2px rgba(16,32,96,.05),0 10px 28px rgba(16,32,96,.07); text-decoration:none; }
-.before-after-card__images { display:grid; grid-template-columns:1fr 1fr; gap:2px; aspect-ratio:16/9; background:#e8edf7; }
-.before-after-card__image { position:relative; display:grid; overflow:hidden; place-items:center; min-width:0; color:var(--color-text-secondary); background:#eef2fb; }
-.before-after-card__image img { width:100%; height:100%; object-fit:cover; }
-.before-after-card__image small { position:absolute; bottom:9px; left:9px; padding:4px 8px; border-radius:999px; color:#fff; background:rgb(15 25 50 / 75%); font-size:11px; font-weight:700; }
+.before-after-card { display:grid; overflow:hidden; min-width:0; border:1px solid rgba(18,38,110,.07); border-radius:20px; color:var(--color-text-primary); background:#fff; box-shadow:0 1px 2px rgba(16,32,96,.05),0 10px 28px rgba(16,32,96,.07); }
+.before-after-card .before-after-viewer { gap:0; }
+.before-after-card .before-after-single { gap:2px; background:#e8edf7; }
+.before-after-card .before-after-single figure { border-radius:0; }
+.before-after-card .before-after-single figcaption { bottom:9px; left:9px; }
+.before-after-card__body h2 a { color:inherit; text-decoration:none; }
+.before-after-card__body h2 a:hover { color:var(--color-primary-dark); }
+.before-after-card__body h2 a:focus-visible { border-radius:3px; outline:3px solid rgb(36 87 214 / 45%); outline-offset:3px; }
 .before-after-card__body { display:grid; gap:10px; padding:15px; }
 .before-after-card__body h2 { overflow:hidden; margin:0; font-size:17px; text-overflow:ellipsis; white-space:nowrap; }
 .before-after-card__provider,.before-after-card__meta,.before-after-card__rating { display:flex; align-items:center; gap:7px; min-width:0; }

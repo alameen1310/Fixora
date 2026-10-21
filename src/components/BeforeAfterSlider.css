@@ -1,5 +1,6 @@
 .before-after-viewer { display:grid; gap:12px; min-width:0; }
 .before-after-track { position:relative; overflow:hidden; aspect-ratio:4/3; border-radius:20px; background:#e8edf7; touch-action:pan-y; user-select:none; }
+.before-after-track--compact { aspect-ratio:16/9; border-radius:20px 20px 0 0; }
 .before-after-track > img,.before-after-track__before,.before-after-track__before img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 .before-after-track__before { overflow:hidden; }
 .before-after-track__label { position:absolute; top:14px; z-index:2; padding:6px 10px; border-radius:999px; color:#fff; background:rgb(15 25 50 / 72%); font-size:12px; font-weight:700; pointer-events:none; }

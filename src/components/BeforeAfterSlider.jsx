@@ -6,7 +6,7 @@ import './BeforeAfterSlider.css'
 
 function imageUrl(image) { return image?.url || getPostImageUrl(image?.storage_path) }
 
-export default function BeforeAfterSlider({ before = [], after = [], title = 'Completed work' }) {
+export default function BeforeAfterSlider({ before = [], after = [], title = 'Completed work', compact = false }) {
   const [position, setPosition] = useState(50)
   const [beforeIndex, setBeforeIndex] = useState(0)
   const [afterIndex, setAfterIndex] = useState(0)
@@ -34,12 +34,12 @@ export default function BeforeAfterSlider({ before = [], after = [], title = 'Co
   if (!hasBoth) return <><div className="before-after-single">{[...beforeImages, ...afterImages].map((image, index) => <figure key={image.storage_path || image.url}><button aria-label={`View ${image.kind || (beforeImages.length ? 'before' : 'after')} photo ${index + 1}`} onClick={() => setLightboxIndex(index)} type="button"><img alt={`${title}, ${image.kind || (beforeImages.length ? 'before' : 'after')} photo ${index + 1}`} src={imageUrl(image)} /></button><figcaption>{image.kind === 'after' ? 'After' : 'Before'}</figcaption></figure>)}</div>{lightboxIndex !== null && <PhotoLightbox images={allImages} index={lightboxIndex} onClose={() => setLightboxIndex(null)} onIndexChange={setLightboxIndex} />}</>
 
   return <div className="before-after-viewer">
-    <div aria-label="Compare before and after photos" className="before-after-track" onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); updatePosition(event) }} onPointerMove={(event) => { if (event.buttons) updatePosition(event) }} ref={trackRef}>
+    <div aria-label="Compare before and after photos" className={`before-after-track${compact ? ' before-after-track--compact' : ''}`} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); updatePosition(event) }} onPointerMove={(event) => { if (event.buttons) updatePosition(event) }} ref={trackRef}>
       <img alt={`${title}, after`} className="before-after-track__after" onClick={() => setLightboxIndex(beforeImages.length + afterIndex)} onError={(event) => { event.currentTarget.hidden = true }} src={imageUrl(currentAfter)} />
       <div className="before-after-track__before" style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}><img alt={`${title}, before`} onClick={() => setLightboxIndex(beforeIndex)} onError={(event) => { event.currentTarget.hidden = true }} src={imageUrl(currentBefore)} /></div>
       <button aria-label="Open photos" className="before-after-track__lightbox" onClick={() => setLightboxIndex(beforeIndex)} type="button"><MagnifyingGlass size={19} /></button>
       <span className="before-after-track__label before-after-track__label--before">Before</span><span className="before-after-track__label before-after-track__label--after">After</span>
-      <button aria-label="Drag to compare before and after photos" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(position)} className="before-after-track__handle" onKeyDown={keyAdjust} role="slider" style={{ left: `${position}%` }} type="button"><span /></button>
+      <button aria-label="Drag to compare before and after photos" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(position)} aria-valuetext={`${Math.round(position)}% of before photo visible`} className="before-after-track__handle" onKeyDown={keyAdjust} role="slider" style={{ left: `${position}%` }} type="button"><span /></button>
     </div>
     {(beforeImages.length > 1 || afterImages.length > 1) && <div className="before-after-thumbnails">
       {beforeImages.length > 1 && <div aria-label="Before photos" className="before-after-thumbnails__side">{beforeImages.map((image, index) => <button aria-label={`Show before photo ${index + 1}`} aria-pressed={index === beforeIndex} key={image.storage_path} onClick={() => setBeforeIndex(index)} type="button"><img alt="" src={imageUrl(image)} /></button>)}</div>}
