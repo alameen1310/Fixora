@@ -11,6 +11,7 @@ export const CATALOG_VERSION = '1'
 // so the core remains usable immediately and offline.
 const catalog = {
   yo: {
+    'A real problem becomes easier to solve when you can see the work, understand the skill, and compare what matters.': 'Ìṣòro gidi máa ń rọrùn láti yanjú nígbà tí o bá rí iṣẹ́ náà, lóye ọgbọ́n ẹni tó ṣe é, tí o sì fi àwọn ohun pàtàkì wé ara wọn.',
     'Home': 'Ilé', 'Discover': 'Ṣàwárí', 'Find work': 'Wá iṣẹ́', 'Activity': 'Ìṣe', 'Messages': 'Àwọn ìfiranṣẹ́',
     'Profile': 'Àkọ́ọ́lẹ̀', 'View profile': 'Wo àkọ́ọ́lẹ̀', 'Edit profile': 'Ṣàtúnṣe àkọ́ọ́lẹ̀', 'Sign out': 'Jáde',
     'App language': 'Èdè ìṣàfilọ́lẹ̀', 'Language': 'Èdè', 'Save': 'Fipamọ́', 'Cancel': 'Fagilé', 'Close': 'Pàdé',
@@ -55,6 +56,7 @@ const catalog = {
     'No new applications': 'Kò sí ìbéèrè iṣẹ́ tuntun', 'View your posts': 'Wo àwọn ìbéèrè iṣẹ́ rẹ', 'Your profile': 'Àkọ́ọ́lẹ̀ rẹ', 'Edit request': 'Ṣàtúnṣe ìbéèrè iṣẹ́', 'Close request': 'Pa ìbéèrè iṣẹ́', 'Reopen request': 'Tún ṣí ìbéèrè iṣẹ́', 'Remove request': 'Yọ ìbéèrè iṣẹ́ kúrò', 'View applicants': 'Wo àwọn tó béèrè fún iṣẹ́', 'Post not found': 'A kò rí ìbéèrè iṣẹ́ náà',
   },
   ig: {
+    'A real problem becomes easier to solve when you can see the work, understand the skill, and compare what matters.': 'Nsogbu na-adị mfe idozi ma ị hụ ọrụ ahụ, ghọta nka onye rụrụ ya, tụlekwa ihe ndị dị mkpa.',
     'Home': 'Ụlọ', 'Discover': 'Chọpụta', 'Find work': 'Chọta ọrụ', 'Activity': 'Ọrụ', 'Messages': 'Ozi',
     'Profile': 'Profaịlụ', 'View profile': 'Lee profaịlụ', 'Edit profile': 'Dezie profaịlụ', 'Sign out': 'Pụọ',
     'App language': 'Asụsụ ngwa', 'Language': 'Asụsụ', 'Save': 'Chekwaa', 'Cancel': 'Kagbuo', 'Close': 'Mechie',
@@ -99,6 +101,7 @@ const catalog = {
     'No new applications': 'Enweghị arịrịọ ọhụrụ', 'View your posts': 'Lee arịrịọ ọrụ gị', 'Your profile': 'Profaịlụ gị', 'Edit request': 'Dezie arịrịọ ọrụ', 'Close request': 'Mechie arịrịọ ọrụ', 'Reopen request': 'Mepee arịrịọ ọrụ ọzọ', 'Remove request': 'Wepụ arịrịọ ọrụ', 'View applicants': 'Lee ndị rịọrọ ọrụ', 'Post not found': 'Ahụghị arịrịọ ọrụ ahụ',
   },
   ha: {
+    'A real problem becomes easier to solve when you can see the work, understand the skill, and compare what matters.': 'Matsala tana da sauƙin warwarewa idan ka ga aikin, ka fahimci ƙwarewar mai yi, sannan ka kwatanta muhimman bayanai.',
     'Home': 'Gida', 'Discover': 'Gano', 'Find work': 'Nemo aiki', 'Activity': 'Ayyuka', 'Messages': 'Saƙonni',
     'Profile': 'Bayanan martaba', 'View profile': 'Duba bayanan martaba', 'Edit profile': 'Gyara bayanan martaba', 'Sign out': 'Fita',
     'App language': 'Harshen manhaja', 'Language': 'Harshe', 'Save': 'Ajiye', 'Cancel': 'Soke', 'Close': 'Rufe',

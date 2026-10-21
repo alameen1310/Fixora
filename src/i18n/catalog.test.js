@@ -15,6 +15,11 @@ test('core navigation and onboarding labels have built-in translations for all t
   }
 })
 
+test('the landing page story paragraph is translated in all supported local languages', () => {
+  const phrase = 'A real problem becomes easier to solve when you can see the work, understand the skill, and compare what matters.'
+  for (const code of ['yo', 'ig', 'ha']) assert.notEqual(translateInterface(code, phrase), phrase, `${code} is missing the landing story copy`)
+})
+
 test('English and unknown phrases safely fall back to the original text', () => {
   assert.equal(translateInterface('en', 'Home'), 'Home')
   assert.equal(translateInterface('ha', 'A phrase without a catalogue entry'), 'A phrase without a catalogue entry')
