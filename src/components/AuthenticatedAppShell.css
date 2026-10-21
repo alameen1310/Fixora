@@ -568,6 +568,10 @@ html.fixora-overlay-open .fixora-app__mobile-nav { transform: translateY(calc(10
 /* Put the language control in reach on the dashboard at every viewport size. */
 .fixora-app__sidebar-language { display: flex; margin-top: auto; padding: 0 4px; }
 .fixora-app__topbar-language { display: none; }
+.fixora-app__sidebar-language .language-selector { color: rgb(255 255 255 / 82%); }
+.fixora-app__sidebar-language .language-selector select { border-color: rgb(255 255 255 / 16%); background: rgb(255 255 255 / 9%); color: #fff; }
+.fixora-app__sidebar-language .language-selector select option { color: #19284a; background: #fff; }
+.fixora-app__sidebar-language .language-selector select:focus-visible { outline-color: #fff; }
 @media (min-width: 1024px) {
   .fixora-app__sidebar > .account-menu { margin-top: 12px; }
 }

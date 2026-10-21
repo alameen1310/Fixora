@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 
-export function useDismissable({ boundaryRef, open, onDismiss }) {
+export function useDismissable({ boundaryRef, ignoreRef, open, onDismiss }) {
   const { key, pathname } = useLocation()
 
   useEffect(() => {
@@ -9,7 +9,7 @@ export function useDismissable({ boundaryRef, open, onDismiss }) {
     const focusTarget = document.activeElement
     const dismiss = () => onDismiss()
     const onPointerDown = (event) => {
-      if (!boundaryRef.current?.contains(event.target)) dismiss()
+      if (!boundaryRef.current?.contains(event.target) && !ignoreRef?.current?.contains(event.target)) dismiss()
     }
     const onKeyDown = (event) => {
       if (event.key === 'Escape') {
@@ -29,5 +29,5 @@ export function useDismissable({ boundaryRef, open, onDismiss }) {
       document.removeEventListener('scroll', dismiss, true)
       window.removeEventListener('blur', onBlur)
     }
-  }, [boundaryRef, key, pathname, open, onDismiss])
+  }, [boundaryRef, ignoreRef, key, pathname, open, onDismiss])
 }

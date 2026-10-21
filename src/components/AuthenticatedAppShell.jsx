@@ -238,11 +238,12 @@ export default function AuthenticatedAppShell() {
 function AccountMenu({ firstName, isProvider, mobile = false, onOpenChange, profile, user }) {
   const [open, setOpen] = useState(false)
   const boundaryRef = useRef(null)
+  const panelRef = useRef(null)
   const closeMenu = () => {
     setOpen(false)
     if (mobile) onOpenChange?.(false)
   }
-  useDismissable({ boundaryRef, open, onDismiss: closeMenu })
+  useDismissable({ boundaryRef, ignoreRef: panelRef, open, onDismiss: closeMenu })
   const toggleMenu = () => {
     const nextOpen = !open
     setOpen(nextOpen)
@@ -254,14 +255,14 @@ function AccountMenu({ firstName, isProvider, mobile = false, onOpenChange, prof
       <span className="fixora-app__account-name">{firstName}</span>
       {mobile && <Avatar name={profile?.full_name || firstName} size={40} src={avatarUrl(profile?.avatar_path)} />}
     </button>
-    {open && mobile && <OverlayPortal><button aria-label="Close account menu" className="account-menu__backdrop" onClick={closeMenu} type="button" /><AccountMenuPanel closeMenu={closeMenu} firstName={firstName} isProvider={isProvider} profile={profile} user={user} mobile /> </OverlayPortal>}
-    {open && !mobile && <AccountMenuPanel closeMenu={closeMenu} firstName={firstName} isProvider={isProvider} profile={profile} user={user} />}
+    {open && mobile && <OverlayPortal><button aria-label="Close account menu" className="account-menu__backdrop" onClick={closeMenu} type="button" /><AccountMenuPanel panelRef={panelRef} closeMenu={closeMenu} firstName={firstName} isProvider={isProvider} profile={profile} user={user} mobile /> </OverlayPortal>}
+    {open && !mobile && <AccountMenuPanel panelRef={panelRef} closeMenu={closeMenu} firstName={firstName} isProvider={isProvider} profile={profile} user={user} />}
   </div>
 }
 
-function AccountMenuPanel({ closeMenu, firstName, isProvider, mobile = false, profile, user }) {
+function AccountMenuPanel({ closeMenu, firstName, isProvider, mobile = false, panelRef, profile, user }) {
   const { t } = useLanguage()
-  return <section aria-label="Account menu" aria-modal={mobile || undefined} className="account-menu__panel" role="dialog">
+  return <section aria-label="Account menu" aria-modal={mobile || undefined} className="account-menu__panel" ref={panelRef} role="dialog">
     <button aria-label="Close account menu" className="account-menu__close" onClick={closeMenu} type="button"><X size={18} /></button>
     <div className="account-menu__identity"><Avatar name={profile?.full_name || firstName} size={56} src={avatarUrl(profile?.avatar_path)} /><div><strong>{profile?.full_name || firstName}</strong><small>{user?.email}</small>{!isProvider && <span className="account-menu__role">Customer</span>}</div></div>
     <nav aria-label={t('Account')} className="account-menu__links"><Link onClick={closeMenu} to="/app/profile"><UserCircle size={18} />{t('View profile')}</Link><Link onClick={closeMenu} to="/app/profile/edit"><Briefcase size={18} />{t('Edit profile')}</Link></nav>
