@@ -1,4 +1,4 @@
-.translated-text__toggle { display: inline-flex; margin-inline-start: .5rem; padding: .12rem .45rem; border: 1px solid #dce5f6; border-radius: 999px; background: #f7f9fe; color: #214ed0; font: inherit; font-size: .76em; line-height: 1.45; cursor: pointer; }
+.translated-text__toggle { display: inline-flex; vertical-align: middle; align-items: center; margin-inline-start: .45rem; padding: .08rem .4rem; border: 1px solid #dce5f6; border-radius: 999px; background: #f7f9fe; color: #214ed0; font: inherit; font-size: .58em; font-weight: 600; line-height: 1.35; cursor: pointer; }
 .translated-text__toggle:focus-visible { outline: 2px solid #3665ed; outline-offset: 2px; }
 .translated-text__consent { position: absolute; z-index: 30; display: grid; gap: .55rem; width: min(320px, 80vw); padding: .85rem; border: 1px solid #dce5f6; border-radius: 12px; background: #fff; color: #19284a; box-shadow: 0 12px 32px rgb(20 39 83 / 18%); font-size: .82rem; line-height: 1.45; }
 .translated-text__consent button { justify-self: end; border: 0; background: transparent; color: #214ed0; font: inherit; font-weight: 700; cursor: pointer; }
