@@ -143,7 +143,7 @@ function ConversationThread() {
     setEmojiOpen(false)
   }, [conversationId])
   const replyMap = useMemo(() => new Map(messages.map((message) => [message.id, message])), [messages])
-  const draftKey = `fixora.chatDraft.${conversationId}`
+  const draftKey = `fixora.chatDraft.${user.id}.${conversationId}`
   useEffect(() => { messagesRef.current = messages }, [messages])
   useEffect(() => {
     if (!conversation) return undefined
