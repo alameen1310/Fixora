@@ -258,7 +258,7 @@ export function ActionSheet({ busy = false, cancelLabel = 'Cancel', confirmLabel
   if (!open) return null
   return (
     <OverlayPortal>
-    <div aria-modal="true" className="ui-sheet-backdrop" onClick={(event) => event.target === event.currentTarget && !busy && onCancel?.()} role="dialog">
+    <div aria-modal="true" className="ui-sheet-backdrop" data-dismissable-keep-open onClick={(event) => event.target === event.currentTarget && !busy && onCancel?.()} role="dialog">
       <section aria-labelledby="ui-sheet-title" className="ui-action-sheet">
         <h2 id="ui-sheet-title">{title}</h2>
         {description && <p>{description}</p>}

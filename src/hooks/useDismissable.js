@@ -9,6 +9,7 @@ export function useDismissable({ boundaryRef, ignoreRef, open, onDismiss }) {
     const focusTarget = document.activeElement
     const dismiss = () => onDismiss()
     const onPointerDown = (event) => {
+      if (event.target instanceof Element && event.target.closest('[data-dismissable-keep-open]')) return
       if (!boundaryRef.current?.contains(event.target) && !ignoreRef?.current?.contains(event.target)) dismiss()
     }
     const onKeyDown = (event) => {
