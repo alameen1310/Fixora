@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import plumberPhoto from '../assets/plumber-at-work.jpg'
+import plumberPhoto from '../assets/plumber-at-work.png'
 import renovationPhoto from '../assets/kitchen-renovation.jpg'
 import completedPhoto from '../assets/african-kitchen.jpg'
 import './ProjectStoryCarousel.css'
@@ -11,8 +11,7 @@ const stories = [
     description:
       'A renovation has paused while the remaining repair is understood and the next professional is found.',
     image: renovationPhoto,
-    alt: 'Kitchen cabinets and work surfaces protected during an active renovation',
-    note: 'Illustrative scenario · not a live listing',
+    alt: 'Cluttered kitchen under renovation with blue painted wall section',
   },
   {
     type: 'A completed project',
@@ -20,8 +19,8 @@ const stories = [
     description:
       'A finished space makes the quality of the work easier to see and gives a professional a project to showcase.',
     image: completedPhoto,
-    alt: 'Bright finished kitchen with light cabinetry, a central island, and natural light',
-    note: 'Illustrative scenario · not a live project',
+    alt: 'Modern finished kitchen with stainless steel appliances and open drawers.',
+
   },
   {
     type: 'A professional at work',
@@ -30,7 +29,6 @@ const stories = [
       'Photos of real work can help explain the task, the materials, and the care taken to solve it.',
     image: plumberPhoto,
     alt: 'Plumber working on exposed residential bathroom pipes',
-    note: 'Illustrative scenario · not a Fixora profile',
   },
 ]
 

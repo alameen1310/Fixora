@@ -8,7 +8,7 @@ import SignupForm from './SignupForm.jsx'
 import { Logo } from './UiPrimitives.jsx'
 import kitchenWork from '../assets/kitchen-renovation.jpg'
 import finishedKitchen from '../assets/finished-kitchen.jpg'
-import plumberAtWork from '../assets/plumber-at-work.jpg'
+import plumberAtWork from '../assets/plumber-at-work.png'
 import './SignupExperience.css'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
