@@ -10,11 +10,13 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@animate-ui/react": "^2.0.0",
     "@gsap/react": "^2.1.2",
     "@phosphor-icons/react": "^2.1.10",
     "@supabase/supabase-js": "2.118.0",
     "gsap": "^3.15.0",
     "libphonenumber-js": "1.13.15",
+    "motion": "^14.3.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router-dom": "^7.18.4"
